@@ -18,7 +18,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-
 /*메인 화면*/
 class MainPage extends StatelessWidget {
   const MainPage({Key? key}) : super(key: key);
@@ -114,7 +113,9 @@ class MainPage extends StatelessWidget {
                           )
                       ),
                       onPressed: (){
-                       
+                        Navigator.push(
+                            context, MaterialPageRoute(builder: (context) => ProfilePage())
+                        );
                       },
                       child: const Center(child: Text("프로필 수정")))
               ),
@@ -175,7 +176,6 @@ class BattlePage extends StatelessWidget {
 
   }
 }
-
 
 /*퀴즈 페이지*/
 class QuizPage extends StatelessWidget {
@@ -241,14 +241,7 @@ class ProfilePage extends StatelessWidget {
           centerTitle: true,
         ),
         body: Center(
-          child: Container(
-            child: Text('프로필 어쩌구'),
-            alignment: Alignment.center,
-            padding: EdgeInsets.all(50),
-            color: Colors.orange[600],
-            width: 400,
-            height: 400,
-          ),
+
         )
     );
 
