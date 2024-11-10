@@ -111,58 +111,9 @@ class NotePage extends StatelessWidget {
             title: Text("예시4"),
             onTap: (){},
           ),
-          ListTile(
-            title: Text("예시1"),
-            onTap: (){},
-          ),
-          ListTile(
-            title: Text("예시2"),
-            onTap: (){},
-          ),
-          ListTile(
-            title: Text("예시3"),
-            onTap: (){},
-          ),
-          ListTile(
-            title: Text("예시4"),
-            onTap: (){},
-          ),
-          ListTile(
-            title: Text("예시1"),
-            onTap: (){},
-          ),
-          ListTile(
-            title: Text("예시2"),
-            onTap: (){},
-          ),
-          ListTile(
-            title: Text("예시3"),
-            onTap: (){},
-          ),
-          ListTile(
-            title: Text("예시4"),
-            onTap: (){},
-          ),
-          ListTile(
-            title: Text("예시1"),
-            onTap: (){},
-          ),
-          ListTile(
-            title: Text("예시2"),
-            onTap: (){},
-          ),
-          ListTile(
-            title: Text("예시3"),
-            onTap: (){},
-          ),
-          ListTile(
-            title: Text("예시4"),
-            onTap: (){},
-          ),
         ],
       ),
     );
-
   }
 }
 

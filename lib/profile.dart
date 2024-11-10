@@ -103,7 +103,7 @@ class ShopPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("프로필 창"),
+        title: Text("상점 창"),
         centerTitle: true,
       ),
       body: Center(
