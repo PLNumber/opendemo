@@ -66,7 +66,7 @@ class ProfilePage extends StatelessWidget {
 
                 ],
               ),
-              SizedBox(height: 20,),
+              SizedBox(height: 20),
 
             /*전적*/
               Row(
