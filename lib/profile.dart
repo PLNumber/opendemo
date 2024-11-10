@@ -31,7 +31,6 @@ class ProfilePage extends StatelessWidget {
                 },
 
                 child: Container(
-                  child: Text("축 신 두"),
                   width: 300,
                   height: 300,
                   color: Colors.black,
