@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 
-/*퀴즈 페이지*/
-class QuizPage extends StatelessWidget {
-  const QuizPage({Key? key}) : super(key: key);
+/*사전 페이지*/
+class DictPage extends StatelessWidget {
+  const DictPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text("퀴즈 창"),
+          title: Text("사전 창"),
           centerTitle: true,
         ),
         body: Center(
           child: Container(
-            child: Text('퀴즈 어쩌구'),
+            child: Text('사전 어쩌구'),
             alignment: Alignment.center,
             padding: EdgeInsets.all(50),
             color: Colors.orange[600],
