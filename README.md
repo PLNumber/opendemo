@@ -2,6 +2,8 @@
 
 데모버전
 
+읽을거 특) 없음
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
