@@ -12,6 +12,11 @@ class ProfilePage extends StatelessWidget {
           centerTitle: true,
         ),
         body: Center(
+          child: Container(
+            //child: Image.asset();
+            child: Text("대충 축 신 두"),
+
+          ),
 
         )
     );
