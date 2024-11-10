@@ -131,6 +131,7 @@ class MainPage extends StatelessWidget {
                 alignment: Alignment.bottomRight,
                 child: IconButton(
                   icon: const Icon(Icons.settings_outlined),
+                  iconSize: 50.0,
                   selectedIcon: const Icon(Icons.settings),
                   onPressed: () {
                     Navigator.push(
