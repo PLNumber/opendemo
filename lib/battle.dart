@@ -82,7 +82,6 @@ class BattlePage extends StatelessWidget {
   }
 }
 
-
 /*pvp 페이지*/
 class PVPPage extends StatelessWidget {
   const PVPPage({Key? key}) : super(key: key);
