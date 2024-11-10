@@ -72,7 +72,8 @@ class BattlePage extends StatelessWidget {
                           context, MaterialPageRoute(builder: (context) => PVEPage())
                       );
                     },
-                    child: Text("PVE")),
+                    child: Text("PVE")
+                  ),
                 ],
               )
             ],
