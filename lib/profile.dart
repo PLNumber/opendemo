@@ -17,7 +17,6 @@ class ProfilePage extends StatelessWidget {
             child: Text("대충 축 신 두"),
 
           ),
-
         )
     );
 
