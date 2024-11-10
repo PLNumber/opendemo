@@ -4,7 +4,6 @@ import 'battle.dart';
 import 'quiz.dart';
 import 'option.dart';
 import 'dictionary.dart';
-import 'dart:math' as math;
 
 void main() {
   runApp(const MyApp());

@@ -9,8 +9,8 @@ class OptionPage extends StatefulWidget {
 }
 
 class _OptionPageState extends State<OptionPage> {
-  bool soundMuted = false;  // Initial sound state (false means sound is on)
-  bool darked = false;
+  bool soundMuted = false;
+  bool lighted = false;
 
   @override
   Widget build(BuildContext context) {
@@ -43,12 +43,12 @@ class _OptionPageState extends State<OptionPage> {
               /*다크 모드 on/off */
               IconButton(
                 icon: Icon(
-                  darked ? Icons.wb_sunny : Icons.dark_mode,
+                  lighted ? Icons.wb_sunny : Icons.dark_mode,
                   size: 100.0,
                 ),
                 onPressed: (){
                   setState(() {
-                    darked = !darked;
+                    lighted = !lighted;
                   });
                 },
               ),
