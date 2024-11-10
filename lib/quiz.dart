@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 /*퀴즈 페이지*/
-class QuizPage extends StatelessWidget {
-  const QuizPage({Key? key}) : super(key: key);
+class QuizMainPage extends StatelessWidget {
+  const QuizMainPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +25,7 @@ class QuizPage extends StatelessWidget {
                   ),
                   onPressed: (){
                     Navigator.push(
-                        context, MaterialPageRoute(builder: (context) => )
+                        context, MaterialPageRoute(builder: (context) => QuizPage())
                     );
                   },
                   child: Text("퀴즈 풀기")
@@ -37,4 +37,9 @@ class QuizPage extends StatelessWidget {
 
   }
 }
+
+
+/*퀴즈 페이지*/
+class QuizPage extends StatelessWidget {
+  const QuizPage({Key? key}) : super(key: key);
 

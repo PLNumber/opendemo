@@ -81,7 +81,7 @@ class MainPage extends StatelessWidget {
                       ),
                       onPressed: (){
                         Navigator.push(
-                            context, MaterialPageRoute(builder: (context) => QuizPage())
+                            context, MaterialPageRoute(builder: (context) => QuizMainPage())
                         );
                       },
                       child: const Center(child: Text("문해력 문제")))
