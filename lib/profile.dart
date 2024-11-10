@@ -18,12 +18,23 @@ class ProfilePage extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              /*프로필 사진*/
+
+              /*힌트*/
               GestureDetector(
                 onTap: (){
-
+                 ScaffoldMessenger.of(context).showSnackBar(
+                   SnackBar(
+                     content: Text("상점은 프로필을 계속 누르세요"),
+                     duration: Duration(seconds: 2),
+                   )
+                 );
                 },
+                child: Icon(Icons.info, size: 35.0, color: Colors.pink,)
+              ),
+              SizedBox(height: 20,),
 
+              /*프로필 사진*/
+              GestureDetector(
                 onLongPress: (){
                   Navigator.push(
                       context, MaterialPageRoute(builder: (context) => ShopPage())
@@ -41,14 +52,11 @@ class ProfilePage extends StatelessWidget {
 
               /*이름 변경*/
               Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Text('이름 변경'),
-                  SizedBox(width: 20,),
-
                   SizedBox(
                     width: 250,
                     child: TextField(
-                      obscureText: true,
                       decoration: InputDecoration(
                         border: OutlineInputBorder(),
                         labelText: '이름 변경',
@@ -62,14 +70,17 @@ class ProfilePage extends StatelessWidget {
 
             /*전적*/
               Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Text('전적'),
+                  // Text('전적'),
+                  // SizedBox(width: 20,),
+
+                  Text('승리 : ', style: TextStyle(fontSize: 30.0),),
+                  Text('$win', style: TextStyle(fontSize: 40.0),),
                   SizedBox(width: 20,),
 
-                  Text('승리 : '),
-                  SizedBox(width: 20,),
-
-                  Text('패배 : '),
+                  Text('패배 : ', style: TextStyle(fontSize: 30.0),),
+                  Text('$lose', style: TextStyle(fontSize: 40.0),),
                   SizedBox(width: 20,),
 
                 ],
