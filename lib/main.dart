@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: '문해북',
       home: MainPage(),
     );
   }
@@ -39,7 +39,7 @@ class MainPage extends StatelessWidget {
             children: [
               /*이미지 창*/
               Container(
-                child: Text("이미지 siuuuu"),
+                child: Text("대충 문해북 이미지"),
                 alignment: Alignment.center,
                 padding: EdgeInsets.all(50),
                 color: Colors.amber[600],
