@@ -21,7 +21,7 @@ class _OptionPageState extends State<OptionPage> {
       ),
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(10.0),
           child: GridView.count(
             crossAxisCount: 2,  // 2 columns in the grid
             crossAxisSpacing: 30.0,  // Space between columns
@@ -31,7 +31,7 @@ class _OptionPageState extends State<OptionPage> {
               IconButton(
                 icon: Icon(
                   soundMuted ? Icons.volume_off : Icons.volume_up,
-                  size: 100.0,
+                  size: 90.0,
                 ),
                 onPressed: () {
                   setState(() {
@@ -44,7 +44,7 @@ class _OptionPageState extends State<OptionPage> {
               IconButton(
                 icon: Icon(
                   lighted ? Icons.wb_sunny : Icons.dark_mode,
-                  size: 100.0,
+                  size: 90.0,
                 ),
                 onPressed: (){
                   setState(() {

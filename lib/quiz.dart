@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'api.dart';
+import 'package:http/http.dart' as http;
+import 'package:xml/xml.dart';
 
 /*퀴즈 메인 페이지*/
 class QuizMainPage extends StatelessWidget {
@@ -59,53 +60,98 @@ class QuizMainPage extends StatelessWidget {
   }
 }
 
+
 class QuizPage extends StatefulWidget {
   @override
-  _QuizPage createState() => _QuizPage();
+  _QuizPageState createState() => _QuizPageState();
 }
 
-class _QuizPage extends State<QuizPage> {
-  final _dictionaryService = KoreanDictionaryService();
-  final _openAIService = OpenAIService();
+class _QuizPageState extends State<QuizPage> {
   final TextEditingController _controller = TextEditingController();
-  String _quizQuestion = '';
+  String _definition = ''; // 단어의 뜻을 저장할 변수
+  bool _isLoading = false;  // 로딩 상태 표시 변수
 
-  Future<void> _createQuiz() async {
-    final word = _controller.text;
+  // API 호출 함수
+  Future<void> fetchWordDefinition(String word) async {
+    final String apiKey = 'YOUR_API_KEY';  // 발급받은 API 키 입력
+    final String baseUrl = 'https://krdict.korean.go.kr/api/search';
+
+    setState(() {
+      _isLoading = true; // API 요청 전에 로딩 상태를 표시
+    });
+
     try {
-      final wordInfo = await _dictionaryService.searchWord(word);
-      final definition = wordInfo['some_definition_key'];
+      final response = await http.get(
+        Uri.parse('$baseUrl?key=$apiKey&q=$word'),
+      );
 
-      final quiz = await _openAIService.generateQuestion(word, definition);
+      if (response.statusCode == 200) {
+        var document = XmlDocument.parse(response.body);
+
+        // XML에서 item과 sense를 찾아서 정의 추출
+        var item = document.findAllElements('item').first;
+        var senses = item.findElements('sense');
+        if (senses.isNotEmpty) {
+          var definitions = senses.map((sense) => sense.findElements('definition').map((def) => def.text).join(', ')).join('\n');
+          setState(() {
+            _definition = definitions.isNotEmpty ? definitions : '정의가 없습니다.';
+          });
+        } else {
+          setState(() {
+            _definition = '해당 단어에 대한 정의를 찾을 수 없습니다.';
+          });
+        }
+      } else {
+        setState(() {
+          _definition = 'API 호출 실패: ${response.statusCode}';
+        });
+      }
+    } catch (e) {
       setState(() {
-        _quizQuestion = quiz;
+        _definition = '에러 발생: $e';
       });
-    } catch(e) {
+    } finally {
       setState(() {
-        _quizQuestion = '문제 생성 오류 : $e';
+        _isLoading = false; // 로딩 상태 종료
       });
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('국어 문제 생성기')),
+      appBar: AppBar(
+        title: Text('단어 뜻 검색'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TextField(
               controller: _controller,
-              decoration: InputDecoration(labelText: '단어를 입력하세요'),
+              decoration: InputDecoration(
+                labelText: '단어 입력',
+                border: OutlineInputBorder(),
+              ),
             ),
-            SizedBox(height: 16),
+            SizedBox(height: 20),
             ElevatedButton(
-              onPressed: _createQuiz,
-              child: Text('문제 생성'),
+              onPressed: () {
+                if (_controller.text.isNotEmpty) {
+                  fetchWordDefinition(_controller.text);
+                }
+              },
+              child: Text('뜻 찾기'),
             ),
-            SizedBox(height: 16),
-            Text(_quizQuestion),
+            SizedBox(height: 20),
+            _isLoading
+                ? CircularProgressIndicator() // 로딩 중 표시
+                : Text(
+              _definition,
+              style: TextStyle(fontSize: 16),
+            ),
           ],
         ),
       ),
@@ -113,28 +159,9 @@ class _QuizPage extends State<QuizPage> {
   }
 }
 
-// /*퀴즈 페이지*/
-// class QuizPage extends StatelessWidget {
-//   const QuizPage({Key? key}) : super(key: key);
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('문제 풀기'),
-//         centerTitle: true,
-//       ),
-//       body: Center(
-//         child: Container(
-//           width: 1000,
-//           height: 1000,
-//           color: Colors.blue,
-//         ),
-//       ),
-//     );
-//   }
-// }
-//
+
+
+
 
 /*오답노트 페이지*/
 class NotePage extends StatelessWidget {

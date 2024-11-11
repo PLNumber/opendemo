@@ -4,9 +4,16 @@ import 'battle.dart';
 import 'quiz.dart';
 import 'option.dart';
 import 'dictionary.dart';
+import 'api.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  // WidgetsFlutterBinding.ensureInitialized();
+  //
+  // final openAIService = OpenAIService();
+  // await openAIService.init(); // OpenAI API 키 초기화
+  await dotenv.load(fileName: 'assets/config/.env');
+  runApp(MyApp());
 }
 
 /*앱*/

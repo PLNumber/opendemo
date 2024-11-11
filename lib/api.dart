@@ -1,50 +1,61 @@
-import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:xml/xml.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-/*한국어 기초 대사전 api*/
-class KoreanDictionaryService {
-  final String kdsApiKey = 'FD59DC4C4A7857C5CA712D2ED1B4E565';
-  final String kdsApiUrl = 'https://opendict.korean.go.kr/api/search';
+class KoreanDictionaryAPI {
+  late final String kdsApiKey;
+  late final String openAiApiKey;
+  final String kdsApiUrl = 'https://krdict.korean.go.kr/api/search';
 
-  Future<Map<String, dynamic>> searchWord(String word) async {
-    final response = await http.get(Uri.parse(
-        '$kdsApiUrl?key=$kdsApiKey&type_search=search&part=word&q=$word'
-    ));
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data;
-    } else {
-      throw Exception('Failed to load data');
-    }
+  KoreanDictionaryAPI() {
+    // .env 파일에서 API 키를 가져옵니다.
+    kdsApiKey = dotenv.env['api.KDKEY'] ?? '';
+    openAiApiKey = dotenv.env['api.OAKEY'] ?? '';
   }
-}
 
-/*openai api*/
-class OpenAIService {
-  final String oaApiKey = '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';
-  final String oaApiUrl = 'https://api.openai.com/v1/completions';
-
-  Future<String> generateQuestion(String word, String definition) async {
-    final response = await http.post(
-      Uri.parse(oaApiUrl),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $oaApiKey',
-      },
-      body: jsonEncode({
-        'model': 'text-davinci-003',
-        'prompt':
-        '단어 "$word"의 뜻은 "$definition"입니다. 이 단어를 사용하여 국어 문제를 만들어 주세요.',
-        'max_tokens': 100,
-      }),
+  // 단어 정의를 검색하는 함수
+  Future<String> search(String query) async {
+    final response = await http.get(
+      Uri.parse('$kdsApiUrl?key=$kdsApiKey&q=$query'),
     );
 
+    // 응답 상태 확인
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data['choices'][0]['text'].toString().trim();
+      try {
+        // XML 문서 파싱
+        var document = XmlDocument.parse(response.body);
+
+        // 응답 XML을 로그로 출력하여 내용 확인
+        print('응답 XML: ${response.body}'); // 응답 XML 로그 확인
+
+        // <item> 태그를 찾아 각 단어의 정의 추출
+        var items = document.findAllElements('item');
+        String definitions = '';
+
+        if (items.isEmpty) {
+          return '결과가 없습니다.';
+        }
+
+        for (var item in items) {
+          // 단어 추출
+          var word = item.findElements('word').first.text;
+          print('단어: $word');  // 단어가 잘 추출되는지 확인
+
+          // <sense> 태그를 찾아 정의 추출
+          var senses = item.findElements('sense');
+          for (var sense in senses) {
+            var definition = sense.findElements('definition').map((e) => e.text).join(', ');
+            definitions += '$word: $definition\n'; // 단어와 정의를 조합하여 추가
+          }
+        }
+
+        return definitions.isEmpty ? '정의가 없습니다.' : definitions;
+      } catch (e) {
+        print('파싱 오류: $e');
+        return '파싱 오류가 발생했습니다.';
+      }
     } else {
-      throw Exception('Failed to load data');
+      return 'API 호출 실패: ${response.statusCode}';
     }
   }
 }

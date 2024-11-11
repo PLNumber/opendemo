@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:opendemo/api.dart';
 
-/*사전 페이지*/
 class DictPage extends StatefulWidget {
   const DictPage({Key? key}) : super(key: key);
 
@@ -10,66 +10,79 @@ class DictPage extends StatefulWidget {
 
 class _DictPageState extends State<DictPage> {
   final TextEditingController _searchController = TextEditingController();
-  List<String> _results = [];
 
-  // Example word list for testing purposes
-  final List<String> _dictionary = [
-    "apple",
-    "banana",
-    "grape",
-    "orange",
-    "peach",
-    "pineapple",
-    "watermelon"
-  ];
+  String _definition = "";
+  String _errorMessage = ''; // 오류 메시지를 저장할 변수
+  bool _isLoading = false;  // 로딩 상태 표시 변수
+  final KoreanDictionaryAPI _api = KoreanDictionaryAPI();
 
-  // Search function
-  void _searchWord(String query) {
-    final results = _dictionary
-        .where((word) => word.contains(query.toLowerCase()))
-        .toList();
+  // 단어 정의 검색
+  Future<void> _searchWord() async {
+    final word = _searchController.text.trim();
+    if (word.isEmpty) {
+      setState(() {
+        _errorMessage = '단어를 입력해 주세요.';
+        _definition = '';
+      });
+      return;
+    }
+
     setState(() {
-      _results = results;
+      _isLoading = true; // 로딩 시작
+      _errorMessage = ''; // 기존 오류 메시지 초기화
     });
+
+    try {
+      final definition = await _api.search(word);
+      setState(() {
+        _definition = definition.isEmpty ? '정의가 없습니다.' : definition;
+        _errorMessage = '';
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'API 호출 실패: $e';
+        _definition = '';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false; // 로딩 종료
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("사전 창"),
-        centerTitle: true,
+        title: Text('단어 정의 검색'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: <Widget>[
-            /*단어 검색 입력 필드*/
             TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                labelText: '단어 검색',
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.search),
-                  onPressed: () => _searchWord(_searchController.text),
-                ),
+                labelText: '단어를 입력',
+                border: OutlineInputBorder(),
               ),
-              onSubmitted: _searchWord,
             ),
-            SizedBox(height: 20),
-
-            /*검색 결과 표시*/
-            Expanded(
-              child: _results.isEmpty
-                  ? Center(child: Text('검색 결과가 없습니다.'))
-                  : ListView.builder(
-                itemCount: _results.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(_results[index]),
-                  );
-                },
-              ),
+            SizedBox(height: 16.0),
+            ElevatedButton(
+              onPressed: _searchWord,  // 단어 정의 검색
+              child: Text('정의 찾기'),
+            ),
+            SizedBox(height: 16.0),
+            _isLoading
+                ? CircularProgressIndicator()  // 로딩 중 표시
+                : _errorMessage.isNotEmpty
+                ? Text(
+              _errorMessage,
+              style: TextStyle(fontSize: 18.0, color: Colors.red),
+            ) // 오류 메시지 표시
+                : Text(
+              _definition.isEmpty ? '정의가 없습니다.' : _definition,
+              style: TextStyle(fontSize: 18.0),
             ),
           ],
         ),
