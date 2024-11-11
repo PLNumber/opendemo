@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 /*한국어 기초 대사전 api*/
 class KoreanDictionaryService {
-  final String kdsApiKey = '646F0B38023B534EE9BE9EA279A3B7CD';
+  final String kdsApiKey = 'FD59DC4C4A7857C5CA712D2ED1B4E565';
   final String kdsApiUrl = 'https://opendict.korean.go.kr/api/search';
 
   Future<Map<String, dynamic>> searchWord(String word) async {
@@ -22,7 +22,7 @@ class KoreanDictionaryService {
 
 /*openai api*/
 class OpenAIService {
-  final String oaApiKey = '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';
+  final String oaApiKey = 'alter';
   final String oaApiUrl = 'https://api.openai.com/v1/completions';
 
   Future<String> generateQuestion(String word, String definition) async {
