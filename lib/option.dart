@@ -1,6 +1,21 @@
 import 'package:flutter/material.dart';
 
-/*옵션 페이지*/
+
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: '옵션 페이지 데모',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: const OptionPage(),
+    );
+  }
+}
+
 class OptionPage extends StatefulWidget {
   const OptionPage({Key? key}) : super(key: key);
 
@@ -16,60 +31,107 @@ class _OptionPageState extends State<OptionPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("옵션 창"),
+        title: const Text("옵션 창"),
         centerTitle: true,
       ),
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(10.0),
+          padding: const EdgeInsets.all(20.0),
           child: GridView.count(
-            crossAxisCount: 2,  // 2 columns in the grid
-            crossAxisSpacing: 30.0,  // Space between columns
-            mainAxisSpacing: 30.0,  // Space between rows
+            crossAxisCount: 2,
+            crossAxisSpacing: 20.0,
+            mainAxisSpacing: 20.0,
             children: <Widget>[
-              /*소리 on/off */
-              IconButton(
-                icon: Icon(
-                  soundMuted ? Icons.volume_off : Icons.volume_up,
-                  size: 90.0,
-                ),
+              // 소리 on/off 버튼
+              _buildOptionItem(
+                icon: soundMuted ? Icons.volume_off : Icons.volume_up,
+                label: soundMuted ? "소리 끄기" : "소리 켜기",
                 onPressed: () {
                   setState(() {
-                    soundMuted = !soundMuted;  // Toggle soundMuted state
+                    soundMuted = !soundMuted;
                   });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(soundMuted ? "소리가 꺼졌습니다." : "소리가 켜졌습니다.")),
+                  );
                 },
               ),
 
-              /*다크 모드 on/off */
-              IconButton(
-                icon: Icon(
-                  lighted ? Icons.wb_sunny : Icons.dark_mode,
-                  size: 90.0,
-                ),
-                onPressed: (){
+              // 다크 모드 on/off 버튼
+              _buildOptionItem(
+                icon: lighted ? Icons.wb_sunny : Icons.dark_mode,
+                label: lighted ? "라이트 모드" : "다크 모드",
+                onPressed: () {
                   setState(() {
                     lighted = !lighted;
                   });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(lighted ? "라이트 모드가 활성화되었습니다." : "다크 모드가 활성화되었습니다.")),
+                  );
                 },
               ),
 
-              /*광고 차단 */
-              IconButton(
-                icon: const Icon(Icons.not_interested),
-                iconSize: 100.0,
-                onPressed: () {},
+              // 광고 차단 버튼
+              _buildOptionItem(
+                icon: Icons.not_interested,
+                label: "광고 차단",
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("광고 차단 기능이 활성화되었습니다.")),
+                  );
+                },
               ),
 
-              /*제작자들 */
-              IconButton(
-                icon: const Icon(Icons.hail),
-                iconSize: 100.0,
-                onPressed: () {},
+              // 제작자 정보 버튼
+              _buildOptionItem(
+                icon: Icons.hail,
+                label: "제작자 정보",
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("제작자 정보 페이지입니다.")),
+                  );
+                },
+              ),
+
+              // 고객 지원 버튼 추가
+              _buildOptionItem(
+                icon: Icons.support_agent,
+                label: "고객 지원",
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("고객 지원 페이지로 이동합니다.")),
+                  );
+                },
+              ),
+
+              // 업데이트 히스토리 버튼 추가
+              _buildOptionItem(
+                icon: Icons.update,
+                label: "업데이트 히스토리",
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("업데이트 히스토리 페이지입니다.")),
+                  );
+                },
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  // 옵션 아이템을 생성하는 함수
+  Widget _buildOptionItem({required IconData icon, required String label, required VoidCallback onPressed}) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          icon: Icon(icon, size: 80.0),
+          onPressed: onPressed,
+        ),
+        const SizedBox(height: 8),
+        Text(label, style: const TextStyle(fontSize: 16)),
+      ],
     );
   }
 }
