@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 /*한국어 기초 대사전 api*/
 class KoreanDictionaryService {
-  final String kdsApiKey = 'FD59DC4C4A7857C5CA712D2ED1B4E565';
+  final String kdsApiKey = 'alter1';
   final String kdsApiUrl = 'https://opendict.korean.go.kr/api/search';
 
   Future<Map<String, dynamic>> searchWord(String word) async {
