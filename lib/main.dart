@@ -16,6 +16,14 @@ void main() async {
   runApp(MyApp());
 }
 
+// void main() async {
+//   WidgetsFlutterBinding.ensureInitialized();
+//   await Firebase.initializeApp(
+//     options: DefaultFirebaseOptions.currentPlatform,
+//   );
+//   runApp(const MyApp());
+// }
+
 /*앱*/
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -35,7 +43,7 @@ class MainPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-      return Scaffold(
+    return Scaffold(
         appBar: AppBar(
           title: Text('메인 화면'),
           centerTitle: true,
@@ -55,7 +63,6 @@ class MainPage extends StatelessWidget {
                 height: 200,
               ),
               SizedBox(height: 20),
-
               Expanded(
                   child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -63,18 +70,15 @@ class MainPage extends StatelessWidget {
                           minimumSize: Size.zero,
                           padding: EdgeInsets.zero,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20.0)
-                          )
-                      ),
-                      onPressed: (){
+                              borderRadius: BorderRadius.circular(20.0))),
+                      onPressed: () {
                         Navigator.push(
-                            context, MaterialPageRoute(builder: (context) => BattlePage())
-                        );
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => BattlePage()));
                       },
-                      child: const Center(child: Text("대전")))
-              ),
+                      child: const Center(child: Text("대전")))),
               SizedBox(height: 20),
-
               Expanded(
                   child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -82,18 +86,15 @@ class MainPage extends StatelessWidget {
                           minimumSize: Size.zero,
                           padding: EdgeInsets.zero,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20.0)
-                          )
-                      ),
-                      onPressed: (){
+                              borderRadius: BorderRadius.circular(20.0))),
+                      onPressed: () {
                         Navigator.push(
-                            context, MaterialPageRoute(builder: (context) => QuizMainPage())
-                        );
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => QuizMainPage()));
                       },
-                      child: const Center(child: Text("문해력 문제")))
-              ),
+                      child: const Center(child: Text("문해력 문제")))),
               SizedBox(height: 20),
-
               Expanded(
                   child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -101,18 +102,15 @@ class MainPage extends StatelessWidget {
                           minimumSize: Size.zero,
                           padding: EdgeInsets.zero,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20.0)
-                          )
-                      ),
-                      onPressed: (){
+                              borderRadius: BorderRadius.circular(20.0))),
+                      onPressed: () {
                         Navigator.push(
-                            context, MaterialPageRoute(builder: (context) => DictPage())
-                        );
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => DictPage()));
                       },
-                      child: const Center(child: Text("단어 사전")))
-              ),
+                      child: const Center(child: Text("단어 사전")))),
               SizedBox(height: 20),
-
               Expanded(
                   child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -120,16 +118,14 @@ class MainPage extends StatelessWidget {
                           minimumSize: Size.zero,
                           padding: EdgeInsets.zero,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20.0)
-                          )
-                      ),
-                      onPressed: (){
+                              borderRadius: BorderRadius.circular(20.0))),
+                      onPressed: () {
                         Navigator.push(
-                            context, MaterialPageRoute(builder: (context) => ProfilePage())
-                        );
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => ProfilePage()));
                       },
-                      child: const Center(child: Text("프로필 수정")))
-              ),
+                      child: const Center(child: Text("프로필 수정")))),
               SizedBox(height: 20),
 
               /*설정버튼*/
@@ -140,25 +136,24 @@ class MainPage extends StatelessWidget {
                   iconSize: 50.0,
                   selectedIcon: const Icon(Icons.settings),
                   onPressed: () {
-                    Navigator.push(
-                        context, MaterialPageRoute(builder: (context) => OptionPage())
-                    );
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (context) => OptionPage()));
                   },
                 ),
               ),
 
-            /*광고 배너*/
-            Container(
-              child: Text("광고 배너"),
-              alignment: Alignment.center,
-              color: Colors.red[100],
-              height: 50,
-
-            ),
+              /*광고 배너*/
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  child: Text("광고 배너"),
+                  alignment: Alignment.center,
+                  color: Colors.red[100],
+                  height: 50,
+                ),
+              )
             ],
           ),
-        )
-
-      );
+        ));
   }
 }

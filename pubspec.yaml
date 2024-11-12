@@ -33,6 +33,7 @@ dependencies:
   http: ^0.13.3
   xml: ^5.3.1
   flutter_dotenv: ^5.0.2
+  audioplayers: ^0.20.1
 
 
   # The following adds the Cupertino Icons font to your application.
