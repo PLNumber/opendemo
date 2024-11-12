@@ -53,7 +53,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _updateStatus() {
     setState(() {
-      statusMessage = _statusController.text;
+      statusMessage = _statusController.text.isNotEmpty
+          ? _statusController.text
+          : "상태 메시지를 입력하세요"; // 상태 메시지 초기값으로 설정
       _statusController.clear();
       _showSnackBar(context, "상태 메시지가 변경되었습니다!");
     });
@@ -67,115 +69,157 @@ class _ProfilePageState extends State<ProfilePage> {
         centerTitle: true,
         backgroundColor: Colors.blueAccent,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            /* 힌트 아이콘 */
-            GestureDetector(
-              onTap: () {
-                _showSnackBar(context, "상점은 프로필 사진을 길게 누르세요!");
-              },
-              child: Icon(Icons.info_outline, size: 30, color: Colors.pinkAccent),
-            ),
-            const SizedBox(height: 20),
-
-            /* 프로필 사진 */
-            GestureDetector(
-              onLongPress: () {
-                Navigator.push(
-                    context, MaterialPageRoute(builder: (context) => const ShopPage()));
-              },
-              child: CircleAvatar(
-                radius: 60,
-                backgroundColor: Colors.grey[300],
-                backgroundImage: const AssetImage('assets/profile.jpg'),
+      body: SingleChildScrollView( // 스크롤 기능 추가
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              /* 힌트 아이콘 */
+              GestureDetector(
+                onTap: () {
+                  _showSnackBar(context, "상점은 프로필 사진을 길게 누르세요!");
+                },
+                child: Icon(Icons.info_outline, size: 30, color: Colors.pinkAccent),
               ),
-            ),
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            /* 이름 변경 */
-            Text(playerName, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                SizedBox(
-                  width: 200,
-                  child: TextField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: '이름 변경',
-                    ),
+              /* 프로필 사진 */
+              GestureDetector(
+                onLongPress: () {
+                  Navigator.push(
+                      context, MaterialPageRoute(builder: (context) => const ShopPage()));
+                },
+                child: CircleAvatar(
+                  radius: 60,
+                  backgroundColor: Colors.grey[300],
+                  backgroundImage: const AssetImage('assets/profile.jpg'),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              /* 상태 메시지 표시 */
+              Text(
+                statusMessage,
+                style: const TextStyle(fontSize: 22, color: Colors.black54), // 글씨 크기 증가
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+
+              /* 이름 변경 카드 */
+              Card(
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      Text(playerName, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          SizedBox(
+                            width: 150,  // 너비 줄이기
+                            child: TextField(
+                              controller: _nameController,
+                              decoration: const InputDecoration(
+                                border: OutlineInputBorder(),
+                                labelText: '이름 변경',
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.check_circle, color: Colors.blueAccent),
+                            onPressed: _updateName,
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.check_circle, color: Colors.blueAccent),
-                  onPressed: _updateName,
-                ),
-              ],
-            ),
-            const SizedBox(height: 30),
+              ),
+              const SizedBox(height: 30),
 
-            /* 전적 */
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Column(
-                  children: [
-                    const Text("승리", style: TextStyle(fontSize: 24, color: Colors.green)),
-                    Text('$win', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                const SizedBox(width: 40),
-                Column(
-                  children: [
-                    const Text("패배", style: TextStyle(fontSize: 24, color: Colors.redAccent)),
-                    Text('$lose', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            /* 레벨 */
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const Text("레벨", style: TextStyle(fontSize: 24)),
-                const SizedBox(width: 20),
-                Text('$level', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            /* 상태 메시지 */
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const Text("상태 메시지", style: TextStyle(fontSize: 24)),
-                const SizedBox(width: 20),
-                SizedBox(
-                  width: 200,
-                  child: TextField(
-                    controller: _statusController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: '상태 메시지 입력',
-                    ),
-                    onSubmitted: (_) => _updateStatus(), // 엔터키로 상태 메시지 변경
+              /* 전적 카드 */
+              Card(
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Column(
+                        children: [
+                          const Text("승리", style: TextStyle(fontSize: 24, color: Colors.green)),
+                          Text('$win', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      const SizedBox(width: 40),
+                      Column(
+                        children: [
+                          const Text("패배", style: TextStyle(fontSize: 24, color: Colors.redAccent)),
+                          Text('$lose', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.check_circle, color: Colors.blueAccent),
-                  onPressed: _updateStatus,
+              ),
+              const SizedBox(height: 20),
+
+              /* 레벨 카드 */
+              Card(
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      const Text("레벨", style: TextStyle(fontSize: 24)),
+                      const SizedBox(width: 20),
+                      Text('$level', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 20),
-          ],
+              ),
+              const SizedBox(height: 20),
+
+              /* 상태 메시지 카드 */
+              Card(
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      const Text("상태 메시지", style: TextStyle(fontSize: 24)),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          SizedBox(
+                            width: 150, // 너비 줄이기
+                            child: TextField(
+                              controller: _statusController,
+                              decoration: const InputDecoration(
+                                border: OutlineInputBorder(),
+                                labelText: '상태 메시지 입력',
+                              ),
+                              onSubmitted: (_) => _updateStatus(), // Enter 키로 상태 메시지 저장
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.check_circle, color: Colors.blueAccent),
+                            onPressed: _updateStatus,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
