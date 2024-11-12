@@ -38,8 +38,15 @@ class MyApp extends StatelessWidget {
 }
 
 /*메인 화면*/
-class MainPage extends StatelessWidget {
+class MainPage extends StatefulWidget {
   const MainPage({Key? key}) : super(key: key);
+
+  @override
+  _MainPage createState() => _MainPage();
+}
+
+class _MainPage extends State<MainPage> {
+  bool isAdVisible = true; // 광고 배너 표시 여부
 
   @override
   Widget build(BuildContext context) {
@@ -149,7 +156,8 @@ class MainPage extends StatelessWidget {
               ),
 
               /*광고 배너*/
-              Align(
+              isAdVisible
+              ? Align(
                 alignment: Alignment.bottomCenter,
                 child: Container(
                   child: Text("광고 배너"),
@@ -157,7 +165,7 @@ class MainPage extends StatelessWidget {
                   color: Colors.red[100],
                   height: 50,
                 ),
-              )
+              ) : Container(),
             ],
           ),
         ));

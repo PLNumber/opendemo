@@ -13,6 +13,7 @@ class OptionPage extends StatefulWidget {
 class _OptionPageState extends State<OptionPage> {
   bool soundMuted = false;
   bool lighted = false;
+  bool isAdVisibled = true;
 
   @override
   Widget build(BuildContext context) {
