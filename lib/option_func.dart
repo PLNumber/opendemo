@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ThemeProvider with ChangeNotifier {
   bool _isDarkMode = false;  // 기본적으로 라이트 모드 설정
@@ -18,7 +19,7 @@ class ThemeProvider with ChangeNotifier {
     _isDarkMode = !_isDarkMode;
     // 테마 상태를 로컬에 저장
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isDarkMode', _isDarkMode);
+    await prefs.setBool('isDarkMode', _isDarkMode);;
     notifyListeners();  // 상태 변경을 알림
   }
 
@@ -32,3 +33,17 @@ class ThemeProvider with ChangeNotifier {
     return _isDarkMode ? ThemeData.dark() : ThemeData.light();
   }
 }
+
+
+// URL을 여는 함수
+Future<void> launchURL(String url) async {
+  final Uri uri = Uri.parse(url);
+
+  // URL을 열기 전에 확인
+  if (await canLaunchUrl(uri)) {
+    await launchUrl(uri);
+  } else {
+    throw 'Could not launch $url';
+  }
+}
+

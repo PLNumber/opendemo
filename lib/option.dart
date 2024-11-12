@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'option_func.dart';
 
 class OptionPage extends StatefulWidget {
@@ -105,12 +106,9 @@ class _OptionPageState extends State<OptionPage> {
               _buildOptionItem(
                 icon: Icons.update,
                 label: "업데이트 히스토리",
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text("업데이트 히스토리 페이지입니다."),
-                      duration: const Duration(milliseconds: 500),),
-                  );
+                onPressed: () async {
+                  // 업데이트 히스토리 웹페이지 링크 여는 예시
+                  await launchURL('https://www.notion.so/12ab86c285be806d9db9c133beecc318');
                 },
               ),
             ],
