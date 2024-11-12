@@ -5,34 +5,34 @@ import 'quiz.dart';
 import 'option.dart';
 import 'dictionary.dart';
 import 'api.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'option_func.dart';
 
 void main() async {
-  // WidgetsFlutterBinding.ensureInitialized();
-  //
-  // final openAIService = OpenAIService();
-  // await openAIService.init(); // OpenAI API 키 초기화
+  WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: 'assets/config/.env');
-  runApp(MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => ThemeProvider()..init(), // 앱 시작 시 테마 상태 초기화
+      child: MyApp(),
+    ),
+  );
 }
 
-// void main() async {
-//   WidgetsFlutterBinding.ensureInitialized();
-//   await Firebase.initializeApp(
-//     options: DefaultFirebaseOptions.currentPlatform,
-//   );
-//   runApp(const MyApp());
-// }
 
 /*앱*/
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: '문해북',
-      home: MainPage(),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          title: '문해북',
+          theme: themeProvider.currentTheme,  // 현재 테마 적용
+          home: MainPage(),
+        );
+      },
     );
   }
 }
@@ -45,13 +45,15 @@ class MainPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text('메인 화면'),
+          title: Text('문해북'),
           centerTitle: true,
         ),
+
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+
               /*이미지 창*/
               Container(
                 child: Text("대충 문해북 이미지"),
@@ -63,6 +65,7 @@ class MainPage extends StatelessWidget {
                 height: 200,
               ),
               SizedBox(height: 20),
+
               Expanded(
                   child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -79,6 +82,7 @@ class MainPage extends StatelessWidget {
                       },
                       child: const Center(child: Text("대전")))),
               SizedBox(height: 20),
+
               Expanded(
                   child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -95,6 +99,8 @@ class MainPage extends StatelessWidget {
                       },
                       child: const Center(child: Text("문해력 문제")))),
               SizedBox(height: 20),
+
+
               Expanded(
                   child: ElevatedButton(
                       style: ElevatedButton.styleFrom(

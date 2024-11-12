@@ -1,20 +1,6 @@
 import 'package:flutter/material.dart';
-
-
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: '옵션 페이지 데모',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const OptionPage(),
-    );
-  }
-}
+import 'package:provider/provider.dart';
+import 'option_func.dart';
 
 class OptionPage extends StatefulWidget {
   const OptionPage({Key? key}) : super(key: key);
@@ -51,7 +37,10 @@ class _OptionPageState extends State<OptionPage> {
                     soundMuted = !soundMuted;
                   });
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(soundMuted ? "소리가 꺼졌습니다." : "소리가 켜졌습니다.")),
+                    SnackBar(
+                      content: Text(soundMuted ? "소리가 꺼졌습니다." : "소리가 켜졌습니다."),
+                      duration: const Duration(milliseconds: 500),),
+
                   );
                 },
               ),
@@ -61,11 +50,14 @@ class _OptionPageState extends State<OptionPage> {
                 icon: lighted ? Icons.wb_sunny : Icons.dark_mode,
                 label: lighted ? "라이트 모드" : "다크 모드",
                 onPressed: () {
+                  Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
                   setState(() {
                     lighted = !lighted;
                   });
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(lighted ? "라이트 모드가 활성화되었습니다." : "다크 모드가 활성화되었습니다.")),
+                    SnackBar(
+                        content: Text(lighted ? "라이트 모드가 활성화되었습니다." : "다크 모드가 활성화되었습니다."),
+                      duration: const Duration(milliseconds: 500),),
                   );
                 },
               ),
@@ -76,7 +68,9 @@ class _OptionPageState extends State<OptionPage> {
                 label: "광고 차단",
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("광고 차단 기능이 활성화되었습니다.")),
+                    const SnackBar(
+                        content: Text("광고 차단 기능이 활성화되었습니다."),
+                      duration: const Duration(milliseconds: 500),),
                   );
                 },
               ),
@@ -87,7 +81,9 @@ class _OptionPageState extends State<OptionPage> {
                 label: "제작자 정보",
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("제작자 정보 페이지입니다.")),
+                    const SnackBar(
+                        content: Text("제작자 정보 페이지입니다."),
+                      duration: const Duration(milliseconds: 500),),
                   );
                 },
               ),
@@ -98,7 +94,9 @@ class _OptionPageState extends State<OptionPage> {
                 label: "고객 지원",
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("고객 지원 페이지로 이동합니다.")),
+                    const SnackBar(
+                        content: Text("고객 지원 페이지로 이동합니다."),
+                      duration: const Duration(milliseconds: 500),),
                   );
                 },
               ),
@@ -109,7 +107,9 @@ class _OptionPageState extends State<OptionPage> {
                 label: "업데이트 히스토리",
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("업데이트 히스토리 페이지입니다.")),
+                    const SnackBar(
+                        content: Text("업데이트 히스토리 페이지입니다."),
+                      duration: const Duration(milliseconds: 500),),
                   );
                 },
               ),
