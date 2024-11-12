@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+/*테마 설정 함수*/
 class ThemeProvider with ChangeNotifier {
   bool _isDarkMode = false;  // 기본적으로 라이트 모드 설정
 
@@ -34,6 +35,44 @@ class ThemeProvider with ChangeNotifier {
   }
 }
 
+// 제작자 정보 다이얼로그를 보여주는 함수
+void showCreatorInfoDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text("제작자 정보", textAlign: TextAlign.center,),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            
+            Text(
+              "안재모\n허재민\n백승태\n위지웅",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 30.0),
+              ),
+            SizedBox(height: 20.0,),
+
+            Text(
+              "이 앱은 Flutter로 개발되었습니다",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 10.0, color: Colors.blue),
+            ),
+
+          ],
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();  // 다이얼로그 닫기
+            },
+            child: const Text("닫기"),
+          ),
+        ],
+      );
+    },
+  );
+}
 
 // URL을 여는 함수
 Future<void> launchURL(String url) async {

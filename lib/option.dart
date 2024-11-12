@@ -40,7 +40,7 @@ class _OptionPageState extends State<OptionPage> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(soundMuted ? "소리가 꺼졌습니다." : "소리가 켜졌습니다."),
-                      duration: const Duration(milliseconds: 500),),
+                      duration: const Duration(milliseconds: 100),),
 
                   );
                 },
@@ -57,8 +57,8 @@ class _OptionPageState extends State<OptionPage> {
                   });
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                        content: Text(lighted ? "라이트 모드가 활성화되었습니다." : "다크 모드가 활성화되었습니다."),
-                      duration: const Duration(milliseconds: 500),),
+                        content: Text(lighted ? "다크 모드가 활성화되었습니다." : "라이트 모드가 활성화되었습니다."),
+                      duration: const Duration(milliseconds: 100),),
                   );
                 },
               ),
@@ -71,7 +71,7 @@ class _OptionPageState extends State<OptionPage> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                         content: Text("광고 차단 기능이 활성화되었습니다."),
-                      duration: const Duration(milliseconds: 500),),
+                      duration: const Duration(milliseconds: 100),),
                   );
                 },
               ),
@@ -81,11 +81,12 @@ class _OptionPageState extends State<OptionPage> {
                 icon: Icons.hail,
                 label: "제작자 정보",
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text("제작자 정보 페이지입니다."),
-                      duration: const Duration(milliseconds: 500),),
-                  );
+                  showCreatorInfoDialog(context);
+                  // ScaffoldMessenger.of(context).showSnackBar(
+                  //   const SnackBar(
+                  //       content: Text("제작자 정보 페이지입니다."),
+                  //     duration: const Duration(milliseconds: 500),),
+                  // );
                 },
               ),
 
@@ -93,11 +94,12 @@ class _OptionPageState extends State<OptionPage> {
               _buildOptionItem(
                 icon: Icons.support_agent,
                 label: "고객 지원",
-                onPressed: () {
+                onPressed: () /*async*/ {
+                  //await launchURL("tel:+82-10-3212-1034");
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                         content: Text("고객 지원 페이지로 이동합니다."),
-                      duration: const Duration(milliseconds: 500),),
+                      duration: const Duration(milliseconds: 100),),
                   );
                 },
               ),
