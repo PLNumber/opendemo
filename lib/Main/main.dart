@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../Pages/profile.dart';
 import '../../Pages/battle.dart';
 import '../../Pages/quiz.dart';
 import '../../Pages/option.dart';
 import '../../Pages/dictionary.dart';
-import 'package:provider/provider.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../Function/option_func.dart';
-import 'package:firebase_core/firebase_core.dart';
+import '../Main/Login/pages/auth_page.dart';
+import '../Main/Login/pages/login_page.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -35,7 +37,7 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
           title: '문해북',
           theme: themeProvider.currentTheme,  // 현재 테마 적용
-          home: MainPage(),
+          home: AuthPage(),
         );
       },
     );
