@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'profile.dart';
-import 'battle.dart';
-import 'quiz.dart';
-import 'option.dart';
-import 'dictionary.dart';
-import '../Function/api.dart';
+import '../../Pages/profile.dart';
+import '../../Pages/battle.dart';
+import '../../Pages/quiz.dart';
+import '../../Pages/option.dart';
+import '../../Pages/dictionary.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../Function/option_func.dart';
+import '../../Function/option_func.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
