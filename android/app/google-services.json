@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "582081833689",
+    "project_id": "quaddingnotetest",
+    "storage_bucket": "quaddingnotetest.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:582081833689:android:adf9be2f401dbb6e68acc8",
+        "android_client_info": {
+          "package_name": "kr.kumoh.ac.s20180665.www.opendemo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "582081833689-2dga1fp5gmk3ln0rtrntvjh19o6a9tt2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "kr.kumoh.ac.s20180665.www.opendemo",
+            "certificate_hash": "a038d0ec5557ca12c0edec5844887710c4e208ad"
+          }
+        },
+        {
+          "client_id": "582081833689-ooj3shs8oml3hc4j60beohb8nl9fkl3s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFEmVNolXS5njiCEtNy6WalXSq-7jnOFE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "582081833689-ooj3shs8oml3hc4j60beohb8nl9fkl3s.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "582081833689-jl80n50ld41onfq969fs139jh8rq5b7s.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "ios"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
