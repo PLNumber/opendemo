@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:opendemo/api.dart';
+import 'package:opendemo/Function/api.dart';
 
 class DictPage extends StatefulWidget {
   const DictPage({Key? key}) : super(key: key);

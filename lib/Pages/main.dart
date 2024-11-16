@@ -4,10 +4,10 @@ import 'battle.dart';
 import 'quiz.dart';
 import 'option.dart';
 import 'dictionary.dart';
-import 'api.dart';
+import '../Function/api.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'option_func.dart';
+import '../Function/option_func.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

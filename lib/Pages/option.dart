@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'option_func.dart';
+import '../Function/option_func.dart';
 
 class OptionPage extends StatefulWidget {
   const OptionPage({Key? key}) : super(key: key);
