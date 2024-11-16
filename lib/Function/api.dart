@@ -6,11 +6,11 @@ import 'package:flutter/foundation.dart'; // debugPrint 사용을 위해
 
 class KoreanDictionaryAPI {
   late final String kdsApiKey;
-  final String kdsApiUrl = 'https://krdict.korean.go.kr/api/search';
+  final String kdsApiUrl = 'https://opendict.korean.go.kr/api/search';
 
   KoreanDictionaryAPI() {
     // API 키를 환경변수에서 불러오고, 누락된 경우 예외를 발생시킵니다.
-    kdsApiKey = dotenv.env['api.KDKEY'] ?? '';
+    kdsApiKey = dotenv.env['api.URSKEY'] ?? '';
     if (kdsApiKey.isEmpty) {
       throw Exception("Korean Dictionary API Key is missing.");
     }
@@ -69,47 +69,40 @@ class KoreanDictionaryAPI {
   }
 }
 
-class OpenAIAPI {
-  late final String openAIApiKey;
-  final String openAIUrl = 'https://api.openai.com/v1/completions';
-  static const String openAIModel = 'text-davinci-003'; // 모델 이름을 상수로 지정
-
-  OpenAIAPI() {
-    openAIApiKey = dotenv.env['api.OAKEY'] ?? '';
-    if (openAIApiKey.isEmpty) {
-      throw Exception("OpenAI API Key is missing.");
-    }
+//openai 로 단어 리스트 가져오기
+Future<List<String>> fetchWordList() async {
+  final apiKey = dotenv.env['api.OAKEY'] ?? '';
+  if (apiKey.isEmpty) {
+    throw Exception("OpenAI API Key가 없거나 제대로 로드되지 않았습니다.");
   }
 
-  Future<String> generateQuestion(String word, String definition) async {
-    try {
-      final response = await http.post(
-        Uri.parse(openAIUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $openAIApiKey',
-        },
-        body: jsonEncode({
-          'model': openAIModel,
-          'prompt': '단어 "$word"의 뜻은 "$definition"입니다. 이 단어를 사용하여 국어 문제를 만들어 주세요.',
-          'max_tokens': 100,
-        }),
-      );
+  final url = Uri.parse("https://api.openai.com/v1/chat/completions");
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final choices = data['choices'];
-        if (choices != null && choices.isNotEmpty) {
-          return choices[0]['text'].toString().trim();
-        } else {
-          return '응답이 없습니다.';
-        }
-      } else {
-        return 'OpenAI API 호출 실패: ${response.statusCode}';
-      }
-    } catch (e) {
-      debugPrint('OpenAI API 호출 오류: $e');
-      return '질문 생성 중 오류가 발생했습니다.';
+  final response = await http.post(
+    url,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $apiKey',
+    },
+    body: jsonEncode({
+      "model": "gpt-3.5-turbo",
+      "messages": [
+        {"role": "user", "content": "문해력 학습용 단어 10개를 제공해주세요."}
+      ],
+      "max_tokens": 100,
+    }),
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    final text = data['choices'][0]['message']['content'] as String;
+    return text.split('\n').map((word) => word.trim()).where((word) => word.isNotEmpty).toList();
+  } else {
+    final error = jsonDecode(response.body);
+    if (error['error']['code'] == 'insufficient_quota') {
+      throw Exception("사용 가능한 쿼터가 초과되었습니다. OpenAI 요금제 및 청구 내역을 확인해주세요.");
+    } else {
+      throw Exception("단어를 가져오는 데 실패했습니다: ${response.body}");
     }
   }
 }
