@@ -64,7 +64,6 @@ class _MainPage extends State<MainPage> {
         ),
 
 
-
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -134,6 +133,8 @@ class _MainPage extends State<MainPage> {
               // 하단 설정 및 광고 배너
               Column(
                 children: [
+
+                  /*설정 버튼*/
                   Align(
                     alignment: Alignment.centerRight,
                     child: IconButton(
