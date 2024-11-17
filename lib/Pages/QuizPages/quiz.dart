@@ -1,65 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../Function/class.dart';
-
-/*퀴즈 메인 페이지*/
-class QuizMainPage extends StatelessWidget {
-  const QuizMainPage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("문제 메인창"),
-        centerTitle: true,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                    fixedSize: const Size(175,175),
-                    backgroundColor: Colors.greenAccent,
-                    padding: EdgeInsets.all(20),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20.0)
-                    )
-                ),
-                onPressed: (){
-                  Navigator.push(
-                      context, MaterialPageRoute(builder: (context) => QuizPage())
-                  );
-                },
-                child: Text("퀴즈 풀기")
-            ),
-            SizedBox(height: 50,),
-
-            /*오답노트*/
-            ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                    fixedSize: const Size(175,175),
-                    backgroundColor: Colors.greenAccent,
-                    padding: EdgeInsets.all(20),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20.0)
-                    )
-                ),
-                onPressed: (){
-                  Navigator.push(
-                      context, MaterialPageRoute(builder: (context) => NotePage())
-                  );
-                },
-                child: Text("오답 노트")
-            )
-          ],
-        ),
-      )
-    );
-
-  }
-}
-
+import '../../Function/class.dart';
 
 class QuizPage extends StatefulWidget {
   @override
@@ -166,13 +107,25 @@ class _QuizPageState extends State<QuizPage> {
 
   void _saveWrongAnswer(Question question) async {
     try {
-      final docRef = FirebaseFirestore.instance.collection('wrongAnswers').doc();
-      await docRef.set(question.toMap()); // Firestore에 데이터를 저장
-      print('Wrong answer saved.');
+      // 'wrongAnswers' 컬렉션에서 동일한 단어나 ID를 가진 문서를 찾기
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('wrongAnswers')
+          .where('w_id', isEqualTo: question.wId)  // 'w_id' 기준으로 중복 체크
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        // 중복된 문서가 없으면 새로 저장
+        final docRef = FirebaseFirestore.instance.collection('wrongAnswers').doc();
+        await docRef.set(question.toMap()); // Firestore에 데이터를 저장
+        print('Wrong answer saved.');
+      } else {
+        print('This question has already been saved in wrong answers.');
+      }
     } catch (e) {
       print('Error saving wrong answer: $e');
     }
   }
+
 
 
   void _showResultDialog(bool isCorrect) {
@@ -234,46 +187,3 @@ class _QuizPageState extends State<QuizPage> {
 
 
 
-class NotePage extends StatelessWidget {
-  final Stream<QuerySnapshot> wrongAnswersStream =
-  FirebaseFirestore.instance.collection('wrongAnswers').snapshots();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('오답노트'),
-        centerTitle: true,
-      ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: wrongAnswersStream,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('오답을 불러오는 데 오류가 발생했습니다.'));
-          }
-          final wrongAnswers = snapshot.data?.docs ?? [];
-
-          return ListView.builder(
-            itemCount: wrongAnswers.length,
-            itemBuilder: (context, index) {
-              final wrongAnswer = wrongAnswers[index];
-              // 'def' 필드가 없을 경우 기본값 사용
-              final def = wrongAnswer['def'] ?? '정의 없음';
-              final word = wrongAnswer['word'] ?? '단어 없음';
-              return ListTile(
-                title: Text(def),  // 'def' 필드 사용
-                subtitle: Text(word),  // 단어 표시
-                onTap: () {
-                  // 오답을 클릭했을 때 더 자세히 보기 기능 추가
-                },
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-}
