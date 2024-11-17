@@ -13,7 +13,7 @@ class _QuizPageState extends State<QuizPage> {
   int _currentQuestionIndex = 0;
   final TextEditingController _answerController = TextEditingController();
   bool _isLoading = true;
-  int _timeLeft = 30; // 30초 제한 (30초)
+  int _timeLeft = 10; // 10초 제한 (10초)
   late Timer _timer;
 
   @override
@@ -97,7 +97,14 @@ class _QuizPageState extends State<QuizPage> {
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 20),
-            // 남은 시간 표시
+            // 남은 시간 표시 (타이머 게이지)
+            CircularProgressIndicator(
+              value: _timeLeft / 10,  // 10초를 기준으로 비율 계산
+              strokeWidth: 8,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+            ),
+            SizedBox(height: 20),
+            // 남은 시간 텍스트 표시
             Text(
               "남은 시간: $_timeLeft 초",
               style: TextStyle(fontSize: 16, color: Colors.red),
@@ -195,7 +202,7 @@ class _QuizPageState extends State<QuizPage> {
     setState(() {
       if (_currentQuestionIndex < _questions.length - 1) {
         _currentQuestionIndex++;
-        _timeLeft = 60; // 새로운 문제로 넘어갈 때마다 타이머 리셋
+        _timeLeft = 10; // 새로운 문제로 넘어갈 때마다 타이머 리셋
       } else {
         _showCompletionDialog();
       }
