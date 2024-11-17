@@ -58,7 +58,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _changeProfileImage() {
-    String newImagePath = 'assets/images/new_image.jpg';
+    String newImagePath = 'assets/images/ronaldo.jpg';
     saveProfileImage(newImagePath);  // 새로운 이미지 저장
     setState(() {
       _profileImage = newImagePath;  // 화면에서 프로필 이미지 변경
