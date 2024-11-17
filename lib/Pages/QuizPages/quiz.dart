@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'dart:async';  // 타이머 사용을 위한 import
 import '../../Function/class.dart';
 
 class QuizPage extends StatefulWidget {
@@ -12,18 +13,21 @@ class _QuizPageState extends State<QuizPage> {
   int _currentQuestionIndex = 0;
   final TextEditingController _answerController = TextEditingController();
   bool _isLoading = true;
+  int _timeLeft = 30; // 30초 제한 (30초)
+  late Timer _timer;
 
   @override
   void initState() {
     super.initState();
-    _fetchQuestions(); // Firestore 데이터 가져오기
+    _fetchQuestions();
+    _startTimer(); // 타이머 시작
   }
 
   Future<void> _fetchQuestions() async {
     try {
       final snapshot = await FirebaseFirestore.instance.collection('WQ').get();
       final questions = snapshot.docs
-          .map((doc) => Question.fromMap(doc.data())) // 데이터 모델에 맞게 변환
+          .map((doc) => Question.fromMap(doc.data()))
           .toList();
       setState(() {
         _questions = questions;
@@ -38,7 +42,27 @@ class _QuizPageState extends State<QuizPage> {
         _isLoading = false;
       });
     }
+  }
 
+  // 타이머 시작
+  void _startTimer() {
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (_timeLeft == 0) {
+        _timer.cancel();
+        _checkAnswer(_questions[_currentQuestionIndex]); // 시간 초과 시 자동으로 오답 처리
+      } else {
+        setState(() {
+          _timeLeft--;
+        });
+      }
+    });
+  }
+
+  // 타이머 종료 시
+  @override
+  void dispose() {
+    _timer.cancel(); // 타이머 해제
+    super.dispose();
   }
 
   @override
@@ -66,12 +90,20 @@ class _QuizPageState extends State<QuizPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // 질문 표시
             Text(
               "문제: ${currentQuestion.def}",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 20),
+            // 남은 시간 표시
+            Text(
+              "남은 시간: $_timeLeft 초",
+              style: TextStyle(fontSize: 16, color: Colors.red),
+            ),
+            SizedBox(height: 20),
+            // 답 입력 필드
             TextField(
               controller: _answerController,
               decoration: InputDecoration(
@@ -80,6 +112,7 @@ class _QuizPageState extends State<QuizPage> {
               ),
             ),
             SizedBox(height: 20),
+            // 제출 버튼
             ElevatedButton(
               onPressed: () => _checkAnswer(currentQuestion),
               child: Text('제출'),
@@ -90,33 +123,38 @@ class _QuizPageState extends State<QuizPage> {
     );
   }
 
+  // 정답 체크 및 오답 처리
   void _checkAnswer(Question question) {
     String userAnswer = _answerController.text.trim();
 
     setState(() {
+      if (_timeLeft == 0) {
+        userAnswer = ''; // 시간 초과 시 정답 없음 처리
+      }
+
       if (userAnswer.toLowerCase() == question.word.toLowerCase()) {
         _showResultDialog(true);
       } else {
         question.isCorrect = false;
-        _saveWrongAnswer(question); // 오답 저장
+        _saveWrongAnswer(question);
         _showResultDialog(false);
       }
+
       _answerController.clear();
     });
   }
 
+  // 오답 저장
   void _saveWrongAnswer(Question question) async {
     try {
-      // 'wrongAnswers' 컬렉션에서 동일한 단어나 ID를 가진 문서를 찾기
       final querySnapshot = await FirebaseFirestore.instance
           .collection('wrongAnswers')
-          .where('w_id', isEqualTo: question.wId)  // 'w_id' 기준으로 중복 체크
+          .where('w_id', isEqualTo: question.wId)
           .get();
 
       if (querySnapshot.docs.isEmpty) {
-        // 중복된 문서가 없으면 새로 저장
         final docRef = FirebaseFirestore.instance.collection('wrongAnswers').doc();
-        await docRef.set(question.toMap()); // Firestore에 데이터를 저장
+        await docRef.set(question.toMap());
         print('Wrong answer saved.');
       } else {
         print('This question has already been saved in wrong answers.');
@@ -126,8 +164,7 @@ class _QuizPageState extends State<QuizPage> {
     }
   }
 
-
-
+  // 결과 다이얼로그
   void _showResultDialog(bool isCorrect) {
     showDialog(
       context: context,
@@ -153,16 +190,19 @@ class _QuizPageState extends State<QuizPage> {
     );
   }
 
+  // 다음 문제로 넘어가기
   void _moveToNextQuestion() {
     setState(() {
       if (_currentQuestionIndex < _questions.length - 1) {
         _currentQuestionIndex++;
+        _timeLeft = 60; // 새로운 문제로 넘어갈 때마다 타이머 리셋
       } else {
         _showCompletionDialog();
       }
     });
   }
 
+  // 퀴즈 완료 다이얼로그
   void _showCompletionDialog() {
     showDialog(
       context: context,
@@ -174,7 +214,7 @@ class _QuizPageState extends State<QuizPage> {
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
-                Navigator.pop(context);
+                Navigator.pop(context); // 메인 페이지로 돌아가기
               },
               child: Text('메인으로'),
             ),
@@ -184,6 +224,3 @@ class _QuizPageState extends State<QuizPage> {
     );
   }
 }
-
-
-
