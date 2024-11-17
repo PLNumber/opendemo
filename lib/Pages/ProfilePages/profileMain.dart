@@ -1,20 +1,7 @@
 import 'package:flutter/material.dart';
 import 'shopPage.dart';
+import '../../Function/Profile/secure.dart';
 
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Literacy Quiz Battle',
-      theme: ThemeData(
-        primaryColor: Colors.blue,
-      ),
-      home: ProfilePage(),
-    );
-  }
-}
-
-/*프로필 페이지*/
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
 
@@ -25,30 +12,38 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   int win = 0;
   int lose = 0;
-  int level = 1; // 사용자의 레벨
+  int level = 1;
+  String playerName = "Player";
+  String statusMessage = "상태 메시지를 입력하세요";
+  String? _profileImage;
+
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _statusController = TextEditingController();
-  String playerName = "Player";
-  String statusMessage = "상태 메시지를 입력하세요"; // 상태 메시지 초기값
 
   @override
-  void dispose() {
-    _nameController.dispose();
-    _statusController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _loadProfileData(); // 데이터를 비동기적으로 불러옵니다.
   }
 
-  void _showSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: Duration(seconds: 2)),
-    );
+  Future<void> _loadProfileData() async {
+    // 비동기적으로 데이터 불러오기
+    String? savedName = await loadDataSecure('playerName');
+    String? savedStatus = await loadDataSecure('statusMessage');
+    String? savedImage = await loadProfileImage();
+
+    setState(() {
+      playerName = savedName ?? "Player";
+      statusMessage = savedStatus ?? "상태 메시지를 입력하세요";
+      _profileImage = savedImage ?? 'assets/images/ronaldo.jpg'; // 기본 이미지
+    });
   }
 
   void _updateName() {
     setState(() {
       playerName = _nameController.text;
       _nameController.clear();
-      _showSnackBar(context, "이름이 변경되었습니다!");
+      saveDataSecure('playerName', playerName); // 이름 저장
     });
   }
 
@@ -56,10 +51,25 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() {
       statusMessage = _statusController.text.isNotEmpty
           ? _statusController.text
-          : "상태 메시지를 입력하세요"; // 상태 메시지 초기값으로 설정
+          : "상태 메시지를 입력하세요";
       _statusController.clear();
-      _showSnackBar(context, "상태 메시지가 변경되었습니다!");
+      saveDataSecure('statusMessage', statusMessage); // 상태 메시지 저장
     });
+  }
+
+  void _changeProfileImage() {
+    String newImagePath = 'assets/images/new_image.jpg';
+    saveProfileImage(newImagePath);  // 새로운 이미지 저장
+    setState(() {
+      _profileImage = newImagePath;  // 화면에서 프로필 이미지 변경
+    });
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _statusController.dispose();
+    super.dispose();
   }
 
   @override
@@ -70,23 +80,13 @@ class _ProfilePageState extends State<ProfilePage> {
         centerTitle: true,
         backgroundColor: Colors.blueAccent,
       ),
-      body: SingleChildScrollView( // 스크롤 기능 추가
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              /* 힌트 아이콘 */
               GestureDetector(
-                onTap: () {
-                  _showSnackBar(context, "상점은 프로필 사진을 길게 누르세요!");
-                },
-                child: Icon(Icons.info_outline, size: 30, color: Colors.pinkAccent),
-              ),
-              const SizedBox(height: 20),
-
-              /* 프로필 사진 */
-              GestureDetector(
+                onTap: _changeProfileImage,
                 onLongPress: () {
                   Navigator.push(
                       context, MaterialPageRoute(builder: (context) => const ShopPage()));
@@ -94,20 +94,19 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: CircleAvatar(
                   radius: 60,
                   backgroundColor: Colors.grey[300],
-                  backgroundImage: const AssetImage('assets/images/ronaldo.jpg'),
+                  backgroundImage: _profileImage != null
+                      ? AssetImage(_profileImage!)
+                      : const AssetImage('assets/images/ronaldo.jpg'),
                 ),
               ),
               const SizedBox(height: 20),
-
-              /* 상태 메시지 표시 */
               Text(
                 statusMessage,
-                style: const TextStyle(fontSize: 22, color: Colors.black54), // 글씨 크기 증가
+                style: const TextStyle(fontSize: 22, color: Colors.black54),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
 
-              /* 이름 변경 카드 */
               Card(
                 elevation: 4,
                 child: Padding(
@@ -120,7 +119,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[
                           SizedBox(
-                            width: 150,  // 너비 줄이기
+                            width: 150,
                             child: TextField(
                               controller: _nameController,
                               decoration: const InputDecoration(
@@ -140,6 +139,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               const SizedBox(height: 30),
+
 
               /* 전적 카드 */
               Card(

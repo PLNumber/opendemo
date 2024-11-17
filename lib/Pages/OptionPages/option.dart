@@ -1,7 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../Function/Option/option_func.dart';
+import '../../Main/Login/pages/home_page.dart';
+import '../../Main/Login/pages/auth_page.dart';
 
 class OptionPage extends StatefulWidget {
   const OptionPage({Key? key}) : super(key: key);
@@ -118,6 +121,19 @@ class _OptionPageState extends State<OptionPage> {
                   await launchURL('https://www.notion.so/12ab86c285be806d9db9c133beecc318');
                 },
               ),
+
+              _buildOptionItem(
+                icon: Icons.output,
+                label: "로그아웃",
+                onPressed: () {
+                  FirebaseAuth.instance.signOut();
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AuthPage()), // 로그인 화면으로 이동
+                        (Route<dynamic> route) => false, // 모든 이전 페이지를 제거
+                  );
+                },
+              )
             ],
           ),
         ),
