@@ -80,9 +80,9 @@ class _QuizPageState extends State<QuizPage> {
 
   Future<void> _fetchQuestions() async {
     try {
-      final snapshot = await FirebaseFirestore.instance.collection('questions').get();
+      final snapshot = await FirebaseFirestore.instance.collection('WQ').get();
       final questions = snapshot.docs
-          .map((doc) => Question.fromMap(doc.data()))
+          .map((doc) => Question.fromMap(doc.data())) // 데이터 모델에 맞게 변환
           .toList();
       setState(() {
         _questions = questions;
@@ -90,10 +90,14 @@ class _QuizPageState extends State<QuizPage> {
       });
     } catch (e) {
       print('Error fetching questions: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('문제를 불러오는 데 실패했습니다. 다시 시도해주세요.')),
+      );
       setState(() {
         _isLoading = false;
       });
     }
+
   }
 
   @override
@@ -122,7 +126,7 @@ class _QuizPageState extends State<QuizPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              "문제: ${currentQuestion.definition}",
+              "문제: ${currentQuestion.def}",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
@@ -161,9 +165,15 @@ class _QuizPageState extends State<QuizPage> {
   }
 
   void _saveWrongAnswer(Question question) async {
-    final docRef = FirebaseFirestore.instance.collection('wrongAnswers').doc();
-    await docRef.set(question.toMap());
+    try {
+      final docRef = FirebaseFirestore.instance.collection('wrongAnswers').doc();
+      await docRef.set(question.toMap()); // Firestore에 데이터를 저장
+      print('Wrong answer saved.');
+    } catch (e) {
+      print('Error saving wrong answer: $e');
+    }
   }
+
 
   void _showResultDialog(bool isCorrect) {
     showDialog(
@@ -224,11 +234,9 @@ class _QuizPageState extends State<QuizPage> {
 
 
 
-
-
-/*오답노트 페이지*/
 class NotePage extends StatelessWidget {
-  const NotePage({Key? key}) : super(key: key);
+  final Stream<QuerySnapshot> wrongAnswersStream =
+  FirebaseFirestore.instance.collection('wrongAnswers').snapshots();
 
   @override
   Widget build(BuildContext context) {
@@ -237,28 +245,35 @@ class NotePage extends StatelessWidget {
         title: Text('오답노트'),
         centerTitle: true,
       ),
-      body: ListView(
-        children: <Widget>[
-          ListTile(
-            title: Text("예시1"),
-            onTap: (){},
-          ),
-          ListTile(
-            title: Text("예시2"),
-            onTap: (){},
-          ),
-          ListTile(
-            title: Text("예시3"),
-            onTap: (){},
-          ),
-          ListTile(
-            title: Text("예시4"),
-            onTap: (){},
-          ),
-        ],
+      body: StreamBuilder<QuerySnapshot>(
+        stream: wrongAnswersStream,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('오답을 불러오는 데 오류가 발생했습니다.'));
+          }
+          final wrongAnswers = snapshot.data?.docs ?? [];
+
+          return ListView.builder(
+            itemCount: wrongAnswers.length,
+            itemBuilder: (context, index) {
+              final wrongAnswer = wrongAnswers[index];
+              // 'def' 필드가 없을 경우 기본값 사용
+              final def = wrongAnswer['def'] ?? '정의 없음';
+              final word = wrongAnswer['word'] ?? '단어 없음';
+              return ListTile(
+                title: Text(def),  // 'def' 필드 사용
+                subtitle: Text(word),  // 단어 표시
+                onTap: () {
+                  // 오답을 클릭했을 때 더 자세히 보기 기능 추가
+                },
+              );
+            },
+          );
+        },
       ),
     );
   }
 }
-
-
