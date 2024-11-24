@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../BattlePages/pve.dart';
 
 class MyApp extends StatelessWidget {
   @override
@@ -103,7 +103,7 @@ class _BattlePageState extends State<BattlePage> {
                     incrementScore();
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const PVEPage()),
+                      MaterialPageRoute(builder: (context) => PVEPage()),
                     );
                   },
                   child: Column(
@@ -153,6 +153,7 @@ class PVPPage extends StatelessWidget {
 }
 
 /* PVE 페이지 */
+/*
 class PVEPage extends StatelessWidget {
   const PVEPage({Key? key}) : super(key: key);
 
@@ -180,3 +181,4 @@ class PVEPage extends StatelessWidget {
     );
   }
 }
+*/
