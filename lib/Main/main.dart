@@ -26,7 +26,8 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()..init()),
-        ChangeNotifierProvider(create: (context) => AdVisibilityProvider()), // 광고 표시 여부 관리
+        ChangeNotifierProvider(create: (context) => AdVisibilityProvider()),
+        // 광고 표시 여부 관리
       ],
       child: MyApp(),
     ),
@@ -65,15 +66,16 @@ class _MainPage extends State<MainPage> {
   }
 
   void _loadAd() {
-    final adVisibilityProvider = Provider.of<AdVisibilityProvider>(context, listen: false);
+    final adVisibilityProvider =
+        Provider.of<AdVisibilityProvider>(context, listen: false);
     if (adVisibilityProvider.isAdVisible) {
       _createBannerAd();
     }
   }
 
-  void _createBannerAd() { // 광고
+  void _createBannerAd() {
     _bannerAd = BannerAd(
-      size: AdSize.fluid,
+      size: AdSize.fullBanner,
       adUnitId: AdMobService.bannerAdUnitId!,
       listener: AdMobService.bannerAdListener,
       request: const AdRequest(),
@@ -107,7 +109,10 @@ class _MainPage extends State<MainPage> {
                 color: Color(0xFFE8F5E9), // 부드러운 연두색
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
-                  BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 5)),
+                  BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 10,
+                      offset: Offset(0, 5)),
                 ],
               ),
               padding: const EdgeInsets.all(24),
@@ -141,69 +146,81 @@ class _MainPage extends State<MainPage> {
                     icon: Icons.sports_esports,
                     title: "대전",
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => BattlePage()));
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => BattlePage()));
                     },
                   ),
                   FeatureCard(
                     icon: Icons.quiz,
                     title: "문해력 문제",
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => QuizMainPage()));
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => QuizMainPage()));
                     },
                   ),
                   FeatureCard(
                     icon: Icons.book,
                     title: "단어 사전",
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => DictPage()));
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) => DictPage()));
                     },
                   ),
                   FeatureCard(
                     icon: Icons.person,
                     title: "프로필 수정",
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => ProfilePage()));
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => ProfilePage()));
                     },
                   ),
                 ],
               ),
             ),
 
-            // 광고 배너
-            if (adVisibilityProvider.isAdVisible) // 광고 표시 여부에 따라 조건부 렌더링
-              _bannerAd == null
-                  ? Container(
-                alignment: Alignment.center,
-                height: 50,
-                width: MediaQuery.of(context).size.width,
-                child: const CircularProgressIndicator(), // 로딩 중
-              )
-                  : Container(
-                alignment: Alignment.center,
-                color: Colors.transparent,
-                height: 50,
-                width: double.infinity,
-                child: AdWidget(ad: _bannerAd!),
-              ),
+// 하단 설정 및 광고 배너
+            Column(
+              children: [
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    icon: Icon(Icons.settings_outlined, size: 30),
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => OptionPage()));
+                    },
+                  ),
+                ),
+                SizedBox(height: 16),
+                // 광고 배너
+                if (adVisibilityProvider.isAdVisible) // 광고 표시 여부에 따라 조건부 렌더링
+                  _bannerAd == null
+                      ? Container(
+                          alignment: Alignment.center,
+                          height: 50,
+                          width: MediaQuery.of(context).size.width,
+                          child: const CircularProgressIndicator(), // 로딩 중
+                        )
+                      : Container(
+                          alignment: Alignment.center,
+                          color: Colors.transparent,
+                          height: 50,
+                          width: MediaQuery.of(context).size.width,
+                          child: AdWidget(ad: _bannerAd!),
+                        ),
+              ],
+            ),
           ],
         ),
       ),
-
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 50), // 광고 배너와 겹치지 않도록 여백 추가
-        child: Container(
-          width: 80, // 버튼의 너비 설정
-          height: 80, // 버튼의 높이 설정
-          child: FloatingActionButton(
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => OptionPage()));
-            },
-            child: Icon(Icons.settings_outlined, size: 50), // 아이콘 크기 조정
-            backgroundColor: Colors.white,
-          ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endDocked, // 위치 조정
     );
   }
 }
@@ -235,7 +252,10 @@ class FeatureCard extends StatelessWidget {
             SizedBox(height: 8),
             Text(
               title,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black),
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black),
               textAlign: TextAlign.center,
             ),
           ],
