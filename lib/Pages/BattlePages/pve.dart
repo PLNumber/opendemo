@@ -4,11 +4,13 @@ import 'dart:async';  // 타이머 사용을 위한 import
 import '../../Function/class.dart';
 
 class PVEPage extends StatefulWidget {
+
   @override
   _PVEPage createState() => _PVEPage();
 }
 
 class _PVEPage extends State<PVEPage> {
+
   List<Question> _questions = [];
   int _currentQuestionIndex = 0;
   final TextEditingController _answerController = TextEditingController();
@@ -99,16 +101,16 @@ class _PVEPage extends State<PVEPage> {
             SizedBox(height: 20),
             // 남은 시간 표시 (타이머 게이지)
             CircularProgressIndicator(
-              value: _timeLeft / 10,  // 10초를 기준으로 비율 계산
+              value: _timeLeft / 10,
               strokeWidth: 8,
               valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+              backgroundColor: Colors.grey[300],
             ),
-            SizedBox(height: 20),
-            // 남은 시간 텍스트 표시
             Text(
-              "남은 시간: $_timeLeft 초",
-              style: TextStyle(fontSize: 16, color: Colors.red),
+              "$_timeLeft 초",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueAccent),
             ),
+
             SizedBox(height: 20),
             // 답 입력 필드
             TextField(
@@ -197,20 +199,22 @@ class _PVEPage extends State<PVEPage> {
     );
   }
 
-  // 다음 문제로 넘어가기
   void _moveToNextQuestion() {
     setState(() {
       if (_currentQuestionIndex < _questions.length - 1) {
         _currentQuestionIndex++;
-        _timeLeft = 10; // 새로운 문제로 넘어갈 때마다 타이머 리셋
+        _timeLeft = 10;
+        _timer.cancel();  // 기존 타이머 종료
+        _startTimer();    // 새로운 타이머 시작
       } else {
         _showCompletionDialog();
       }
     });
   }
 
-  // 퀴즈 완료 다이얼로그
+
   void _showCompletionDialog() {
+    _timer.cancel(); // 타이머 종료
     showDialog(
       context: context,
       builder: (context) {
@@ -230,4 +234,5 @@ class _PVEPage extends State<PVEPage> {
       },
     );
   }
+
 }

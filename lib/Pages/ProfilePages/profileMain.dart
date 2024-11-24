@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'shopPage.dart';
+import 'shopPage.dart'; // GridViewScreen이 포함된 파일
 import '../../Function/Profile/secure.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -35,7 +35,7 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() {
       playerName = savedName ?? "Player";
       statusMessage = savedStatus ?? "상태 메시지를 입력하세요";
-      _profileImage = savedImage ?? 'assets/images/ronaldo.jpg'; // 기본 이미지
+      _profileImage = savedImage ?? 'assets/images/default.jpg'; // 기본 이미지
     });
   }
 
@@ -57,12 +57,19 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
-  void _changeProfileImage() {
-    String newImagePath = 'assets/images/ronaldo.jpg';
-    saveProfileImage(newImagePath);  // 새로운 이미지 저장
-    setState(() {
-      _profileImage = newImagePath;  // 화면에서 프로필 이미지 변경
-    });
+  Future<void> _selectProfileImage() async {
+    // 이미지 선택 페이지로 이동
+    final selectedImageUrl = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => GridViewScreen()),
+    );
+
+    if (selectedImageUrl != null) {
+      setState(() {
+        _profileImage = selectedImageUrl; // 프로필 이미지 업데이트
+        saveProfileImage(selectedImageUrl); // 선택한 이미지 저장
+      });
+    }
   }
 
   @override
@@ -86,17 +93,13 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             children: [
               GestureDetector(
-                onTap: _changeProfileImage,
-                onLongPress: () {
-                  Navigator.push(
-                      context, MaterialPageRoute(builder: (context) => const ShopPage()));
-                },
+                onLongPress: _selectProfileImage,
                 child: CircleAvatar(
                   radius: 60,
                   backgroundColor: Colors.grey[300],
                   backgroundImage: _profileImage != null
-                      ? AssetImage(_profileImage!)
-                      : const AssetImage('assets/images/ronaldo.jpg'),
+                      ? NetworkImage(_profileImage!) as ImageProvider
+                      : const AssetImage('assets/images/default.jpg'),
                 ),
               ),
               const SizedBox(height: 20),
@@ -139,7 +142,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               const SizedBox(height: 30),
-
 
               /* 전적 카드 */
               Card(
@@ -198,7 +200,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[
                           SizedBox(
-                            width: 150, // 너비 줄이기
+                            width: 150,
                             child: TextField(
                               controller: _statusController,
                               decoration: const InputDecoration(
@@ -226,4 +228,3 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 }
-
