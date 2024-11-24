@@ -2,9 +2,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../Function/Ads/ads_provider.dart';
 import '../../Function/Option/option_func.dart';
 import '../../Main/Login/pages/home_page.dart';
 import '../../Main/Login/pages/auth_page.dart';
+import '../../Function/Ads/ads.dart'; // AdManager를 임포트합니다.
+
 
 class OptionPage extends StatefulWidget {
   const OptionPage({Key? key}) : super(key: key);
@@ -13,17 +16,14 @@ class OptionPage extends StatefulWidget {
   _OptionPageState createState() => _OptionPageState();
 }
 
-
-
 class _OptionPageState extends State<OptionPage> {
   bool soundMuted = false;
   bool lighted = false;
-  bool isAdVisibled = true;
-
-
 
   @override
   Widget build(BuildContext context) {
+    final adVisibilityProvider = Provider.of<AdVisibilityProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("옵션 창"),
@@ -48,8 +48,8 @@ class _OptionPageState extends State<OptionPage> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(soundMuted ? "소리가 꺼졌습니다." : "소리가 켜졌습니다."),
-                      duration: const Duration(milliseconds: 100),),
-
+                      duration: const Duration(milliseconds: 100),
+                    ),
                   );
                 },
               ),
@@ -65,22 +65,27 @@ class _OptionPageState extends State<OptionPage> {
                   });
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                        content: Text(lighted ? "다크 모드가 활성화되었습니다." : "라이트 모드가 활성화되었습니다."),
-                      duration: const Duration(milliseconds: 100),),
+                      content: Text(lighted ? "라이트 모드가 활성화되었습니다." : "다크 모드가 활성화되었습니다."),
+                      duration: const Duration(milliseconds: 100),
+                    ),
                   );
                 },
               ),
 
               // 광고 차단 버튼
               _buildOptionItem(
-                icon: Icons.not_interested,
-                label: "광고 차단",
-                onPressed: () {
+                icon: adVisibilityProvider.isAdVisible ? Icons.not_interested : Icons.check_circle,
+                label: adVisibilityProvider.isAdVisible ? "광고 차단" : "광고 표시",
+                onPressed: () async {
+                  await adVisibilityProvider.setAdVisibility(!adVisibilityProvider.isAdVisible);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text("광고 차단 기능이 활성화되었습니다."),
-                      duration: const Duration(milliseconds: 100),),
+                    SnackBar(
+                      content: Text(adVisibilityProvider.isAdVisible ? "광고가 표시됩니다." : "광고가 차단되었습니다."),
+                      duration: const Duration(milliseconds: 100),
+                    ),
                   );
+                  // 옵션 페이지를 닫지 않고 광고 표시 여부가 변경된 상태를 적용합니다.
+                  setState(() {}); // 상태를 업데이트하여 UI를 재구성
                 },
               ),
 
@@ -90,11 +95,6 @@ class _OptionPageState extends State<OptionPage> {
                 label: "제작자 정보",
                 onPressed: () {
                   showCreatorInfoDialog(context);
-                  // ScaffoldMessenger.of(context).showSnackBar(
-                  //   const SnackBar(
-                  //       content: Text("제작자 정보 페이지입니다."),
-                  //     duration: const Duration(milliseconds: 500),),
-                  // );
                 },
               ),
 
@@ -102,12 +102,12 @@ class _OptionPageState extends State<OptionPage> {
               _buildOptionItem(
                 icon: Icons.support_agent,
                 label: "고객 지원",
-                onPressed: () /*async*/ {
-                  //await launchURL("tel:+82-10-3212-1034");
+                onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                        content: Text("고객 지원 페이지로 이동합니다."),
-                      duration: const Duration(milliseconds: 100),),
+                      content: Text("고객 지원 페이지로 이동합니다."),
+                      duration: const Duration(milliseconds: 100),
+                    ),
                   );
                 },
               ),
@@ -117,11 +117,11 @@ class _OptionPageState extends State<OptionPage> {
                 icon: Icons.update,
                 label: "업데이트 히스토리",
                 onPressed: () async {
-                  // 업데이트 히스토리 웹페이지 링크 여는 예시
                   await launchURL('https://www.notion.so/12ab86c285be806d9db9c133beecc318');
                 },
               ),
 
+              // 로그아웃 버튼
               _buildOptionItem(
                 icon: Icons.output,
                 label: "로그아웃",
@@ -129,8 +129,8 @@ class _OptionPageState extends State<OptionPage> {
                   FirebaseAuth.instance.signOut();
                   Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(builder: (context) => const AuthPage()), // 로그인 화면으로 이동
-                        (Route<dynamic> route) => false, // 모든 이전 페이지를 제거
+                    MaterialPageRoute(builder: (context) => const AuthPage()),
+                        (Route<dynamic> route) => false,
                   );
                 },
               )
