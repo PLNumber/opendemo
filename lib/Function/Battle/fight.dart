@@ -2,7 +2,8 @@
 import 'package:flutter/material.dart';
 import '../class.dart'; // Question 클래스를 가져옵니다.
 
-void startFight(BuildContext context, List<Question> questions, Function(int, int) onScoresUpdated) {
+void startFight(BuildContext context, List<Question> questions,
+    Function(int, int) onScoresUpdated) {
   int player1Score = 0;
   int player2Score = 0;
 

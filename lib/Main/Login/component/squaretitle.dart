@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class SquareTitle extends StatelessWidget {
   final String imagePath;
   final Function()? onTap;
+
   const SquareTitle({
     super.key,
     required this.imagePath,

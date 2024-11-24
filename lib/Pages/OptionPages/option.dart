@@ -8,7 +8,6 @@ import '../../Main/Login/pages/home_page.dart';
 import '../../Main/Login/pages/auth_page.dart';
 import '../../Function/Ads/ads.dart'; // AdManager를 임포트합니다.
 
-
 class OptionPage extends StatefulWidget {
   const OptionPage({Key? key}) : super(key: key);
 
@@ -59,13 +58,15 @@ class _OptionPageState extends State<OptionPage> {
                 icon: lighted ? Icons.wb_sunny : Icons.dark_mode,
                 label: lighted ? "라이트 모드" : "다크 모드",
                 onPressed: () {
-                  Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+                  Provider.of<ThemeProvider>(context, listen: false)
+                      .toggleTheme();
                   setState(() {
                     lighted = !lighted;
                   });
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(lighted ? "라이트 모드가 활성화되었습니다." : "다크 모드가 활성화되었습니다."),
+                      content: Text(
+                          lighted ? "라이트 모드가 활성화되었습니다." : "다크 모드가 활성화되었습니다."),
                       duration: const Duration(milliseconds: 100),
                     ),
                   );
@@ -74,13 +75,18 @@ class _OptionPageState extends State<OptionPage> {
 
               // 광고 차단 버튼
               _buildOptionItem(
-                icon: adVisibilityProvider.isAdVisible ? Icons.not_interested : Icons.check_circle,
+                icon: adVisibilityProvider.isAdVisible
+                    ? Icons.not_interested
+                    : Icons.check_circle,
                 label: adVisibilityProvider.isAdVisible ? "광고 차단" : "광고 표시",
                 onPressed: () async {
-                  await adVisibilityProvider.setAdVisibility(!adVisibilityProvider.isAdVisible);
+                  await adVisibilityProvider
+                      .setAdVisibility(!adVisibilityProvider.isAdVisible);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(adVisibilityProvider.isAdVisible ? "광고가 표시됩니다." : "광고가 차단되었습니다."),
+                      content: Text(adVisibilityProvider.isAdVisible
+                          ? "광고가 표시됩니다."
+                          : "광고가 차단되었습니다."),
                       duration: const Duration(milliseconds: 100),
                     ),
                   );
@@ -117,7 +123,8 @@ class _OptionPageState extends State<OptionPage> {
                 icon: Icons.update,
                 label: "업데이트 히스토리",
                 onPressed: () async {
-                  await launchURL('https://www.notion.so/12ab86c285be806d9db9c133beecc318');
+                  await launchURL(
+                      'https://www.notion.so/12ab86c285be806d9db9c133beecc318');
                 },
               ),
 
@@ -130,7 +137,7 @@ class _OptionPageState extends State<OptionPage> {
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (context) => const AuthPage()),
-                        (Route<dynamic> route) => false,
+                    (Route<dynamic> route) => false,
                   );
                 },
               )
@@ -142,7 +149,10 @@ class _OptionPageState extends State<OptionPage> {
   }
 
   // 옵션 아이템을 생성하는 함수
-  Widget _buildOptionItem({required IconData icon, required String label, required VoidCallback onPressed}) {
+  Widget _buildOptionItem(
+      {required IconData icon,
+      required String label,
+      required VoidCallback onPressed}) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [

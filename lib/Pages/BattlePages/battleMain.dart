@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../BattlePages/pve.dart';
+import '../BattlePages/pvp.dart';
 
 class MyApp extends StatelessWidget {
   @override
@@ -50,7 +51,8 @@ class _BattlePageState extends State<BattlePage> {
                 shape: BoxShape.circle,
                 color: Colors.pinkAccent,
                 image: const DecorationImage(
-                  image: AssetImage('assets/profile.jpg'), // Add profile picture asset here
+                  image: AssetImage('assets/profile.jpg'),
+                  // Add profile picture asset here
                   fit: BoxFit.cover,
                 ),
               ),
@@ -58,7 +60,8 @@ class _BattlePageState extends State<BattlePage> {
             const SizedBox(height: 20.0),
             Text(
               "$score 점",
-              style: const TextStyle(fontSize: 30.0, fontWeight: FontWeight.bold),
+              style:
+                  const TextStyle(fontSize: 30.0, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20.0),
             Row(
@@ -77,7 +80,7 @@ class _BattlePageState extends State<BattlePage> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const PVPPage()),
+                      MaterialPageRoute(builder: (context) => PVPPage()),
                     );
                   },
                   child: Column(
@@ -122,63 +125,3 @@ class _BattlePageState extends State<BattlePage> {
     );
   }
 }
-
-/* PVP 페이지 */
-class PVPPage extends StatelessWidget {
-  const PVPPage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("PVP 창"),
-        centerTitle: true,
-        backgroundColor: Colors.blueAccent,
-      ),
-      body: Center(
-        child: Container(
-          alignment: Alignment.center,
-          padding: const EdgeInsets.all(50),
-          color: Colors.orange[600],
-          width: 300,
-          height: 300,
-          child: const Text(
-            'PVP 매치 대기 중...',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/* PVE 페이지 */
-/*
-class PVEPage extends StatelessWidget {
-  const PVEPage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("PVE 창"),
-        centerTitle: true,
-        backgroundColor: Colors.blueAccent,
-      ),
-      body: Center(
-        child: Container(
-          alignment: Alignment.center,
-          padding: const EdgeInsets.all(50),
-          color: Colors.orange[600],
-          width: 300,
-          height: 300,
-          child: const Text(
-            'AI와 대결 시작!',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
-    );
-  }
-}
-*/

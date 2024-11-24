@@ -51,12 +51,13 @@ class KoreanDictionaryAPI {
       for (var item in items) {
         // 단어 추출
         var word = item.findElements('word').first.text;
-        debugPrint('단어: $word');  // 단어가 잘 추출되는지 확인
+        debugPrint('단어: $word'); // 단어가 잘 추출되는지 확인
 
         // <sense> 태그를 찾아 정의 추출
         var senses = item.findElements('sense');
         for (var sense in senses) {
-          var definition = sense.findElements('definition').map((e) => e.text).join(', ');
+          var definition =
+              sense.findElements('definition').map((e) => e.text).join(', ');
           definitions.write('$word: $definition\n');
         }
       }
@@ -96,7 +97,11 @@ Future<List<String>> fetchWordList() async {
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
     final text = data['choices'][0]['message']['content'] as String;
-    return text.split('\n').map((word) => word.trim()).where((word) => word.isNotEmpty).toList();
+    return text
+        .split('\n')
+        .map((word) => word.trim())
+        .where((word) => word.isNotEmpty)
+        .toList();
   } else {
     final error = jsonDecode(response.body);
     if (error['error']['code'] == 'insufficient_quota') {

@@ -109,14 +109,15 @@ class _ProfilePageState extends State<ProfilePage> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
-
               Card(
                 elevation: 4,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     children: [
-                      Text(playerName, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                      Text(playerName,
+                          style: const TextStyle(
+                              fontSize: 24, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 10),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -132,7 +133,8 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.check_circle, color: Colors.blueAccent),
+                            icon: const Icon(Icons.check_circle,
+                                color: Colors.blueAccent),
                             onPressed: _updateName,
                           ),
                         ],
@@ -153,15 +155,23 @@ class _ProfilePageState extends State<ProfilePage> {
                     children: <Widget>[
                       Column(
                         children: [
-                          const Text("승리", style: TextStyle(fontSize: 24, color: Colors.green)),
-                          Text('$win', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                          const Text("승리",
+                              style:
+                                  TextStyle(fontSize: 24, color: Colors.green)),
+                          Text('$win',
+                              style: const TextStyle(
+                                  fontSize: 28, fontWeight: FontWeight.bold)),
                         ],
                       ),
                       const SizedBox(width: 40),
                       Column(
                         children: [
-                          const Text("패배", style: TextStyle(fontSize: 24, color: Colors.redAccent)),
-                          Text('$lose', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                          const Text("패배",
+                              style: TextStyle(
+                                  fontSize: 24, color: Colors.redAccent)),
+                          Text('$lose',
+                              style: const TextStyle(
+                                  fontSize: 28, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ],
@@ -180,7 +190,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     children: <Widget>[
                       const Text("레벨", style: TextStyle(fontSize: 24)),
                       const SizedBox(width: 20),
-                      Text('$level', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                      Text('$level',
+                          style: const TextStyle(
+                              fontSize: 28, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
@@ -207,11 +219,13 @@ class _ProfilePageState extends State<ProfilePage> {
                                 border: OutlineInputBorder(),
                                 labelText: '상태 메시지 입력',
                               ),
-                              onSubmitted: (_) => _updateStatus(), // Enter 키로 상태 메시지 저장
+                              onSubmitted: (_) =>
+                                  _updateStatus(), // Enter 키로 상태 메시지 저장
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.check_circle, color: Colors.blueAccent),
+                            icon: const Icon(Icons.check_circle,
+                                color: Colors.blueAccent),
                             onPressed: _updateStatus,
                           ),
                         ],

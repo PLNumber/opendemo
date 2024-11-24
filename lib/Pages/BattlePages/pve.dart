@@ -1,16 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'dart:async';  // 타이머 사용을 위한 import
+import 'dart:async'; // 타이머 사용을 위한 import
 import '../../Function/class.dart';
 
 class PVEPage extends StatefulWidget {
-
   @override
   _PVEPage createState() => _PVEPage();
 }
 
 class _PVEPage extends State<PVEPage> {
-
   List<Question> _questions = [];
   int _currentQuestionIndex = 0;
   final TextEditingController _answerController = TextEditingController();
@@ -28,9 +26,8 @@ class _PVEPage extends State<PVEPage> {
   Future<void> _fetchQuestions() async {
     try {
       final snapshot = await FirebaseFirestore.instance.collection('WQ').get();
-      final questions = snapshot.docs
-          .map((doc) => Question.fromMap(doc.data()))
-          .toList();
+      final questions =
+          snapshot.docs.map((doc) => Question.fromMap(doc.data())).toList();
       setState(() {
         _questions = questions;
         _isLoading = false;
@@ -108,7 +105,10 @@ class _PVEPage extends State<PVEPage> {
             ),
             Text(
               "$_timeLeft 초",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueAccent),
             ),
 
             SizedBox(height: 20),
@@ -162,7 +162,8 @@ class _PVEPage extends State<PVEPage> {
           .get();
 
       if (querySnapshot.docs.isEmpty) {
-        final docRef = FirebaseFirestore.instance.collection('wrongAnswers').doc();
+        final docRef =
+            FirebaseFirestore.instance.collection('wrongAnswers').doc();
         await docRef.set(question.toMap());
         print('Wrong answer saved.');
       } else {
@@ -204,14 +205,13 @@ class _PVEPage extends State<PVEPage> {
       if (_currentQuestionIndex < _questions.length - 1) {
         _currentQuestionIndex++;
         _timeLeft = 10;
-        _timer.cancel();  // 기존 타이머 종료
-        _startTimer();    // 새로운 타이머 시작
+        _timer.cancel(); // 기존 타이머 종료
+        _startTimer(); // 새로운 타이머 시작
       } else {
         _showCompletionDialog();
       }
     });
   }
-
 
   void _showCompletionDialog() {
     _timer.cancel(); // 타이머 종료
@@ -234,5 +234,4 @@ class _PVEPage extends State<PVEPage> {
       },
     );
   }
-
 }

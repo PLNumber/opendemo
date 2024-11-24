@@ -7,6 +7,7 @@ import '../services/auth.dart';
 
 class LoginPage extends StatefulWidget {
   final Function()? onTap;
+
   LoginPage({
     super.key,
     required this.onTap,
@@ -33,15 +34,15 @@ class _LoginPageState extends State<LoginPage> {
       },
     );
     //로그인 정보 전달
-    try{
+    try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text,
         password: passwordController.text,
       );
       Navigator.pop(context);
-    } on FirebaseAuthException catch(e){
+    } on FirebaseAuthException catch (e) {
       Navigator.pop(context);
-      
+
       ErrorMessage(e.code);
     }
     //Navigator.pop(context);
@@ -66,12 +67,13 @@ class _LoginPageState extends State<LoginPage> {
           actions: [
             Center(
               child: TextButton(
-                  onPressed: (){
-                    Navigator.of(context).pop();//창 닫기
-                  },
+                onPressed: () {
+                  Navigator.of(context).pop(); //창 닫기
+                },
                 style: TextButton.styleFrom(
                   backgroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -105,37 +107,37 @@ class _LoginPageState extends State<LoginPage> {
                   Icons.auto_stories,
                   size: 100,
                 ),
-            
+
                 const SizedBox(height: 50),
-            
+
                 Text(
-                    '환영합니다.',
-                    style: TextStyle(
-                      color: Colors.grey[700],
-                      fontSize: 16,
-                    ),
+                  '환영합니다.',
+                  style: TextStyle(
+                    color: Colors.grey[700],
+                    fontSize: 16,
+                  ),
                 ),
-            
+
                 const SizedBox(height: 25),
-            
+
                 // 이메일 입력칸
                 MyTextField(
                   controller: emailController,
                   hintText: 'Email',
                   obscureText: false,
                 ),
-            
+
                 const SizedBox(height: 10),
-            
+
                 //비밀번호 입력칸
                 MyTextField(
                   controller: passwordController,
                   hintText: 'Password',
                   obscureText: true,
                 ),
-            
+
                 const SizedBox(height: 10),
-            
+
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: Row(
@@ -148,17 +150,17 @@ class _LoginPageState extends State<LoginPage> {
                     ],
                   ),
                 ),
-            
+
                 const SizedBox(height: 25),
-            
+
                 //로그인 버튼
                 MyButton(
                   text: "로그인",
                   onTap: signUserIn,
                 ),
-            
+
                 const SizedBox(height: 50),
-            
+
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: Row(
@@ -169,69 +171,61 @@ class _LoginPageState extends State<LoginPage> {
                           color: Colors.grey[400],
                         ),
                       ),
-            
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10.0),
                         child: Text(
-                            'Or continue with',
+                          'Or continue with',
                           style: TextStyle(color: Colors.grey[700]),
                         ),
                       ),
-            
                       Expanded(
                         child: Divider(
                           thickness: 0.5,
                           color: Colors.grey[400],
                         ),
                       ),
-            
                     ],
                   ),
                 ),
-            
+
                 const SizedBox(height: 50),
-            
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     //구글로 로그인 버튼
                     SquareTitle(
-                      onTap: () => AuthService().signInWithGoogle(),
-                        imagePath: 'assets/images/google.png'
-                    ),
-            
+                        onTap: () => AuthService().signInWithGoogle(),
+                        imagePath: 'assets/images/google.png'),
+
                     //SizedBox(width: 25),
-            
+
                     //그외
                     //SquareTitle(imagePath: 'lib/images/google.png'),
                   ],
                 ),
-            
+
                 const SizedBox(height: 50),
-            
+
                 //회원가입
-            
-                Row(children: [
-                  Text(
+
+                Row(
+                  children: [
+                    Text(
                       '회원가입한 적이 없나요?',
-                    style: TextStyle(color: Colors.grey[700]),
-                  ),
-                  const SizedBox(width: 4),
-                  GestureDetector(
-                    onTap: widget.onTap,
-                    child: const Text(
+                      style: TextStyle(color: Colors.grey[700]),
+                    ),
+                    const SizedBox(width: 4),
+                    GestureDetector(
+                      onTap: widget.onTap,
+                      child: const Text(
                         '지금 회원가입 하세요',
-                      style: TextStyle(
-                          color: Colors.blue,
-                          fontWeight: FontWeight.bold
+                        style: TextStyle(
+                            color: Colors.blue, fontWeight: FontWeight.bold),
                       ),
                     ),
-                  ),
-                ],)
-            
-            
-            
-            
+                  ],
+                )
               ],
             ),
           ),

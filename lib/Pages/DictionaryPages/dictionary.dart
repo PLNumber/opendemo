@@ -86,13 +86,13 @@ class _DictPageState extends State<DictPage> {
                 prefixIcon: const Icon(Icons.search, color: Colors.teal),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                  icon: const Icon(Icons.clear, color: Colors.teal),
-                  onPressed: () {
-                    setState(() {
-                      _searchController.clear();
-                    });
-                  },
-                )
+                        icon: const Icon(Icons.clear, color: Colors.teal),
+                        onPressed: () {
+                          setState(() {
+                            _searchController.clear();
+                          });
+                        },
+                      )
                     : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10.0),
@@ -153,19 +153,20 @@ class _DictPageState extends State<DictPage> {
                     child: _definition.isEmpty
                         ? const Text('정의가 없습니다.')
                         : Container(
-                      key: ValueKey(_definition),
-                      padding: const EdgeInsets.all(16.0),
-                      decoration: BoxDecoration(
-                        color: Colors.teal[50],
-                        borderRadius: BorderRadius.circular(10.0),
-                        border: Border.all(color: Colors.teal, width: 1),
-                      ),
-                      child: Text(
-                        _definition,
-                        style: const TextStyle(fontSize: 18.0, color: Colors.black87),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
+                            key: ValueKey(_definition),
+                            padding: const EdgeInsets.all(16.0),
+                            decoration: BoxDecoration(
+                              color: Colors.teal[50],
+                              borderRadius: BorderRadius.circular(10.0),
+                              border: Border.all(color: Colors.teal, width: 1),
+                            ),
+                            child: Text(
+                              _definition,
+                              style: const TextStyle(
+                                  fontSize: 18.0, color: Colors.black87),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
                   ),
                 ),
               ),

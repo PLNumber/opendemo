@@ -13,18 +13,19 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(//로그아웃하는거
+      appBar: AppBar(
+        //로그아웃하는거
         actions: [
           IconButton(
-              onPressed: signUserOut,
-              icon: Icon(Icons.logout),
+            onPressed: signUserOut,
+            icon: Icon(Icons.logout),
           )
         ],
       ),
       body: Center(
         //child: Text('메인홈페이지로 연결'),
         child: Text(
-            user.email!,
+          user.email!,
           style: TextStyle(fontSize: 20),
         ),
       ),

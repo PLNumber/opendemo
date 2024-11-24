@@ -27,16 +27,14 @@ Future<void> generateAndSaveWords() async {
     List<Future<void>> saveFutures = [];
 
     for (String word in words) {
-      saveFutures.add(
-          dictionaryAPI.search(word).then((definition) async {
-            debugPrint('$word: $definition');
+      saveFutures.add(dictionaryAPI.search(word).then((definition) async {
+        debugPrint('$word: $definition');
 
-            // Firestore에 저장
-            await saveToFirestore(word, definition);
-          }).catchError((e) {
-            debugPrint('단어 $word 처리 중 오류: $e');
-          })
-      );
+        // Firestore에 저장
+        await saveToFirestore(word, definition);
+      }).catchError((e) {
+        debugPrint('단어 $word 처리 중 오류: $e');
+      }));
     }
 
     // 병렬로 처리 후 모두 완료될 때까지 기다림

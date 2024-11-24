@@ -22,9 +22,8 @@ class _QuizPageState extends State<QuizPage> {
   Future<void> _fetchQuestions() async {
     try {
       final snapshot = await FirebaseFirestore.instance.collection('WQ').get();
-      final questions = snapshot.docs
-          .map((doc) => Question.fromMap(doc.data()))
-          .toList();
+      final questions =
+          snapshot.docs.map((doc) => Question.fromMap(doc.data())).toList();
       setState(() {
         _questions = questions;
         _isLoading = false;
@@ -124,7 +123,8 @@ class _QuizPageState extends State<QuizPage> {
           .get();
 
       if (querySnapshot.docs.isEmpty) {
-        final docRef = FirebaseFirestore.instance.collection('wrongAnswers').doc();
+        final docRef =
+            FirebaseFirestore.instance.collection('wrongAnswers').doc();
         await docRef.set(question.toMap());
         print('Wrong answer saved.');
       } else {

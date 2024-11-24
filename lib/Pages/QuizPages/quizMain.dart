@@ -25,7 +25,7 @@ class QuizMainPage extends StatelessWidget {
                 context,
                 Icons.quiz,
                 "퀴즈 풀기",
-                    () {
+                () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => QuizPage()),
@@ -38,7 +38,7 @@ class QuizMainPage extends StatelessWidget {
                 context,
                 Icons.note,
                 "오답 노트",
-                    () {
+                () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => NotePage()),
@@ -53,7 +53,8 @@ class QuizMainPage extends StatelessWidget {
   }
 
   // 버튼 카드 위젯 생성
-  Widget _buildFeatureCard(BuildContext context, IconData icon, String title, VoidCallback onTap) {
+  Widget _buildFeatureCard(
+      BuildContext context, IconData icon, String title, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Card(

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 class NotePage extends StatelessWidget {
   final Stream<QuerySnapshot> wrongAnswersStream =
-  FirebaseFirestore.instance.collection('wrongAnswers').snapshots();
+      FirebaseFirestore.instance.collection('wrongAnswers').snapshots();
 
   @override
   Widget build(BuildContext context) {
@@ -31,8 +31,8 @@ class NotePage extends StatelessWidget {
               final def = wrongAnswer['def'] ?? '정의 없음';
               final word = wrongAnswer['word'] ?? '단어 없음';
               return ListTile(
-                title: Text(def),  // 'def' 필드 사용
-                subtitle: Text(word),  // 단어 표시
+                title: Text(def), // 'def' 필드 사용
+                subtitle: Text(word), // 단어 표시
                 onTap: () {
                   // 오답을 클릭했을 때 더 자세히 보기 기능 추가
                 },
