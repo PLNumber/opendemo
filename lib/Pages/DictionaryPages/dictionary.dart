@@ -105,14 +105,14 @@ class _DictPageState extends State<DictPage> {
                 prefixIcon: const Icon(Icons.search, color: Colors.teal),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                  icon: const Icon(Icons.clear, color: Colors.teal),
-                  onPressed: () {
-                    setState(() {
-                      _searchController.clear();
-                      _definitions.clear();
-                    });
-                  },
-                )
+                        icon: const Icon(Icons.clear, color: Colors.teal),
+                        onPressed: () {
+                          setState(() {
+                            _searchController.clear();
+                            _definitions.clear();
+                          });
+                        },
+                      )
                     : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10.0),
