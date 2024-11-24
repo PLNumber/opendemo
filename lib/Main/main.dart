@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -16,6 +17,11 @@ import '../Function/Ads/google_ads.dart'; // AdManager를 임포트합니다.
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // 세로 모드로 잠금
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   MobileAds.instance.initialize();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -26,7 +32,6 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()..init()),
         ChangeNotifierProvider(create: (context) => AdVisibilityProvider()),
-        // 광고 표시 여부 관리
       ],
       child: MyApp(),
     ),
@@ -65,8 +70,7 @@ class _MainPage extends State<MainPage> {
   }
 
   void _loadAd() {
-    final adVisibilityProvider =
-        Provider.of<AdVisibilityProvider>(context, listen: false);
+    final adVisibilityProvider = Provider.of<AdVisibilityProvider>(context, listen: false);
     if (adVisibilityProvider.isAdVisible) {
       _createBannerAd();
     }
@@ -97,7 +101,7 @@ class _MainPage extends State<MainPage> {
         centerTitle: true,
         backgroundColor: Colors.teal,
       ),
-      body: Padding(
+      body: SingleChildScrollView( // 스크롤 가능하도록 설정
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,92 +176,79 @@ class _MainPage extends State<MainPage> {
             // 계속 공부하기 섹션
             Text("계속 공부하기",
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                children: [
-                  FeatureCard(
-                    icon: Icons.sports_esports,
-                    title: "대전",
-                    onTap: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => BattlePage()));
-                    },
-                  ),
-                  FeatureCard(
-                    icon: Icons.quiz,
-                    title: "문해력 문제",
-                    onTap: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => QuizMainPage()));
-                    },
-                  ),
-                  FeatureCard(
-                    icon: Icons.book,
-                    title: "단어 사전",
-                    onTap: () {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => DictPage()));
-                    },
-                  ),
-                  FeatureCard(
-                    icon: Icons.person,
-                    title: "프로필 수정",
-                    onTap: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => ProfilePage()));
-                    },
-                  ),
-                ],
-              ),
+            SizedBox(height: 16),
+            GridView.count(
+              crossAxisCount: 2,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              shrinkWrap: true, // GridView의 크기를 부모에 맞춤
+              physics: NeverScrollableScrollPhysics(), // 스크롤 비활성화
+              children: [
+                FeatureCard(
+                  icon: Icons.sports_esports,
+                  title: "대전",
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => BattlePage()));
+                  },
+                ),
+                FeatureCard(
+                  icon: Icons.quiz,
+                  title: "문해력 문제",
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => QuizMainPage()));
+                  },
+                ),
+                FeatureCard(
+                  icon: Icons.book,
+                  title: "단어 사전",
+                  onTap: () {
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (context) => DictPage()));
+                  },
+                ),
+                FeatureCard(
+                  icon: Icons.person,
+                  title: "프로필 수정",
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => ProfilePage()));
+                  },
+                ),
+              ],
             ),
-
-            // 광고 배너
-            if (adVisibilityProvider.isAdVisible) // 광고 표시 여부에 따라 조건부 렌더링
-              _bannerAd == null
-                  ? Container(
-                      color: Colors.transparent,
-                      alignment: Alignment.center,
-                      height: 50,
-                      width: MediaQuery.of(context).size.width,
-                      child: const CircularProgressIndicator(), // 로딩 중
-                    )
-                  : Container(
-                      alignment: Alignment.center,
-                      color: Colors.transparent,
-                      height: 50,
-                      width: double.infinity,
-                      child: AdWidget(ad: _bannerAd!),
-                    ),
           ],
         ),
       ),
 
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 70), // 광고 배너와 겹치지 않도록 여백 추가
-        child: Container(
-          width: 60, // 버튼의 너비 설정
-          height: 60, // 버튼의 높이 설정
-          child: FloatingActionButton(
-            onPressed: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => OptionPage()));
-            },
-            child: Icon(Icons.settings_outlined, size: 40), // 아이콘 크기 조정
-            backgroundColor: Colors.white24,
-          ),
-        ),
+      // 광고 배너
+      bottomNavigationBar: adVisibilityProvider.isAdVisible
+          ? _bannerAd == null
+          ? Container(
+        height: 50,
+        child: const Center(child: CircularProgressIndicator()),
+      )
+          : Container(
+        height: 50,
+        child: AdWidget(ad: _bannerAd!),
+      )
+          : null,
+
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => OptionPage()));
+        },
+        child: Icon(Icons.settings_outlined),
+        backgroundColor: Colors.teal,
       ),
-      floatingActionButtonLocation:
-          FloatingActionButtonLocation.endDocked, // 위치 조정
     );
   }
 }

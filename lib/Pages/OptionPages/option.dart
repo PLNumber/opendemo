@@ -104,20 +104,6 @@ class _OptionPageState extends State<OptionPage> {
                 },
               ),
 
-              // 고객 지원 버튼 추가
-              _buildOptionItem(
-                icon: Icons.support_agent,
-                label: "고객 지원",
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("고객 지원 페이지로 이동합니다."),
-                      duration: const Duration(milliseconds: 100),
-                    ),
-                  );
-                },
-              ),
-
               // 업데이트 히스토리 버튼 추가
               _buildOptionItem(
                 icon: Icons.update,

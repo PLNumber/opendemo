@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:opendemo/Function/api.dart';
 
 class DictPage extends StatefulWidget {
@@ -10,19 +11,36 @@ class DictPage extends StatefulWidget {
 
 class _DictPageState extends State<DictPage> {
   final TextEditingController _searchController = TextEditingController();
-
-  String _definition = "";
+  List<Map<String, String>> _definitions = [];
   String _errorMessage = '';
   bool _isLoading = false;
   List<String> _recentWords = [];
   final KoreanDictionaryAPI _api = KoreanDictionaryAPI();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecentWords();
+  }
+
+  Future<void> _loadRecentWords() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _recentWords = prefs.getStringList('recentWords') ?? [];
+    });
+  }
+
+  Future<void> _saveRecentWords() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('recentWords', _recentWords);
+  }
 
   Future<void> _searchWord() async {
     final word = _searchController.text.trim();
     if (word.isEmpty) {
       setState(() {
         _errorMessage = '단어를 입력해 주세요.';
-        _definition = '';
+        _definitions.clear();
       });
       return;
     }
@@ -33,23 +51,24 @@ class _DictPageState extends State<DictPage> {
     });
 
     try {
-      final definition = await _api.search(word);
+      final definitions = await _api.search(word);
       setState(() {
-        _definition = definition.isEmpty ? '정의가 없습니다.' : definition;
+        _definitions = definitions;
         _errorMessage = '';
       });
       if (!_recentWords.contains(word)) {
         setState(() {
           _recentWords.add(word);
           if (_recentWords.length > 5) {
-            _recentWords.removeAt(0); // 최근 검색어는 최대 5개로 제한
+            _recentWords.removeAt(0);
           }
+          _saveRecentWords();
         });
       }
     } catch (e) {
       setState(() {
         _errorMessage = 'API 호출 실패: $e';
-        _definition = '';
+        _definitions.clear();
       });
     } finally {
       setState(() {
@@ -69,7 +88,7 @@ class _DictPageState extends State<DictPage> {
       appBar: AppBar(
         title: const Text(
           '단어 정의 검색',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.teal,
       ),
@@ -86,13 +105,14 @@ class _DictPageState extends State<DictPage> {
                 prefixIcon: const Icon(Icons.search, color: Colors.teal),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.teal),
-                        onPressed: () {
-                          setState(() {
-                            _searchController.clear();
-                          });
-                        },
-                      )
+                  icon: const Icon(Icons.clear, color: Colors.teal),
+                  onPressed: () {
+                    setState(() {
+                      _searchController.clear();
+                      _definitions.clear();
+                    });
+                  },
+                )
                     : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10.0),
@@ -129,6 +149,7 @@ class _DictPageState extends State<DictPage> {
                       onDeleted: () {
                         setState(() {
                           _recentWords.remove(word);
+                          _saveRecentWords();
                         });
                       },
                       deleteIcon: const Icon(Icons.close, size: 18),
@@ -147,27 +168,22 @@ class _DictPageState extends State<DictPage> {
               )
             else
               Expanded(
-                child: SingleChildScrollView(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    child: _definition.isEmpty
-                        ? const Text('정의가 없습니다.')
-                        : Container(
-                            key: ValueKey(_definition),
-                            padding: const EdgeInsets.all(16.0),
-                            decoration: BoxDecoration(
-                              color: Colors.teal[50],
-                              borderRadius: BorderRadius.circular(10.0),
-                              border: Border.all(color: Colors.teal, width: 1),
-                            ),
-                            child: Text(
-                              _definition,
-                              style: const TextStyle(
-                                  fontSize: 18.0, color: Colors.black87),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                  ),
+                child: ListView.builder(
+                  itemCount: _definitions.length,
+                  itemBuilder: (context, index) {
+                    final item = _definitions[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 8.0),
+                      elevation: 4, // 그림자 효과 추가
+                      child: ListTile(
+                        title: Text(
+                          item['word'] ?? '단어 없음',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(item['definition'] ?? '정의 없음'),
+                      ),
+                    );
+                  },
                 ),
               ),
           ],

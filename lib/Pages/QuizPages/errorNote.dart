@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 class NotePage extends StatelessWidget {
   final Stream<QuerySnapshot> wrongAnswersStream =
-      FirebaseFirestore.instance.collection('wrongAnswers').snapshots();
+  FirebaseFirestore.instance.collection('wrongAnswers').snapshots();
 
   @override
   Widget build(BuildContext context) {
@@ -27,20 +27,63 @@ class NotePage extends StatelessWidget {
             itemCount: wrongAnswers.length,
             itemBuilder: (context, index) {
               final wrongAnswer = wrongAnswers[index];
-              // 'def' 필드가 없을 경우 기본값 사용
               final def = wrongAnswer['def'] ?? '정의 없음';
               final word = wrongAnswer['word'] ?? '단어 없음';
-              return ListTile(
-                title: Text(def), // 'def' 필드 사용
-                subtitle: Text(word), // 단어 표시
-                onTap: () {
-                  // 오답을 클릭했을 때 더 자세히 보기 기능 추가
-                },
+
+              return Card(
+                margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                child: ListTile(
+                  title: Text(def, style: TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text(word),
+                  onTap: () {
+                    // 오답을 클릭했을 때 더 자세히 보기
+                    _showDetailDialog(context, word, def);
+                  },
+                  trailing: IconButton(
+                    icon: Icon(Icons.delete, color: Colors.red),
+                    onPressed: () {
+                      _deleteWrongAnswer(wrongAnswer.id);
+                    },
+                  ),
+                ),
               );
             },
           );
         },
       ),
     );
+  }
+
+  void _showDetailDialog(BuildContext context, String word, String def) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('상세 정보'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('단어: $word'),
+              SizedBox(height: 10),
+              Text('정의: $def'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('닫기'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _deleteWrongAnswer(String id) {
+    FirebaseFirestore.instance.collection('wrongAnswers').doc(id).delete().then((_) {
+      print("오답 항목이 삭제되었습니다.");
+    }).catchError((error) {
+      print("오답 항목 삭제 실패: $error");
+    });
   }
 }
