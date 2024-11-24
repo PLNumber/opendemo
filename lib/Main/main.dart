@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../Function/Ads/ads.dart';
 import '../Function/Ads/ads_provider.dart';
 import '../Pages/ProfilePages/profileMain.dart';
 import '../Pages/BattlePages/battleMain.dart';
@@ -94,53 +93,90 @@ class _MainPage extends State<MainPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('문해북', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('문해북'),
         centerTitle: true,
-        backgroundColor: Colors.white,
-        iconTheme: IconThemeData(color: Colors.black),
+        backgroundColor: Colors.teal,
       ),
-      body: Center(
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 상단 이미지 배너
+            // 환영 메시지 및 사용자 정보
             Container(
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Color(0xFFE8F5E9), // 부드러운 연두색
-                borderRadius: BorderRadius.circular(20),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 10,
-                      offset: Offset(0, 5)),
+                      color: Colors.grey.withOpacity(0.2),
+                      blurRadius: 4,
+                      offset: Offset(0, 2)),
                 ],
               ),
-              padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  Icon(Icons.book, size: 80, color: Colors.teal),
-                  SizedBox(height: 8),
-                  Text(
-                    "문해북에 오신 것을 환영합니다!",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                    textAlign: TextAlign.center,
+                  Center(
+                    child: Text("안녕하세요, 사용자님!",
+                        style: TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.bold)),
+                  ),
+                  SizedBox(height: 10),
+                  Center(
+                    child: Text("2300 Exp. Points\n32 Ranking",
+                        textAlign: TextAlign.center),
                   ),
                 ],
               ),
             ),
-            SizedBox(height: 32),
+            SizedBox(height: 24),
 
-            // 버튼 카드 리스트
+            // 학습 섹션
+            Text("더 학습하기",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.teal[100],
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("일일 퀴즈",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
+                      SizedBox(height: 5),
+                      Text("20문항", style: TextStyle(fontSize: 14)),
+                    ],
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => QuizMainPage()));
+                    },
+                    child: Text("시작하기"),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 24),
+
+            // 계속 공부하기 섹션
+            Text("계속 공부하기",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
-                mainAxisSpacing: 24,
-                crossAxisSpacing: 24,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
                 children: [
                   FeatureCard(
                     icon: Icons.sports_esports,
@@ -184,43 +220,44 @@ class _MainPage extends State<MainPage> {
               ),
             ),
 
-// 하단 설정 및 광고 배너
-            Column(
-              children: [
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: IconButton(
-                    icon: Icon(Icons.settings_outlined, size: 30),
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => OptionPage()));
-                    },
-                  ),
-                ),
-                SizedBox(height: 16),
-                // 광고 배너
-                if (adVisibilityProvider.isAdVisible) // 광고 표시 여부에 따라 조건부 렌더링
-                  _bannerAd == null
-                      ? Container(
-                          alignment: Alignment.center,
-                          height: 50,
-                          width: MediaQuery.of(context).size.width,
-                          child: const CircularProgressIndicator(), // 로딩 중
-                        )
-                      : Container(
-                          alignment: Alignment.center,
-                          color: Colors.transparent,
-                          height: 50,
-                          width: MediaQuery.of(context).size.width,
-                          child: AdWidget(ad: _bannerAd!),
-                        ),
-              ],
-            ),
+            // 광고 배너
+            if (adVisibilityProvider.isAdVisible) // 광고 표시 여부에 따라 조건부 렌더링
+              _bannerAd == null
+                  ? Container(
+                      color: Colors.transparent,
+                      alignment: Alignment.center,
+                      height: 50,
+                      width: MediaQuery.of(context).size.width,
+                      child: const CircularProgressIndicator(), // 로딩 중
+                    )
+                  : Container(
+                      alignment: Alignment.center,
+                      color: Colors.transparent,
+                      height: 50,
+                      width: double.infinity,
+                      child: AdWidget(ad: _bannerAd!),
+                    ),
           ],
         ),
       ),
+
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 70), // 광고 배너와 겹치지 않도록 여백 추가
+        child: Container(
+          width: 60, // 버튼의 너비 설정
+          height: 60, // 버튼의 높이 설정
+          child: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => OptionPage()));
+            },
+            child: Icon(Icons.settings_outlined, size: 40), // 아이콘 크기 조정
+            backgroundColor: Colors.white24,
+          ),
+        ),
+      ),
+      floatingActionButtonLocation:
+          FloatingActionButtonLocation.endDocked, // 위치 조정
     );
   }
 }
