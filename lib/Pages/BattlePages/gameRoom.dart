@@ -23,64 +23,38 @@ class _GameRoomPageState extends State<GameRoomPage> {
   @override
   void initState() {
     super.initState();
-    _loadQuestions();
+    _loadSharedQuestions();
   }
 
-  Future<void> _loadQuestions() async {
+  Future<void> _loadSharedQuestions() async {
     try {
       final event = await _questionsRef.once();
-      if (event.snapshot.exists) {
-        final data = event.snapshot.value;
-
-        if (data is Map) {
-          // Map일 경우
-          questions = _getQuestionsFromSharedData(data);
-        } else if (data is List) {
-          // List일 경우
-          questions = _getQuestionsFromSharedList(data);
+      if (event.snapshot.value is Map) {
+        final data = event.snapshot.value as Map<Object?, Object?>;
+        if (data.isNotEmpty) {
+          setState(() {
+            questions = _getQuestionsFromSharedData(data);
+            print("Loaded questions count: ${questions.length}");
+            isLoading = false;  // 데이터 로드 완료
+          });
         } else {
-          _updateMatchStatus("예상하지 못한 데이터 형식입니다.");
+          _updateMatchStatus("질문이 없습니다.");
         }
-
-        print("Loaded questions count: ${questions.length}");
       } else {
-        _updateMatchStatus("질문이 없습니다.");
+        _updateMatchStatus("예상하지 못한 데이터 형식입니다.");
       }
     } catch (e) {
       _updateMatchStatus("문제를 불러오는 중 오류 발생: $e");
-    } finally {
-      setState(() {
-        isLoading = false; // 로딩 완료
-      });
     }
   }
-
-// List<Object?>에서 Question 객체로 변환하는 메서드
-  List<Question> _getQuestionsFromSharedList(List<Object?> dataList) {
-    List<Question> loadedQuestions = [];
-    Set<int> uniqueIds = {};
-
-    for (var item in dataList) {
-      if (item is Map<String, dynamic>) {
-        Question question = Question.fromMap(item);
-        if (!uniqueIds.contains(question.wId)) {
-          uniqueIds.add(question.wId);
-          loadedQuestions.add(question);
-        }
-      }
-    }
-
-    return loadedQuestions;
-  }
-
 
   void _updateMatchStatus(String message) {
     setState(() {
       matchStatus = message;
+      isLoading = false;  // 데이터 로드 완료
     });
   }
 
-  // Map에서 List<Question>으로 변환
   List<Question> _getQuestionsFromSharedData(Map<Object?, Object?> data) {
     List<Question> loadedQuestions = [];
     Set<int> uniqueIds = {};
