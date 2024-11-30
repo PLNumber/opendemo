@@ -51,7 +51,7 @@ class _BattlePageState extends State<BattlePage> {
                 shape: BoxShape.circle,
                 color: Colors.pinkAccent,
                 image: const DecorationImage(
-                  image: AssetImage('assets/images/default.jpg'),
+                  image: AssetImage('assets/profile.jpg'),
                   // Add profile picture asset here
                   fit: BoxFit.cover,
                 ),
@@ -61,7 +61,7 @@ class _BattlePageState extends State<BattlePage> {
             Text(
               "$score 점",
               style:
-                  const TextStyle(fontSize: 30.0, fontWeight: FontWeight.bold),
+              const TextStyle(fontSize: 30.0, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20.0),
             Row(
@@ -106,7 +106,7 @@ class _BattlePageState extends State<BattlePage> {
                     incrementScore();
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => PVEPage()),
+                      MaterialPageRoute(builder: (context) => QuizBattlePage()),
                     );
                   },
                   child: Column(

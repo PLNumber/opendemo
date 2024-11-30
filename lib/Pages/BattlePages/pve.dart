@@ -1,81 +1,282 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
-import 'dart:async'; // 타이머 사용을 위한 import
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../Function/class.dart';
 
-class PVEPage extends StatefulWidget {
+class QuizBattlePage extends StatefulWidget {
   @override
-  _PVEPage createState() => _PVEPage();
+  _QuizBattlePageState createState() => _QuizBattlePageState();
 }
 
-class _PVEPage extends State<PVEPage> {
+class _QuizBattlePageState extends State<QuizBattlePage> {
   List<Question> _questions = [];
   int _currentQuestionIndex = 0;
+  int _userHealth = 100;
+  int _aiHealth = 100;
   final TextEditingController _answerController = TextEditingController();
+  final FocusNode _answerFocusNode = FocusNode();
   bool _isLoading = true;
-  int _timeLeft = 10; // 10초 제한 (10초)
+  int _timeLeft = 10;
   late Timer _timer;
+  Timer? _aiTimer;
+  String? _resultMessage;
+
+  double _userRotationAngle = 0.0;  // 사용자 회전 각도
+  double _aiRotationAngle = 0.0;    // 상대 회전 각도
+  double rotationSpeed = 0.3;        // 회전 속도 (빠르게 설정)
 
   @override
   void initState() {
     super.initState();
     _fetchQuestions();
-    _startTimer(); // 타이머 시작
   }
 
   Future<void> _fetchQuestions() async {
     try {
       final snapshot = await FirebaseFirestore.instance.collection('WQ').get();
-      final questions =
-          snapshot.docs.map((doc) => Question.fromMap(doc.data())).toList();
+      final questions = snapshot.docs
+          .map((doc) => Question.fromMap(doc.data()))
+          .toList();
       setState(() {
         _questions = questions;
         _isLoading = false;
+        _startTimer();
       });
     } catch (e) {
       print('Error fetching questions: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('문제를 불러오는 데 실패했습니다. 다시 시도해주세요.')),
-      );
-      setState(() {
-        _isLoading = false;
-      });
+          SnackBar(content: Text('문제를 불러오는 데 실패했습니다. 다시 시도해주세요.')));
     }
+    setState(() {
+      _isLoading = false;
+    });
   }
 
-  // 타이머 시작
   void _startTimer() {
+    _timeLeft = 10;
+    _resultMessage = null;
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (_timeLeft == 0) {
-        _timer.cancel();
-        _checkAnswer(_questions[_currentQuestionIndex]); // 시간 초과 시 자동으로 오답 처리
+        _checkAnswer('');
       } else {
         setState(() {
           _timeLeft--;
         });
       }
     });
+    _simulateAiAnswer();
   }
 
-  // 타이머 종료 시
+  void _simulateAiAnswer() {
+    _aiTimer?.cancel();
+    int aiDelay = Random().nextInt(5) + 3;
+    _aiTimer = Timer(Duration(seconds: aiDelay), () {
+      if (_timeLeft > 0) {
+        _checkAnswer(_questions[_currentQuestionIndex].word, isUser: false);
+      }
+    });
+  }
+
+  void _checkAnswer(String userAnswer, {bool isUser = true}) {
+    if (isUser && userAnswer.trim().isEmpty) {
+      return;
+    }
+
+    final question = _questions[_currentQuestionIndex];
+    String correctAnswer = question.word.toLowerCase();
+
+    setState(() {
+      if (isUser) {
+        if (userAnswer.toLowerCase() == correctAnswer) {
+          _aiHealth = max(0, _aiHealth - 10);
+          _resultMessage = '정답입니다!';
+          _rotateOpponent();
+        } else {
+          _resultMessage = '오답입니다!';
+        }
+      } else if (!isUser && correctAnswer == question.word.toLowerCase()) {
+        _userHealth = max(0, _userHealth - 10);
+        _rotateUser();
+      }
+
+      _timer.cancel();
+      _aiTimer?.cancel();
+      _moveToNextQuestion();
+    });
+  }
+
+  void _rotateOpponent() {
+    double rotation = 2 * pi * 3;  // 3바퀴 회전
+    Timer.periodic(Duration(milliseconds: 16), (timer) {  // 60Hz로 타이머 주기 설정
+      setState(() {
+        _aiRotationAngle += rotationSpeed;  // 회전 속도에 맞춰 회전 각도 업데이트
+        if (_aiRotationAngle >=  pi * 4) {
+          _aiRotationAngle = 0.0;  // 3바퀴 회전 후 초기화
+          timer.cancel();
+        }
+      });
+    });
+  }
+
+  void _rotateUser() {
+    double rotation = 2 * pi * 3;  // 3바퀴 회전
+    Timer.periodic(Duration(milliseconds: 16), (timer) {  // 60Hz로 타이머 주기 설정
+      setState(() {
+        _userRotationAngle += rotationSpeed;  // 회전 속도에 맞춰 회전 각도 업데이트
+        if (_userRotationAngle >= pi * 4) {
+          _userRotationAngle = 0.0;  // 3바퀴 회전 후 초기화
+          timer.cancel();
+        }
+      });
+    });
+  }
+
+  void _moveToNextQuestion() {
+    if (_userHealth <= 0 || _aiHealth <= 0) {
+      _showGameOverDialog();
+      return;
+    }
+
+    setState(() {
+      if (_currentQuestionIndex < _questions.length - 1) {
+        _currentQuestionIndex++;
+        _answerController.clear();
+        _startTimer();
+        _focusOnAnswerField();
+      } else {
+        _showCompletionDialog();
+      }
+    });
+  }
+
+  void _focusOnAnswerField() {
+    Future.delayed(Duration(milliseconds: 100), () {
+      _answerFocusNode.requestFocus();
+    });
+  }
+
+  void _showGameOverDialog() {
+    String winner = _userHealth > 0 ? "사용자" : "AI";
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("게임 종료"),
+          content: Text("$winner가 승리했습니다!"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pop(context);
+              },
+              child: Text("메인으로"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showCompletionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("퀴즈 완료"),
+          content: Text("모든 문제를 푸셨습니다!"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pop(context);
+              },
+              child: Text("메인으로"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
-    _timer.cancel(); // 타이머 해제
+    _timer.cancel();
+    _aiTimer?.cancel();
+    _answerController.dispose();
+    _answerFocusNode.dispose();
     super.dispose();
+  }
+
+  Widget _buildOpponentUI() {
+    return Column(
+      children: [
+        Text(
+          "상대 체력 (${_aiHealth}/100)",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        LinearProgressIndicator(
+          value: _aiHealth / 100,
+          color: Colors.green,
+          backgroundColor: Colors.red,
+          minHeight: 20,
+        ),
+        SizedBox(height: 10),
+        Transform(
+          transform: Matrix4.rotationY(_aiRotationAngle),  // 상대 회전
+          alignment: Alignment.center,
+          child: Container(
+            width: 100,
+            height: 100,
+            color: Colors.red,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUserHealthBar() {
+    return Column(
+      children: [
+        Text(
+          "내 체력 (${_userHealth}/100)",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        SizedBox(height: 10),
+        LinearProgressIndicator(
+          value: _userHealth / 100,
+          color: Colors.green,
+          backgroundColor: Colors.red,
+          minHeight: 20,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUserCharacter() {
+    return Transform(
+      transform: Matrix4.rotationY(_userRotationAngle),  // 사용자 회전
+      alignment: Alignment.center,
+      child: Container(
+        width: 100,
+        height: 100,
+        color: Colors.green,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: Text('퀴즈 풀기')),
+        appBar: AppBar(title: Text('퀴즈 대결')),
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_questions.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: Text('퀴즈 풀기')),
+        appBar: AppBar(title: Text('퀴즈 대결')),
         body: Center(child: Text('퀴즈 데이터가 없습니다.')),
       );
     }
@@ -83,155 +284,42 @@ class _PVEPage extends State<PVEPage> {
     final currentQuestion = _questions[_currentQuestionIndex];
 
     return Scaffold(
-      appBar: AppBar(title: Text('퀴즈 풀기')),
+      appBar: AppBar(title: Text("퀴즈 대결")),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 질문 표시
+            _buildOpponentUI(),
+            SizedBox(height: 20),
+            _buildUserHealthBar(),
+            SizedBox(height: 20),
+            _buildUserCharacter(),
+            SizedBox(height: 40),
             Text(
               "문제: ${currentQuestion.def}",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 20),
-            // 남은 시간 표시 (타이머 게이지)
-            CircularProgressIndicator(
-              value: _timeLeft / 10,
-              strokeWidth: 8,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-              backgroundColor: Colors.grey[300],
-            ),
-            Text(
-              "$_timeLeft 초",
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blueAccent),
-            ),
-
-            SizedBox(height: 20),
-            // 답 입력 필드
             TextField(
               controller: _answerController,
+              focusNode: _answerFocusNode,
               decoration: InputDecoration(
                 labelText: '정답을 입력하세요',
                 border: OutlineInputBorder(),
               ),
+              onSubmitted: (value) => _checkAnswer(value),
             ),
             SizedBox(height: 20),
-            // 제출 버튼
             ElevatedButton(
-              onPressed: () => _checkAnswer(currentQuestion),
+              onPressed: () {
+                _checkAnswer(_answerController.text);
+              },
               child: Text('제출'),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  // 정답 체크 및 오답 처리
-  void _checkAnswer(Question question) {
-    String userAnswer = _answerController.text.trim();
-
-    setState(() {
-      if (_timeLeft == 0) {
-        userAnswer = ''; // 시간 초과 시 정답 없음 처리
-      }
-
-      if (userAnswer.toLowerCase() == question.word.toLowerCase()) {
-        _showResultDialog(true);
-      } else {
-        question.isCorrect = false;
-        _saveWrongAnswer(question);
-        _showResultDialog(false);
-      }
-
-      _answerController.clear();
-    });
-  }
-
-  // 오답 저장
-  void _saveWrongAnswer(Question question) async {
-    try {
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('wrongAnswers')
-          .where('w_id', isEqualTo: question.wId)
-          .get();
-
-      if (querySnapshot.docs.isEmpty) {
-        final docRef =
-            FirebaseFirestore.instance.collection('wrongAnswers').doc();
-        await docRef.set(question.toMap());
-        print('Wrong answer saved.');
-      } else {
-        print('This question has already been saved in wrong answers.');
-      }
-    } catch (e) {
-      print('Error saving wrong answer: $e');
-    }
-  }
-
-  // 결과 다이얼로그
-  void _showResultDialog(bool isCorrect) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(isCorrect ? '정답입니다!' : '오답입니다.'),
-          content: Text(
-            isCorrect
-                ? '잘했습니다! 다음 문제로 넘어갑니다.'
-                : '정답은 "${_questions[_currentQuestionIndex].word}"입니다.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _moveToNextQuestion();
-              },
-              child: Text('다음'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _moveToNextQuestion() {
-    setState(() {
-      if (_currentQuestionIndex < _questions.length - 1) {
-        _currentQuestionIndex++;
-        _timeLeft = 10;
-        _timer.cancel(); // 기존 타이머 종료
-        _startTimer(); // 새로운 타이머 시작
-      } else {
-        _showCompletionDialog();
-      }
-    });
-  }
-
-  void _showCompletionDialog() {
-    _timer.cancel(); // 타이머 종료
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('퀴즈 완료'),
-          content: Text('모든 문제를 푸셨습니다!'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pop(context); // 메인 페이지로 돌아가기
-              },
-              child: Text('메인으로'),
-            ),
-          ],
-        );
-      },
     );
   }
 }

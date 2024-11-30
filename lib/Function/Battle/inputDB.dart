@@ -1,53 +1,49 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
+import '../class.dart';
 
-class Question {
-  int wId; // Firestore 필드명: w_id
-  bool isCorrect;
-  String word;
-  String def;
+Future<List<Question>> fetchWQFromFirestore() async {
+  List<Question> questions = [];
 
-  Question(this.wId, this.word, this.def, {this.isCorrect = true});
+  // Firestore에서 'WQ' 컬렉션의 모든 문서를 가져옴
+  QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('WQ').get();
 
-  // Firestore에서 가져온 데이터를 기반으로 Question 객체 생성
-  factory Question.fromMap(Map<String, dynamic> map) {
-    return Question(
-      map['w_id'] as int? ?? 0, // 기본값 설정
-      map['word'] as String? ?? '', // 기본값 설정
-      map['def'] as String? ?? '정의 없음', // 기본값 설정
-      isCorrect: map['isCorrect'] as bool? ?? true,
-    );
+  for (var doc in snapshot.docs) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    // Question 객체로 변환
+    questions.add(Question.fromMap(data));
   }
 
-  // Firebase Realtime Database에 저장할 Map으로 변환
-  Map<String, dynamic> toMap() {
-    return {
-      'w_id': wId,
-      'isCorrect': isCorrect,
-      'word': word,
-      'def': def,
-    };
-  }
+  print("로드된 질문 수: ${questions.length}"); // 로드된 질문 수 출력
+  return questions;
 }
 
-Future<void> migrateFirestoreToRealtime() async {
-  final firestore = FirebaseFirestore.instance;
-  final realtimeDb = FirebaseDatabase.instance.ref();
 
+Future<void> saveQuestionsToRealtimeDatabase(String roomId, List<Question> questions) async {
+  final DatabaseReference ref = FirebaseDatabase.instance.ref("rooms/$roomId/questions");
+  List<Future<void>> futures = [];
+
+  for (var question in questions) {
+    String questionKey = ref.push().key!;
+    futures.add(ref.child(questionKey).set(question.toMap())); // Realtime Database에 저장
+  }
+
+  // 모든 저장 작업이 완료될 때까지 대기
+  await Future.wait(futures);
+  print("질문이 방에 성공적으로 저장되었습니다: $roomId");
+}
+
+// 전체 흐름
+Future<void> migrateWQToRealtimeDatabase(String roomId) async {
   try {
-    // Firestore에서 질문 데이터 가져오기
-    final firestoreSnapshot = await firestore.collection('questions').get();
-
-    // Realtime Database에 데이터 쓰기
-    for (var doc in firestoreSnapshot.docs) {
-      final question = Question.fromMap(doc.data());
-
-      // Realtime Database의 경로에 쓰기
-      await realtimeDb.child('questions/${question.wId}').set(question.toMap());
+    List<Question> questions = await fetchWQFromFirestore(); // Firestore에서 데이터 가져오기
+    if (questions.isNotEmpty) {
+      await saveQuestionsToRealtimeDatabase(roomId, questions); // 방 ID 전달
+      print("질문이 성공적으로 Realtime Database에 저장되었습니다!");
+    } else {
+      print("저장할 질문이 없습니다.");
     }
-
-    print('Migration completed successfully!');
   } catch (e) {
-    print('Error during migration: $e');
+    print("데이터 마이그레이션 실패: $e");
   }
 }
