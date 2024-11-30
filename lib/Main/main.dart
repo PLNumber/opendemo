@@ -28,7 +28,7 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  await migrateQuestionsToRealtimeDatabase();
+  //await migrateQuestionsToRealtimeDatabase();
   await dotenv.load(fileName: 'assets/config/.env');
   runApp(
     MultiProvider(

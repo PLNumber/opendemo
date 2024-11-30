@@ -9,7 +9,8 @@ class QuizBattlePage extends StatefulWidget {
   _QuizBattlePageState createState() => _QuizBattlePageState();
 }
 
-class _QuizBattlePageState extends State<QuizBattlePage> {
+class _QuizBattlePageState extends State<QuizBattlePage>
+    with SingleTickerProviderStateMixin {
   List<Question> _questions = [];
   int _currentQuestionIndex = 0;
   int _userHealth = 100;
@@ -21,23 +22,35 @@ class _QuizBattlePageState extends State<QuizBattlePage> {
   late Timer _timer;
   Timer? _aiTimer;
   String? _resultMessage;
-
-  double _userRotationAngle = 0.0;  // 사용자 회전 각도
-  double _aiRotationAngle = 0.0;    // 상대 회전 각도
-  double rotationSpeed = 0.3;        // 회전 속도 (빠르게 설정)
+  late AnimationController _rotationController;
+  bool _rotateOpponent = false;
+  bool _rotateUser = false;
 
   @override
   void initState() {
     super.initState();
+    _rotationController = AnimationController(
+      duration: Duration(seconds: 1), // 회전 속도 조절
+      vsync: this,
+    );
     _fetchQuestions();
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    _aiTimer?.cancel();
+    _rotationController.dispose();
+    _answerController.dispose();
+    _answerFocusNode.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchQuestions() async {
     try {
       final snapshot = await FirebaseFirestore.instance.collection('WQ').get();
-      final questions = snapshot.docs
-          .map((doc) => Question.fromMap(doc.data()))
-          .toList();
+      final questions =
+      snapshot.docs.map((doc) => Question.fromMap(doc.data())).toList();
       setState(() {
         _questions = questions;
         _isLoading = false;
@@ -46,11 +59,12 @@ class _QuizBattlePageState extends State<QuizBattlePage> {
     } catch (e) {
       print('Error fetching questions: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('문제를 불러오는 데 실패했습니다. 다시 시도해주세요.')));
+        SnackBar(content: Text('문제를 불러오는 데 실패했습니다. 다시 시도해주세요.')),
+      );
+      setState(() {
+        _isLoading = false;
+      });
     }
-    setState(() {
-      _isLoading = false;
-    });
   }
 
   void _startTimer() {
@@ -78,6 +92,26 @@ class _QuizBattlePageState extends State<QuizBattlePage> {
     });
   }
 
+  void _triggerRotation({required bool isOpponent}) {
+    setState(() {
+      if (isOpponent) {
+        _rotateOpponent = true;
+      } else {
+        _rotateUser = true;
+      }
+    });
+
+    _rotationController.forward(from: 0).whenComplete(() {
+      setState(() {
+        if (isOpponent) {
+          _rotateOpponent = false;
+        } else {
+          _rotateUser = false;
+        }
+      });
+    });
+  }
+
   void _checkAnswer(String userAnswer, {bool isUser = true}) {
     if (isUser && userAnswer.trim().isEmpty) {
       return;
@@ -91,44 +125,19 @@ class _QuizBattlePageState extends State<QuizBattlePage> {
         if (userAnswer.toLowerCase() == correctAnswer) {
           _aiHealth = max(0, _aiHealth - 10);
           _resultMessage = '정답입니다!';
-          _rotateOpponent();
+          _triggerRotation(isOpponent: true); // 상대 회전
         } else {
           _resultMessage = '오답입니다!';
+          return;
         }
       } else if (!isUser && correctAnswer == question.word.toLowerCase()) {
         _userHealth = max(0, _userHealth - 10);
-        _rotateUser();
+        _triggerRotation(isOpponent: false); // 사용자 회전
       }
 
       _timer.cancel();
       _aiTimer?.cancel();
       _moveToNextQuestion();
-    });
-  }
-
-  void _rotateOpponent() {
-    double rotation = 2 * pi * 3;  // 3바퀴 회전
-    Timer.periodic(Duration(milliseconds: 16), (timer) {  // 60Hz로 타이머 주기 설정
-      setState(() {
-        _aiRotationAngle += rotationSpeed;  // 회전 속도에 맞춰 회전 각도 업데이트
-        if (_aiRotationAngle >=  pi * 4) {
-          _aiRotationAngle = 0.0;  // 3바퀴 회전 후 초기화
-          timer.cancel();
-        }
-      });
-    });
-  }
-
-  void _rotateUser() {
-    double rotation = 2 * pi * 3;  // 3바퀴 회전
-    Timer.periodic(Duration(milliseconds: 16), (timer) {  // 60Hz로 타이머 주기 설정
-      setState(() {
-        _userRotationAngle += rotationSpeed;  // 회전 속도에 맞춰 회전 각도 업데이트
-        if (_userRotationAngle >= pi * 4) {
-          _userRotationAngle = 0.0;  // 3바퀴 회전 후 초기화
-          timer.cancel();
-        }
-      });
     });
   }
 
@@ -199,20 +208,11 @@ class _QuizBattlePageState extends State<QuizBattlePage> {
     );
   }
 
-  @override
-  void dispose() {
-    _timer.cancel();
-    _aiTimer?.cancel();
-    _answerController.dispose();
-    _answerFocusNode.dispose();
-    super.dispose();
-  }
-
   Widget _buildOpponentUI() {
     return Column(
       children: [
         Text(
-          "상대 체력 (${_aiHealth}/100)",
+          "상대",
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         LinearProgressIndicator(
@@ -222,16 +222,43 @@ class _QuizBattlePageState extends State<QuizBattlePage> {
           minHeight: 20,
         ),
         SizedBox(height: 10),
-        Transform(
-          transform: Matrix4.rotationY(_aiRotationAngle),  // 상대 회전
+        AnimatedBuilder(
+          animation: _rotationController,
+          builder: (context, child) {
+            double rotationValue = _rotateOpponent
+                ? _rotationController.value * pi * 4// 3회전
+                : 0;
+            return Transform(
+              transform: Matrix4.rotationY(rotationValue),
+              alignment: Alignment.center,
+              child: Container(
+                width: 100,
+                height: 100,
+                color: Colors.red,
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUserCharacter() {
+    return AnimatedBuilder(
+      animation: _rotationController,
+      builder: (context, child) {
+        double rotationValue =
+        _rotateUser ? _rotationController.value * pi * 4 : 0;
+        return Transform(
+          transform: Matrix4.rotationY(rotationValue),
           alignment: Alignment.center,
           child: Container(
             width: 100,
             height: 100,
-            color: Colors.red,
+            color: Colors.green,
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -239,7 +266,7 @@ class _QuizBattlePageState extends State<QuizBattlePage> {
     return Column(
       children: [
         Text(
-          "내 체력 (${_userHealth}/100)",
+          "내 체력",
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         SizedBox(height: 10),
@@ -250,18 +277,6 @@ class _QuizBattlePageState extends State<QuizBattlePage> {
           minHeight: 20,
         ),
       ],
-    );
-  }
-
-  Widget _buildUserCharacter() {
-    return Transform(
-      transform: Matrix4.rotationY(_userRotationAngle),  // 사용자 회전
-      alignment: Alignment.center,
-      child: Container(
-        width: 100,
-        height: 100,
-        color: Colors.green,
-      ),
     );
   }
 

@@ -49,36 +49,28 @@ Future<void> saveQuestionsToRealtimeDatabase(List<Question> questions) async {
   List<Future<void>> futures = [];
 
   for (var question in questions) {
-    String questionKey = ref.push().key!;
-    futures.add(ref.child(questionKey).set(question.toMap())); // Realtime Database에 저장
+    // 각 질문에 대해 키를 생성
+    String questionKey = ref.child(question.wId.toString()).key!;
+
+    // 질문이 이미 존재하는지 확인
+    final existingQuestionSnapshot = await ref.child(questionKey).once();
+
+    if (existingQuestionSnapshot.snapshot.value == null) {
+      // 질문이 존재하지 않을 경우에만 추가
+      futures.add(ref.child(questionKey).set(question.toMap())); // Realtime Database에 저장
+    } else {
+      print("질문 '${question.def}'는 이미 존재합니다.");
+    }
   }
 
   await Future.wait(futures);
 }
 
+// Firestore에서 질문을 가져와 Realtime Database에 저장하는 함수
 Future<void> migrateQuestionsToRealtimeDatabase() async {
   try {
     List<Question> questions = await fetchWQFromFirestore(); // Firestore에서 데이터 가져오기
-
-    for (var question in questions) {
-      final DatabaseReference questionRef = FirebaseDatabase.instance.ref("questions/${question.wId}");
-
-      // 질문이 이미 존재하는지 확인
-      final existingQuestionSnapshot = await questionRef.once();
-
-      if (existingQuestionSnapshot.snapshot.value == null) {
-        // 질문이 존재하지 않을 경우에만 추가
-        await questionRef.set({
-          "def": question.def,
-          "word": question.word,
-          "isCorrect": question.isCorrect,
-          "w_id": question.wId,
-        });
-      } else {
-        print("질문 '${question.def}'는 이미 존재합니다.");
-      }
-    }
-
+    await saveQuestionsToRealtimeDatabase(questions); // Realtime Database에 저장
     print("질문이 성공적으로 Realtime Database에 저장되었습니다!");
   } catch (e) {
     print("데이터 마이그레이션 실패: $e");

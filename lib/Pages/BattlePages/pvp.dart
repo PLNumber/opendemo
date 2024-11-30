@@ -1,6 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import '../../Function/class.dart';
 import '../../Function/Profile/secure.dart';
 import 'gameRoom.dart';
 
@@ -13,6 +14,7 @@ class PVPPage extends StatefulWidget {
 
 class _PVPPageState extends State<PVPPage> {
   final DatabaseReference _queueRef = FirebaseDatabase.instance.ref("queue");
+  late StreamSubscription<DatabaseEvent> _childAddedSubscription;
   String playerName = "Player";
   String matchStatus = "'매치 시작' 버튼을 눌러 시작하세요!";
   String statusMessage = "상태 메시지를 입력하세요";
@@ -23,9 +25,19 @@ class _PVPPageState extends State<PVPPage> {
   @override
   void initState() {
     super.initState();
-    _loadPlayerProfile();
-    handleDisconnect();
+    _childAddedSubscription = _queueRef.onChildAdded.listen((event) {
+      _loadPlayerProfile();
+      handleDisconnect();
+    });
+
   }
+
+  @override
+  void dispose() {
+    _childAddedSubscription.cancel();
+    super.dispose();
+  }
+
 
   Future<void> _loadPlayerProfile() async {
     String? savedName = await loadDataSecure('playerName');
@@ -60,7 +72,7 @@ class _PVPPageState extends State<PVPPage> {
 
       // 상대방 찾기
       _queueRef.onChildAdded.listen((event) async {
-        if (event.snapshot.key != playerKey) {
+        if (event.snapshot.key != playerKey) { // 자신과 매칭되지 않도록 체크
           final data = event.snapshot.value as Map<dynamic, dynamic>?;
           if (data != null) {
             String opponentKey = event.snapshot.key!;
@@ -115,12 +127,14 @@ class _PVPPageState extends State<PVPPage> {
     });
 
     // 방 ID를 플레이어에게 전달하여 방으로 이동
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => GameRoomPage(roomId: roomId),
-      ),
-    );
+    if (mounted) { // mounted 체크 추가
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => GameRoomPage(roomId: roomId),
+        ),
+      );
+    }
   }
 
   void handleDisconnect() {
@@ -135,12 +149,6 @@ class _PVPPageState extends State<PVPPage> {
         }
       }
     });
-  }
-
-  @override
-  void dispose() {
-    _queueRef.onDisconnect().remove();
-    super.dispose();
   }
 
   @override
@@ -215,4 +223,7 @@ class _PVPPageState extends State<PVPPage> {
       ),
     );
   }
+
 }
+
+

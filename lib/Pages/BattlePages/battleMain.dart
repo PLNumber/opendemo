@@ -51,7 +51,7 @@ class _BattlePageState extends State<BattlePage> {
                 shape: BoxShape.circle,
                 color: Colors.pinkAccent,
                 image: const DecorationImage(
-                  image: AssetImage('assets/profile.jpg'),
+                  image: AssetImage('assets/images/default.jpg'),
                   // Add profile picture asset here
                   fit: BoxFit.cover,
                 ),

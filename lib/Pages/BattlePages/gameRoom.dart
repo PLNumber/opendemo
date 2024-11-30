@@ -18,55 +18,75 @@ class _GameRoomPageState extends State<GameRoomPage> {
   int currentQuestionIndex = 0;
   String? playerAnswer;
   String matchStatus = "문제를 풀어보세요!";
-  bool isLoading = true;  // 로딩 상태 변수 추가
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadSharedQuestions(); // 공유 질문 로드
+    _loadQuestions();
   }
 
-  Future<void> _loadSharedQuestions() async {
+  Future<void> _loadQuestions() async {
     try {
-      // 리스너를 한 번만 추가
-      _questionsRef.once().then((event) {
-        if (event.snapshot.value != null) {
-          final data = event.snapshot.value as Map<Object?, Object?>?;
-          if (data != null && data.isNotEmpty) {
-            setState(() {
-              questions = _getQuestionsFromSharedData(data);
-              isLoading = false;  // 데이터 로드 완료
-            });
-          } else {
-            setState(() {
-              matchStatus = "질문이 없습니다."; // 데이터가 비어 있을 때
-              isLoading = false;  // 데이터 로드 완료
-            });
-          }
+      final event = await _questionsRef.once();
+      if (event.snapshot.exists) {
+        final data = event.snapshot.value;
+
+        if (data is Map) {
+          // Map일 경우
+          questions = _getQuestionsFromSharedData(data);
+        } else if (data is List) {
+          // List일 경우
+          questions = _getQuestionsFromSharedList(data);
         } else {
-          setState(() {
-            matchStatus = "질문이 없습니다.";  // snapshot.value가 null일 때
-            isLoading = false;  // 데이터 로드 완료
-          });
+          _updateMatchStatus("예상하지 못한 데이터 형식입니다.");
         }
-      });
+
+        print("Loaded questions count: ${questions.length}");
+      } else {
+        _updateMatchStatus("질문이 없습니다.");
+      }
     } catch (e) {
+      _updateMatchStatus("문제를 불러오는 중 오류 발생: $e");
+    } finally {
       setState(() {
-        matchStatus = "문제를 불러오는 중 오류 발생: $e";
-        isLoading = false;  // 데이터 로드 완료
+        isLoading = false; // 로딩 완료
       });
     }
   }
 
+// List<Object?>에서 Question 객체로 변환하는 메서드
+  List<Question> _getQuestionsFromSharedList(List<Object?> dataList) {
+    List<Question> loadedQuestions = [];
+    Set<int> uniqueIds = {};
+
+    for (var item in dataList) {
+      if (item is Map<String, dynamic>) {
+        Question question = Question.fromMap(item);
+        if (!uniqueIds.contains(question.wId)) {
+          uniqueIds.add(question.wId);
+          loadedQuestions.add(question);
+        }
+      }
+    }
+
+    return loadedQuestions;
+  }
 
 
+  void _updateMatchStatus(String message) {
+    setState(() {
+      matchStatus = message;
+    });
+  }
+
+  // Map에서 List<Question>으로 변환
   List<Question> _getQuestionsFromSharedData(Map<Object?, Object?> data) {
     List<Question> loadedQuestions = [];
-    Set<int> uniqueIds = {}; // 중복 체크를 위한 Set
+    Set<int> uniqueIds = {};
 
     data.forEach((key, value) {
       Question question = Question.fromMap(value as Map<String, dynamic>);
-      // 중복 여부 체크
       if (!uniqueIds.contains(question.wId)) {
         uniqueIds.add(question.wId);
         loadedQuestions.add(question);
@@ -76,12 +96,10 @@ class _GameRoomPageState extends State<GameRoomPage> {
     return loadedQuestions;
   }
 
-
   void _submitAnswer() {
     if (playerAnswer == null || playerAnswer!.isEmpty) return;
 
     bool isCorrect = questions[currentQuestionIndex].word == playerAnswer;
-
     setState(() {
       matchStatus = isCorrect ? "정답입니다!" : "틀렸습니다. 다시 시도해보세요!";
     });
@@ -106,9 +124,9 @@ class _GameRoomPageState extends State<GameRoomPage> {
         title: const Text("게임 방"),
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator())  // 로딩 중 표시
+          ? Center(child: CircularProgressIndicator())
           : questions.isEmpty
-          ? Center(child: Text(matchStatus))  // 질문이 없을 때 메시지 표시
+          ? Center(child: Text(matchStatus))
           : Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
