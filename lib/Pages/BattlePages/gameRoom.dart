@@ -25,6 +25,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
     gameFunctions.addPlayerToRoom(widget.roomId, widget.playerId).then((_) {
       _setupPlayerListener();
       _setupScoreListener(); // 점수 리스너 설정
+      _setupQuestionIndexListener();
       loadQuestionsAndCheckReady();
     }).catchError((error) {
       print("Error adding player to room: $error");
@@ -83,9 +84,20 @@ class _GameRoomPageState extends State<GameRoomPage> {
     });
   }
 
-  // 점수 리스너 설정
+  void _setupQuestionIndexListener() {
+    gameFunctions.roomsRef.child(widget.roomId).child('currentQuestionIndex').onValue.listen((event) {
+      if (event.snapshot.exists) {
+        setState(() {
+          gameFunctions.currentQuestionIndex = event.snapshot.value as int;
+        });
+      }
+    });
+  }
+
+
+
   void _setupScoreListener() {
-    // 내 플레이어 점수 리스너
+    // 내 점수 리스너
     gameFunctions.roomsRef.child(widget.roomId).child('players').child(widget.playerId).onValue.listen((event) {
       if (event.snapshot.exists) {
         final data = event.snapshot.value as Map<Object?, Object?>;
@@ -103,8 +115,6 @@ class _GameRoomPageState extends State<GameRoomPage> {
           setState(() {
             gameFunctions.opponentScore = (data['score'] ?? 0) as int;
           });
-        } else {
-          print("상대방 데이터가 존재하지 않습니다."); // 디버깅용 로그
         }
       });
     }
@@ -126,11 +136,19 @@ class _GameRoomPageState extends State<GameRoomPage> {
     });
   }
 
-  // 방에서 나가기 기능
+// 방 나가기 기능에서 에러 핸들링 추가
   void _leaveRoom() async {
-    await gameFunctions.leaveRoom(widget.roomId, widget.playerId);
-    Navigator.pop(context); // 이전 화면으로 돌아가기
+    try {
+      await gameFunctions.leaveRoom(widget.roomId, widget.playerId);
+      Navigator.pop(context); // 이전 화면으로 돌아가기
+    } catch (e) {
+      // 에러 메시지를 사용자에게 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("방 나가는 중 오류 발생: $e"))
+      );
+    }
   }
+
 
   // 답변 제출 처리
   void _submitAnswer() async {

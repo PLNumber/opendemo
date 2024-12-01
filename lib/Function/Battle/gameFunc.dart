@@ -133,25 +133,23 @@ class GameFunction {
   }
 
 
+  void moveToNextQuestion(String roomId) async {
+    // 현재 질문 인덱스를 데이터베이스에서 가져옵니다.
+    final currentIndexSnapshot = await roomsRef.child(roomId).child('currentQuestionIndex').once();
+    int currentIndex = (currentIndexSnapshot.snapshot.value ?? 0) as int;
 
-  // 정답 알리기 및 다음 문제로 이동
-  void notifyPlayersCorrectAnswers(String roomId, String playerId) {
-    roomsRef.child(roomId).child('answers').set({
-      'correctAnswer': questions[currentQuestionIndex].word,
-      'correctPlayerId': playerId, // 정답을 맞춘 플레이어 ID 저장
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
-    });
-  }
+    if (currentIndex < questions.length - 1) {
+      currentIndex++; // 인덱스 증가
+      // 데이터베이스에 현재 질문 인덱스 업데이트
+      await roomsRef.child(roomId).child('currentQuestionIndex').set(currentIndex);
 
-  // 다음 문제로 이동
-  void moveToNextQuestion(String roomId) {
-    if (currentQuestionIndex < questions.length - 1) {
-      currentQuestionIndex++;
+      // 새로운 질문을 알립니다.
       notifyPlayersNewQuestion(roomId);
     } else {
-      endQuiz(roomId);
+      endQuiz(roomId); // 더 이상 질문이 없으면 퀴즈 종료
     }
   }
+
 
   // 플레이어에게 새로운 문제 알리기
   void notifyPlayersNewQuestion(String roomId) {
@@ -160,6 +158,17 @@ class GameFunction {
       'question': question.def,
       'timestamp': DateTime.now().millisecondsSinceEpoch,
     });
+  }
+
+  // 정답 알리기 및 다음 문제로 이동
+  void notifyPlayersCorrectAnswers(String roomId, String playerId) {
+    roomsRef.child(roomId).child('answers').set({
+      'correctAnswer': questions[currentQuestionIndex].word,
+      'correctPlayerId': playerId, // 정답을 맞춘 플레이어 ID 저장
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    });
+
+    moveToNextQuestion(roomId); // 다음 문제로 이동
   }
 
   // 퀴즈 종료 처리
