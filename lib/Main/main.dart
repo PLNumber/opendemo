@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:opendemo/Function/Battle/inputDB.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../Function/Ads/ads_provider.dart';
 import '../Function/Profile/secure.dart';
-import '../Function/class.dart';
 import '../Pages/ProfilePages/profileMain.dart';
 import '../Pages/BattlePages/battleMain.dart';
 import '../Pages/QuizPages/quizMain.dart';
@@ -28,7 +28,7 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  //await migrateQuestionsToRealtimeDatabase();
+  await migrateWQToSharedDatabase();
   await dotenv.load(fileName: 'assets/config/.env');
   runApp(
     MultiProvider(

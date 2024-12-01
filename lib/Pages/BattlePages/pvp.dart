@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../../Function/Profile/secure.dart';
@@ -15,6 +14,7 @@ class PVPPage extends StatefulWidget {
 class _PVPPageState extends State<PVPPage> {
   final DatabaseReference _queueRef = FirebaseDatabase.instance.ref("queue");
   late StreamSubscription<DatabaseEvent> _childAddedSubscription;
+  StreamSubscription<DatabaseEvent>? _matchListener;
   String playerName = "Player";
   String matchStatus = "'매치 시작' 버튼을 눌러 시작하세요!";
   String statusMessage = "상태 메시지를 입력하세요";
@@ -25,19 +25,16 @@ class _PVPPageState extends State<PVPPage> {
   @override
   void initState() {
     super.initState();
-    _childAddedSubscription = _queueRef.onChildAdded.listen((event) {
-      _loadPlayerProfile();
-      handleDisconnect();
-    });
-
+    _loadPlayerProfile();
+    _childAddedSubscription = _queueRef.onChildRemoved.listen(_handleDisconnect);
   }
 
   @override
   void dispose() {
     _childAddedSubscription.cancel();
+    _matchListener?.cancel();
     super.dispose();
   }
-
 
   Future<void> _loadPlayerProfile() async {
     String? savedName = await loadDataSecure('playerName');
@@ -60,7 +57,6 @@ class _PVPPageState extends State<PVPPage> {
     String playerKey = _queueRef.push().key!;
 
     try {
-      // 대기열에 플레이어 추가
       await _queueRef.child(playerKey).set({
         "name": playerName,
         "statusMessage": statusMessage,
@@ -70,47 +66,40 @@ class _PVPPageState extends State<PVPPage> {
 
       _queueRef.child(playerKey).onDisconnect().remove();
 
-      // 상대방 찾기
-      _queueRef.onChildAdded.listen((event) async {
-        if (event.snapshot.key != playerKey) { // 자신과 매칭되지 않도록 체크
+      _matchListener = _queueRef.onChildAdded.listen((event) async {
+        if (event.snapshot.key != playerKey) {
           final data = event.snapshot.value as Map<dynamic, dynamic>?;
+
           if (data != null) {
             String opponentKey = event.snapshot.key!;
-            await createGameRoom(playerKey, opponentKey); // 방 생성
+            await createGameRoom(playerKey, opponentKey, data["name"]);
 
-            if (mounted) { // 추가된 체크
-              setState(() {
-                matchStatus = "매치 성사! 상대: ${data["name"]}";
-                isSearching = false;
-              });
-            }
+            setState(() {
+              matchStatus = "매치 성사! 상대: ${data["name"]}";
+              isSearching = false;
+            });
 
-            // 대기열에서 자신과 상대 제거
             await _queueRef.child(playerKey).remove();
             await _queueRef.child(opponentKey).remove();
+            _matchListener?.cancel();
           }
         }
       });
 
-      _queueRef.child(playerKey).onDisconnect().set({
-        "status": "disconnected",
+    } catch (e, stacktrace) {
+      debugPrint("Error during match: $e\n$stacktrace");
+      setState(() {
+        matchStatus = "오류 발생: 매칭을 다시 시도해주세요.";
+        isSearching = false;
       });
-
-    } catch (e) {
-      if (mounted) { // 추가된 체크
-        setState(() {
-          matchStatus = "오류 발생: $e";
-          isSearching = false;
-        });
-      }
     }
   }
 
-  Future<void> createGameRoom(String playerKey, String opponentKey) async {
+  Future<void> createGameRoom(String playerKey, String opponentKey, String opponentName) async {
     final DatabaseReference roomRef = FirebaseDatabase.instance.ref("rooms").push();
     String roomId = roomRef.key!;
 
-    // 방 정보 저장
+    // 게임 방 생성
     await roomRef.set({
       "players": {
         playerKey: {
@@ -118,37 +107,33 @@ class _PVPPageState extends State<PVPPage> {
           "status": "active",
         },
         opponentKey: {
-          "name": "상대방 이름", // 상대방 이름은 나중에 업데이트
+          "name": opponentName,
           "status": "active",
         },
       },
-      "questions": [], // 문제 목록을 추가할 수 있는 공간
+      "questions": [],  // 질문 데이터를 이곳에 추가할 수 있습니다.
       "status": "active",
     });
 
-    // 방 ID를 플레이어에게 전달하여 방으로 이동
-    if (mounted) { // mounted 체크 추가
+    if (mounted) {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => GameRoomPage(roomId: roomId),
+          builder: (context) => GameRoomPage(roomId: roomId, playerId: playerKey,),
         ),
       );
     }
   }
 
-  void handleDisconnect() {
-    _queueRef.onChildRemoved.listen((event) {
-      if (event.snapshot.key != null && !opponentDisconnected) {
-        if (mounted) { // 추가된 체크
-          setState(() {
-            matchStatus = "상대방이 매칭을 취소했습니다.";
-            isSearching = false;
-            opponentDisconnected = true;
-          });
-        }
-      }
-    });
+  // 상대방이 매칭을 취소했을 때 처리
+  void _handleDisconnect(DatabaseEvent event) {
+    if (event.snapshot.key != null && !opponentDisconnected) {
+      setState(() {
+        matchStatus = "상대방이 매칭을 취소했습니다.";
+        isSearching = false;
+        opponentDisconnected = true;
+      });
+    }
   }
 
   @override
@@ -194,9 +179,28 @@ class _PVPPageState extends State<PVPPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                 backgroundColor: Colors.blueAccent,
               ),
-              child: Text(
-                isSearching ? "매치 대기 중..." : "매치 시작",
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              child: isSearching
+                  ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text(
+                    "매치 대기 중...",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              )
+                  : const Text(
+                "매치 시작",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 40),
@@ -223,7 +227,4 @@ class _PVPPageState extends State<PVPPage> {
       ),
     );
   }
-
 }
-
-

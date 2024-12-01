@@ -1,94 +1,41 @@
+// gameroom.dart
 import 'package:flutter/material.dart';
-import 'package:firebase_database/firebase_database.dart';
-import '../../Function/class.dart';
+import '../../Function/Battle/gameFunc.dart';
 
 class GameRoomPage extends StatefulWidget {
   final String roomId;
+  final String playerId; // 플레이어 ID 추가
 
-  const GameRoomPage({Key? key, required this.roomId}) : super(key: key);
+  const GameRoomPage({Key? key, required this.roomId, required this.playerId}) : super(key: key);
 
   @override
   _GameRoomPageState createState() => _GameRoomPageState();
 }
 
 class _GameRoomPageState extends State<GameRoomPage> {
-  final DatabaseReference _questionsRef = FirebaseDatabase.instance.ref("questions");
-
-  List<Question> questions = [];
-  int currentQuestionIndex = 0;
-  String? playerAnswer;
-  String matchStatus = "문제를 풀어보세요!";
-  bool isLoading = true;
+  late GameFunctions gameFunctions;
 
   @override
   void initState() {
     super.initState();
-    _loadSharedQuestions();
-  }
-
-  Future<void> _loadSharedQuestions() async {
-    try {
-      final event = await _questionsRef.once();
-      if (event.snapshot.value is Map) {
-        final data = event.snapshot.value as Map<Object?, Object?>;
-        if (data.isNotEmpty) {
-          setState(() {
-            questions = _getQuestionsFromSharedData(data);
-            print("Loaded questions count: ${questions.length}");
-            isLoading = false;  // 데이터 로드 완료
-          });
-        } else {
-          _updateMatchStatus("질문이 없습니다.");
-        }
-      } else {
-        _updateMatchStatus("예상하지 못한 데이터 형식입니다.");
-      }
-    } catch (e) {
-      _updateMatchStatus("문제를 불러오는 중 오류 발생: $e");
-    }
-  }
-
-  void _updateMatchStatus(String message) {
-    setState(() {
-      matchStatus = message;
-      isLoading = false;  // 데이터 로드 완료
-    });
-  }
-
-  List<Question> _getQuestionsFromSharedData(Map<Object?, Object?> data) {
-    List<Question> loadedQuestions = [];
-    Set<int> uniqueIds = {};
-
-    data.forEach((key, value) {
-      Question question = Question.fromMap(value as Map<String, dynamic>);
-      if (!uniqueIds.contains(question.wId)) {
-        uniqueIds.add(question.wId);
-        loadedQuestions.add(question);
-      }
-    });
-
-    return loadedQuestions;
-  }
-
-  void _submitAnswer() {
-    if (playerAnswer == null || playerAnswer!.isEmpty) return;
-
-    bool isCorrect = questions[currentQuestionIndex].word == playerAnswer;
-    setState(() {
-      matchStatus = isCorrect ? "정답입니다!" : "틀렸습니다. 다시 시도해보세요!";
-    });
-
-    // 다음 문제로 이동
-    if (currentQuestionIndex < questions.length - 1) {
+    gameFunctions = GameFunctions();
+    gameFunctions.loadSharedQuestions().then((_) {
       setState(() {
-        currentQuestionIndex++;
-        playerAnswer = null; // 답변 초기화
+        // 데이터 로딩 완료 후 로딩 상태 변경
+        gameFunctions.isLoading = false;
       });
-    } else {
+    }).catchError((error) {
       setState(() {
-        matchStatus = "모든 문제를 풀었습니다!";
+        gameFunctions.isLoading = false;
       });
-    }
+      print("Error loading questions: $error");
+    });
+  }
+
+  // 방에서 나가기 기능
+  void _leaveRoom() async {
+    await gameFunctions.leaveRoom(widget.roomId, widget.playerId);  // 플레이어 ID를 함께 전달
+    Navigator.pop(context); // 이전 화면으로 돌아가기
   }
 
   @override
@@ -96,53 +43,64 @@ class _GameRoomPageState extends State<GameRoomPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("게임 방"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.exit_to_app),
+            onPressed: _leaveRoom, // 나가기 버튼
+          ),
+        ],
       ),
-      body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : questions.isEmpty
-          ? Center(child: Text(matchStatus))
+      body: gameFunctions.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : gameFunctions.questions.isEmpty
+          ? Center(
+        child: Text(
+          gameFunctions.matchStatus,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+      )
           : Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "문제 ${currentQuestionIndex + 1}/${questions.length}",
+              "문제 ${gameFunctions.currentQuestionIndex + 1} / ${gameFunctions.questions.length}",
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
             Text(
-              questions[currentQuestionIndex].def,
+              gameFunctions.questions[gameFunctions.currentQuestionIndex].def,
               style: const TextStyle(fontSize: 18),
             ),
             const SizedBox(height: 20),
             TextField(
-              onChanged: (value) {
-                playerAnswer = value;
-              },
-              decoration: InputDecoration(
+              onChanged: (value) => gameFunctions.playerAnswer = value,
+              decoration: const InputDecoration(
                 labelText: "답변을 입력하세요",
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: _submitAnswer,
+              onPressed: () {
+                setState(() {
+                  gameFunctions.submitAnswer();
+                });
+              },
               child: const Text("제출"),
             ),
             const SizedBox(height: 20),
             Text(
-              matchStatus,
-              style: const TextStyle(fontSize: 16, color: Colors.red),
+              gameFunctions.matchStatus,
+              style: TextStyle(
+                fontSize: 16,
+                color: gameFunctions.matchStatus == "정답입니다!" ? Colors.green : Colors.red,
+              ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 }

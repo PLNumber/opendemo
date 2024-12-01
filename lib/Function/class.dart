@@ -1,5 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_database/firebase_database.dart';
+//class.dart
 
 class Question {
   int wId; // Firestore 필드명: w_id
@@ -22,57 +21,10 @@ class Question {
   // Firestore에서 가져온 데이터를 기반으로 Question 객체 생성
   factory Question.fromMap(Map<String, dynamic> map) {
     return Question(
-      map['w_id'] as int? ?? 0, // 기본값 설정
-      map['word'] as String? ?? '', // 기본값 설정
-      map['def'] as String? ?? '정의 없음', // 'def' 필드 사용, 기본값 추가
-      isCorrect: map['isCorrect'] as bool? ?? true,
+      map['w_id'] is int ? map['w_id'] as int : 0, // 정수 변환
+      map['word'] is String ? map['word'] as String : '', // 문자열 변환
+      map['def'] is String ? map['def'] as String : '정의 없음', // 문자열 변환
+      isCorrect: map['isCorrect'] is bool ? map['isCorrect'] as bool : true, // 불리언 변환
     );
-  }
-}
-
-// Firestore에서 질문 데이터를 가져오는 함수
-Future<List<Question>> fetchWQFromFirestore() async {
-  List<Question> questions = [];
-  QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('WQ').get();
-
-  for (var doc in snapshot.docs) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-    questions.add(Question.fromMap(data));
-  }
-
-  return questions;
-}
-
-// Realtime Database에 질문 데이터를 저장하는 함수
-Future<void> saveQuestionsToRealtimeDatabase(List<Question> questions) async {
-  final DatabaseReference ref = FirebaseDatabase.instance.ref("questions");
-  List<Future<void>> futures = [];
-
-  for (var question in questions) {
-    // 각 질문에 대해 키를 생성
-    String questionKey = ref.child(question.wId.toString()).key!;
-
-    // 질문이 이미 존재하는지 확인
-    final existingQuestionSnapshot = await ref.child(questionKey).once();
-
-    if (existingQuestionSnapshot.snapshot.value == null) {
-      // 질문이 존재하지 않을 경우에만 추가
-      futures.add(ref.child(questionKey).set(question.toMap())); // Realtime Database에 저장
-    } else {
-      print("질문 '${question.def}'는 이미 존재합니다.");
-    }
-  }
-
-  await Future.wait(futures);
-}
-
-// Firestore에서 질문을 가져와 Realtime Database에 저장하는 함수
-Future<void> migrateQuestionsToRealtimeDatabase() async {
-  try {
-    List<Question> questions = await fetchWQFromFirestore(); // Firestore에서 데이터 가져오기
-    await saveQuestionsToRealtimeDatabase(questions); // Realtime Database에 저장
-    print("질문이 성공적으로 Realtime Database에 저장되었습니다!");
-  } catch (e) {
-    print("데이터 마이그레이션 실패: $e");
   }
 }
