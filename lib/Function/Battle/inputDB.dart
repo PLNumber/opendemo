@@ -1,4 +1,3 @@
-//imputDB.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../class.dart';
@@ -11,9 +10,14 @@ Future<List<Question>> fetchWQFromFirestore() async {
 
     for (var doc in snapshot.docs) {
       try {
-        // Firebase에서 가져온 데이터를 Map<String, dynamic>으로 안전하게 변환
-        Map<String, dynamic> data = Map<String, dynamic>.from(doc.data() as Map<Object?, Object?>);
-        questions.add(Question.fromMap(data.cast<String, dynamic>()));
+        // Firestore에서 가져온 데이터를 Map<String, dynamic>으로 안전하게 변환
+        final data = doc.data();
+        if (data is Map<Object?, Object?>) {
+          Map<String, dynamic> questionData = data.map((key, value) => MapEntry(key.toString(), value));
+          questions.add(Question.fromMap(questionData));
+        } else {
+          print("문서의 데이터 형식이 잘못되었습니다 (ID: ${doc.id}): $data");
+        }
       } catch (e) {
         print("문서를 변환하는 중 오류 발생 (ID: ${doc.id}): $e");
       }
@@ -25,8 +29,6 @@ Future<List<Question>> fetchWQFromFirestore() async {
   print("로드된 질문 수: ${questions.length}");
   return questions;
 }
-
-
 
 Future<void> saveQuestionsToSharedDatabase(List<Question> questions) async {
   final DatabaseReference ref = FirebaseDatabase.instance.ref("shared/questions");
@@ -54,7 +56,7 @@ Future<bool> isMigrationCompleted() async {
   final DatabaseReference ref = FirebaseDatabase.instance.ref("shared/migrationCompleted");
   final snapshot = await ref.get();
 
-  return snapshot.exists && snapshot.value == true;
+  return snapshot.exists && (snapshot.value as bool);
 }
 
 Future<void> migrateWQToSharedDatabase() async {

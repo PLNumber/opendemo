@@ -1,11 +1,14 @@
-// gamefunc.dart
 import 'package:firebase_database/firebase_database.dart';
-import 'package:flutter/material.dart';
 import '../../Function/class.dart';
 
-class GameFunctions {
+class GameFunction {
+  int playerScore = 0;
+  int opponentScore = 0;
   final DatabaseReference _questionsRef = FirebaseDatabase.instance.ref("shared/questions");
-  final DatabaseReference _roomsRef = FirebaseDatabase.instance.ref("rooms"); // 방 정보
+
+  final DatabaseReference _roomsRef = FirebaseDatabase.instance.ref("rooms");
+  DatabaseReference get roomsRef => _roomsRef; // 방 정보 참조를 외부에서 접근할 수 있도록 하는 getter
+  DatabaseReference get questionsRef => _questionsRef; // 방 정보 참조를 외부에서 접근할 수 있도록 하는 getter
 
   List<Question> questions = [];
   int currentQuestionIndex = 0;
@@ -13,13 +16,29 @@ class GameFunctions {
   String matchStatus = "문제를 불러오는 중입니다...";
   bool isLoading = true;
 
+  // 점수 업데이트 메서드
+  void updateScore(bool isCorrect, bool isPlayer) {
+    if (isCorrect) {
+      if (isPlayer) {
+        playerScore += 10; // 플레이어가 정답인 경우
+        opponentScore -= 10; // 상대방 점수 감소
+      } else {
+        opponentScore += 10; // 상대방이 정답인 경우
+        playerScore -= 10; // 플레이어 점수 감소
+      }
+    }
+  }
+
   Future<void> loadSharedQuestions() async {
     try {
       final event = await _questionsRef.once();
       final data = event.snapshot.value;
 
-      if (data is Map) {
-        questions = _getQuestionsFromSharedData(data);
+      // 데이터가 Map<Object?, Object?> 형식인지 확인
+      if (data is Map<Object?, Object?>) {
+        // 안전하게 변환
+        final questionsData = Map<String, dynamic>.from(data);
+        questions = _getQuestionsFromSharedData(questionsData);
         isLoading = false;
         matchStatus = questions.isEmpty ? "출제된 문제가 없습니다." : "문제를 풀어보세요!";
       } else {
@@ -30,9 +49,10 @@ class GameFunctions {
     }
   }
 
-  List<Question> _getQuestionsFromSharedData(Map<Object?, Object?> data) {
+
+  List<Question> _getQuestionsFromSharedData(Map<String, dynamic> data) {
     return data.entries.map((entry) {
-      return Question.fromMap(Map<String, dynamic>.from(entry.value as Map<Object?, Object?>));
+      return Question.fromMap(entry.value as Map<String, dynamic>);
     }).toList();
   }
 
@@ -42,13 +62,23 @@ class GameFunctions {
     isLoading = false;
   }
 
-  void submitAnswer() {
+  Future<Map<String, dynamic>> getRoomData(String roomId) async {
+    final roomSnapshot = await _roomsRef.child(roomId).once();
+    return roomSnapshot.snapshot.value as Map<String, dynamic>;
+  }
+
+  void submitAnswer(bool isPlayer) {
     if (playerAnswer == null || playerAnswer!.isEmpty) return;
 
     final isCorrect = questions[currentQuestionIndex].word.trim().toLowerCase() == playerAnswer!.trim().toLowerCase();
 
+    // 점수 업데이트
+    updateScore(isCorrect, isPlayer);
+
+    // 상태 메시지 업데이트
     matchStatus = isCorrect ? "정답입니다!" : "틀렸습니다. 다시 시도해보세요!";
 
+    // 다음 질문으로 이동
     if (isCorrect && currentQuestionIndex < questions.length - 1) {
       currentQuestionIndex++;
       playerAnswer = null; // 답변 초기화
@@ -57,7 +87,19 @@ class GameFunctions {
     }
   }
 
-  // 방을 떠날 때 호출되는 함수
+  Future<void> addPlayerToRoom(String roomId, String playerId) async {
+    await _roomsRef.child(roomId).child('players').child(playerId).set({
+      "name": playerId,
+      "status": "waiting", // 대기 상태
+    });
+  }
+
+  Future<void> updatePlayerStatus(String roomId, String playerId, String status) async {
+    await _roomsRef.child(roomId).child('players').child(playerId).update({
+      "status": status,
+    });
+  }
+
   Future<void> leaveRoom(String roomId, String playerId) async {
     try {
       final roomRef = _roomsRef.child(roomId);

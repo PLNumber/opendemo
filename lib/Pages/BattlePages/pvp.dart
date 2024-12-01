@@ -12,28 +12,18 @@ class PVPPage extends StatefulWidget {
 }
 
 class _PVPPageState extends State<PVPPage> {
-  final DatabaseReference _queueRef = FirebaseDatabase.instance.ref("queue");
-  late StreamSubscription<DatabaseEvent> _childAddedSubscription;
-  StreamSubscription<DatabaseEvent>? _matchListener;
+  final DatabaseReference _roomsRef = FirebaseDatabase.instance.ref("rooms");
   String playerName = "Player";
-  String matchStatus = "'매치 시작' 버튼을 눌러 시작하세요!";
   String statusMessage = "상태 메시지를 입력하세요";
   String? profileImage;
-  bool isSearching = false;
-  bool opponentDisconnected = false;
+  bool isCreatingRoom = false;
+  String? roomId; // 방 ID를 저장하는 변수
+  TextEditingController roomIdController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadPlayerProfile();
-    _childAddedSubscription = _queueRef.onChildRemoved.listen(_handleDisconnect);
-  }
-
-  @override
-  void dispose() {
-    _childAddedSubscription.cancel();
-    _matchListener?.cancel();
-    super.dispose();
   }
 
   Future<void> _loadPlayerProfile() async {
@@ -48,91 +38,83 @@ class _PVPPageState extends State<PVPPage> {
     });
   }
 
-  Future<void> startMatch() async {
+  Future<void> createRoom() async {
     setState(() {
-      isSearching = true;
-      matchStatus = "플레이어 찾는 중...";
+      isCreatingRoom = true;
     });
 
-    String playerKey = _queueRef.push().key!;
+    String newRoomId = _roomsRef.push().key!;
 
-    try {
-      await _queueRef.child(playerKey).set({
-        "name": playerName,
-        "statusMessage": statusMessage,
-        "profileImage": profileImage,
-        "timestamp": DateTime.now().millisecondsSinceEpoch,
-      });
-
-      _queueRef.child(playerKey).onDisconnect().remove();
-
-      _matchListener = _queueRef.onChildAdded.listen((event) async {
-        if (event.snapshot.key != playerKey) {
-          final data = event.snapshot.value as Map<dynamic, dynamic>?;
-
-          if (data != null) {
-            String opponentKey = event.snapshot.key!;
-            await createGameRoom(playerKey, opponentKey, data["name"]);
-
-            setState(() {
-              matchStatus = "매치 성사! 상대: ${data["name"]}";
-              isSearching = false;
-            });
-
-            await _queueRef.child(playerKey).remove();
-            await _queueRef.child(opponentKey).remove();
-            _matchListener?.cancel();
-          }
-        }
-      });
-
-    } catch (e, stacktrace) {
-      debugPrint("Error during match: $e\n$stacktrace");
-      setState(() {
-        matchStatus = "오류 발생: 매칭을 다시 시도해주세요.";
-        isSearching = false;
-      });
-    }
-  }
-
-  Future<void> createGameRoom(String playerKey, String opponentKey, String opponentName) async {
-    final DatabaseReference roomRef = FirebaseDatabase.instance.ref("rooms").push();
-    String roomId = roomRef.key!;
-
-    // 게임 방 생성
-    await roomRef.set({
+    await _roomsRef.child(newRoomId).set({
       "players": {
-        playerKey: {
+        playerName: {
           "name": playerName,
-          "status": "active",
-        },
-        opponentKey: {
-          "name": opponentName,
-          "status": "active",
+          "status": "waiting", // 대기 상태로 설정
         },
       },
-      "questions": [],  // 질문 데이터를 이곳에 추가할 수 있습니다.
-      "status": "active",
+      "questions": [], // 질문 데이터를 이곳에 추가할 수 있습니다.
+      "status": "waiting", // 방 상태를 대기 중으로 설정
     });
 
-    if (mounted) {
+    setState(() {
+      roomId = newRoomId; // 생성한 방 ID 저장
+      isCreatingRoom = false;
+    });
+
+    // 방 대기 화면으로 이동
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GameRoomPage(roomId: roomId!, playerId: playerName),
+      ),
+    );
+  }
+
+  Future<void> joinRoom() async {
+    String enteredRoomId = roomIdController.text;
+    if (enteredRoomId.isEmpty) {
+      // 방 ID가 비어있으면 경고 메시지 표시
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("경고"),
+          content: const Text("방 ID를 입력하세요."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("확인"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // 입력한 방 ID로 방에 들어가기
+    DatabaseEvent event = await _roomsRef.child(enteredRoomId).once();
+    if (event.snapshot.exists) {
+      // 방이 존재하면 게임 방으로 이동
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => GameRoomPage(roomId: roomId, playerId: playerKey,),
+          builder: (context) => GameRoomPage(roomId: enteredRoomId, playerId: playerName),
         ),
       );
-    }
-  }
-
-  // 상대방이 매칭을 취소했을 때 처리
-  void _handleDisconnect(DatabaseEvent event) {
-    if (event.snapshot.key != null && !opponentDisconnected) {
-      setState(() {
-        matchStatus = "상대방이 매칭을 취소했습니다.";
-        isSearching = false;
-        opponentDisconnected = true;
-      });
+    } else {
+      // 방이 존재하지 않으면 경고 메시지 표시
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("경고"),
+          content: const Text("존재하지 않는 방입니다."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("확인"),
+            ),
+          ],
+        ),
+      );
     }
   }
 
@@ -174,52 +156,36 @@ class _PVPPageState extends State<PVPPage> {
             ),
             const SizedBox(height: 40),
             ElevatedButton(
-              onPressed: isSearching ? null : startMatch,
+              onPressed: isCreatingRoom ? null : createRoom,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                 backgroundColor: Colors.blueAccent,
               ),
-              child: isSearching
-                  ? Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text(
-                    "매치 대기 중...",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              )
+              child: isCreatingRoom
+                  ? const CircularProgressIndicator(color: Colors.white)
                   : const Text(
-                "매치 시작",
+                "방 만들기",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
-            const SizedBox(height: 40),
-            Container(
-              alignment: Alignment.center,
-              padding: const EdgeInsets.all(16),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.orange[600],
-                borderRadius: BorderRadius.circular(8),
+            const SizedBox(height: 20),
+            TextField(
+              controller: roomIdController,
+              decoration: const InputDecoration(
+                labelText: "방 ID 입력",
+                border: OutlineInputBorder(),
               ),
-              child: Text(
-                matchStatus,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-                textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: joinRoom,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                backgroundColor: Colors.green,
+              ),
+              child: const Text(
+                "들어가기",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
           ],
