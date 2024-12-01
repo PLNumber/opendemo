@@ -34,7 +34,7 @@ class GameFunction {
       final event = await _questionsRef.once();
       final data = event.snapshot.value;
 
-      // 데이터가 Map<Object?, Object?> 형식인지 확인
+      // 데이터가 Map 형식인지 확인
       if (data is Map<Object?, Object?>) {
         // 안전하게 변환
         final questionsData = Map<String, dynamic>.from(data);
@@ -49,12 +49,17 @@ class GameFunction {
     }
   }
 
-
   List<Question> _getQuestionsFromSharedData(Map<String, dynamic> data) {
     return data.entries.map((entry) {
-      return Question.fromMap(entry.value as Map<String, dynamic>);
+      // entry.value가 Map<String, dynamic> 형식인지 확인
+      if (entry.value is Map<Object?, Object?>) {
+        return Question.fromMap(Map<String, dynamic>.from(entry.value));
+      } else {
+        throw Exception("질문 데이터 형식이 잘못되었습니다: ${entry.value}");
+      }
     }).toList();
   }
+
 
 
   void updateMatchStatus(String message) {
@@ -64,8 +69,23 @@ class GameFunction {
 
   Future<Map<String, dynamic>> getRoomData(String roomId) async {
     final roomSnapshot = await _roomsRef.child(roomId).once();
-    return roomSnapshot.snapshot.value as Map<String, dynamic>;
+
+    // roomSnapshot의 snapshot을 통해 데이터 존재 여부 확인
+    if (roomSnapshot.snapshot.value != null) {
+      final data = roomSnapshot.snapshot.value;
+
+      // 데이터가 Map<Object?, Object?> 형식일 경우 안전하게 변환
+      if (data is Map<Object?, Object?>) {
+        return Map<String, dynamic>.from(data);
+      } else {
+        throw Exception("방 데이터 형식이 잘못되었습니다: $data");
+      }
+    } else {
+      throw Exception("방이 존재하지 않습니다.");
+    }
   }
+
+
 
   void submitAnswer(bool isPlayer) {
     if (playerAnswer == null || playerAnswer!.isEmpty) return;

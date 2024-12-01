@@ -37,31 +37,39 @@ class _GameRoomPageState extends State<GameRoomPage> {
       await gameFunctions.loadSharedQuestions();
       await _checkIfReady();
     } catch (error) {
-      print("Error loading questions44: $error");
+      print("Error loading questions: $error");
       setState(() {
-        gameFunctions.isLoading = false;
+        gameFunctions.isLoading = false; // 로딩 상태 해제
       });
     }
   }
 
   Future<void> _checkIfReady() async {
-    final roomData = await gameFunctions.getRoomData(widget.roomId);
+    try {
+      final roomData = await gameFunctions.getRoomData(widget.roomId);
 
-    if (roomData['players'] != null) {
-      int playerCount = roomData['players'].length;
+      if (roomData['players'] != null) {
+        int playerCount = roomData['players'].length;
 
-      if (playerCount > 1) {
-        setState(() {
-          isWaiting = false; // 대기 상태 해제
-        });
+        if (playerCount > 1) {
+          setState(() {
+            isWaiting = false; // 대기 상태 해제
+          });
 
-        // 각 플레이어의 상태를 active로 변경
-        for (var playerId in roomData['players'].keys) {
-          await gameFunctions.updatePlayerStatus(widget.roomId, playerId, "active");
+          // 각 플레이어의 상태를 active로 변경
+          for (var playerId in roomData['players'].keys) {
+            await gameFunctions.updatePlayerStatus(widget.roomId, playerId, "active");
+          }
         }
       }
+    } catch (error) {
+      print("Error checking if ready: $error");
+      setState(() {
+        gameFunctions.isLoading = false; // 오류 발생 시 로딩 상태 해제
+      });
     }
   }
+
 
   // 플레이어 추가 리스너 설정
   void _setupPlayerListener() {
@@ -70,6 +78,8 @@ class _GameRoomPageState extends State<GameRoomPage> {
       if (playerId != widget.playerId) {
         setState(() {
           messages.add("$playerId가 들어왔습니다."); // 메시지 추가
+          // 플레이어가 들어오면 대기 상태 해제 체크
+          _checkIfReady(); // 대기 상태를 체크하여 UI 업데이트
         });
       }
     });
@@ -86,15 +96,17 @@ class _GameRoomPageState extends State<GameRoomPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("게임 방"),
-        leading:  IconButton(
-            icon: const Icon(Icons.exit_to_app),
-            onPressed: _leaveRoom,
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.exit_to_app), // 나가기 아이콘으로 변경
+          onPressed: _leaveRoom, // 방 나가기 메서드 호출
+        ),
       ),
       body: gameFunctions.isLoading
           ? const Center(child: CircularProgressIndicator())
           : isWaiting
           ? Center(child: Text("상대방을 기다리는 중..."))
+          : (gameFunctions.questions.isEmpty
+          ? Center(child: Text("질문이 없습니다."))
           : Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -109,7 +121,9 @@ class _GameRoomPageState extends State<GameRoomPage> {
             ),
             const SizedBox(height: 20),
             Text(
-              gameFunctions.questions[gameFunctions.currentQuestionIndex].def,
+              gameFunctions.questions.isNotEmpty
+                  ? gameFunctions.questions[gameFunctions.currentQuestionIndex].def
+                  : '질문이 없습니다.',
               style: const TextStyle(fontSize: 18),
             ),
             const SizedBox(height: 20),
@@ -144,7 +158,8 @@ class _GameRoomPageState extends State<GameRoomPage> {
             ),
           ],
         ),
-      ),
+      )),
     );
   }
+
 }
