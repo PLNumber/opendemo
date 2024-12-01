@@ -1,73 +1,147 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'shopPage.dart'; // GridViewScreen이 포함된 파일
-import '../../Function/Profile/secure.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
 
   @override
-  _ProfilePageState createState() => _ProfilePageState();
+  State<ProfilePage> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  // 사용자 데이터 필드
+  String name = "Player";
+  String currentMSG = "상태 메시지가 없습니다.";
+  String profileImg = "https://via.placeholder.com/150"; // 기본 이미지
   int win = 0;
-  int lose = 0;
-  int level = 1;
-  String playerName = "Player";
-  String statusMessage = "상태 메시지를 입력하세요";
-  String? _profileImage;
+  int loss = 0;
 
+  bool isLoading = true; // 데이터 로드 상태
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _statusController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _loadProfileData(); // 데이터를 비동기적으로 불러옵니다.
+    fetchUserData(); // 데이터 로드
   }
 
-  Future<void> _loadProfileData() async {
-    // 비동기적으로 데이터 불러오기
-    String? savedName = await loadDataSecure('playerName');
-    String? savedStatus = await loadDataSecure('statusMessage');
-    String? savedImage = await loadProfileImage();
+  Future<void> fetchUserData() async {
+    try {
+      // 현재 로그인된 사용자 가져오기
+      User? currentUser = FirebaseAuth.instance.currentUser;
 
-    setState(() {
-      playerName = savedName ?? "Player";
-      statusMessage = savedStatus ?? "상태 메시지를 입력하세요";
-      _profileImage = savedImage ?? 'assets/images/default.jpg'; // 기본 이미지
-    });
+      if (currentUser == null) {
+        throw Exception("로그인된 사용자가 없습니다.");
+      }
+
+      // Firestore에서 UID로 문서 가져오기
+      String uid = currentUser.uid;
+      DocumentSnapshot document = await FirebaseFirestore.instance
+          .collection('UserData')
+          .doc(uid)
+          .get();
+
+      if (document.exists) {
+        Map<String, dynamic> data = document.data() as Map<String, dynamic>;
+        setState(() {
+          name = data['name'] ?? "Player";
+          currentMSG = data['currentMSG'] ?? "상태 메시지가 없습니다.";
+          profileImg = data['profileImg'] ?? "https://via.placeholder.com/150";
+          win = data['win'] ?? 0;
+          loss = data['loss'] ?? 0;
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          isLoading = false;
+        });
+        throw Exception("사용자 데이터를 찾을 수 없습니다.");
+      }
+    } catch (e) {
+      print("데이터 가져오기 오류: $e");
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
-  void _updateName() {
-    setState(() {
-      playerName = _nameController.text;
-      _nameController.clear();
-      saveDataSecure('playerName', playerName); // 이름 저장
-    });
+  Future<void> updateName(String newName) async {
+    try {
+      // 현재 로그인된 사용자 가져오기
+      User? currentUser = FirebaseAuth.instance.currentUser;
+
+      if (currentUser == null) {
+        throw Exception("로그인된 사용자가 없습니다.");
+      }
+
+      String uid = currentUser.uid;
+
+      // Firestore의 name 필드 업데이트
+      await FirebaseFirestore.instance
+          .collection('UserData')
+          .doc(uid)
+          .update({'name': newName});
+
+      setState(() {
+        name = newName;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("이름이 성공적으로 변경되었습니다.")),
+      );
+    } catch (e) {
+      print("이름 업데이트 오류: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("이름 변경 중 오류가 발생했습니다.")),
+      );
+    }
   }
 
-  void _updateStatus() {
-    setState(() {
-      statusMessage = _statusController.text.isNotEmpty
-          ? _statusController.text
-          : "상태 메시지를 입력하세요";
-      _statusController.clear();
-      saveDataSecure('statusMessage', statusMessage); // 상태 메시지 저장
-    });
+  Future<void> updateStatus(String newStatus) async {
+    try {
+      // 현재 로그인된 사용자 가져오기
+      User? currentUser = FirebaseAuth.instance.currentUser;
+
+      if (currentUser == null) {
+        throw Exception("로그인된 사용자가 없습니다.");
+      }
+
+      String uid = currentUser.uid;
+
+      // Firestore의 currentMSG 필드 업데이트
+      await FirebaseFirestore.instance
+          .collection('UserData')
+          .doc(uid)
+          .update({'currentMSG': newStatus});
+
+      setState(() {
+        currentMSG = newStatus;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("상태 메시지가 성공적으로 변경되었습니다.")),
+      );
+    } catch (e) {
+      print("상태 메시지 업데이트 오류: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("상태 메시지 변경 중 오류가 발생했습니다.")),
+      );
+    }
   }
 
-  Future<void> _selectProfileImage() async {
-    // 이미지 선택 페이지로 이동
+  // 플로팅 버튼 클릭 시 GridViewScreen으로 네비게이션
+  void _navigateToGridView() async {
     final selectedImageUrl = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => GridViewScreen()),
+      MaterialPageRoute(builder: (context) => ShopPage()),
     );
 
     if (selectedImageUrl != null) {
       setState(() {
-        _profileImage = selectedImageUrl; // 프로필 이미지 업데이트
-        saveProfileImage(selectedImageUrl); // 선택한 이미지 저장
+        profileImg = selectedImageUrl; // 새 프로필 이미지 업데이트
       });
     }
   }
@@ -85,57 +159,62 @@ class _ProfilePageState extends State<ProfilePage> {
       appBar: AppBar(
         title: const Text("프로필"),
         centerTitle: true,
-        backgroundColor: Colors.blueAccent,
       ),
-      body: SingleChildScrollView(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator()) // 로딩 표시
+          : SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              GestureDetector(
-                onLongPress: _selectProfileImage,
-                child: CircleAvatar(
-                  radius: 60,
-                  backgroundColor: Colors.grey[300],
-                  backgroundImage: _profileImage != null
-                      ? NetworkImage(_profileImage!) as ImageProvider
-                      : const AssetImage('assets/images/default.jpg'),
-                ),
+              // 프로필 이미지
+              CircleAvatar(
+                radius: 60,
+                backgroundImage: NetworkImage(profileImg),
+                backgroundColor: Colors.grey[300],
               ),
               const SizedBox(height: 20),
+
+              // 상태 메시지
               Text(
-                statusMessage,
-                style: const TextStyle(fontSize: 22, color: Colors.black54),
+                currentMSG,
+                style: const TextStyle(fontSize: 25),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 20),
+
+              // 이름 카드
               Card(
                 elevation: 4,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     children: [
-                      Text(playerName,
-                          style: const TextStyle(
-                              fontSize: 24, fontWeight: FontWeight.bold)),
+                      Text(
+                        "$name",
+                        style: const TextStyle(
+                            fontSize: 25, fontWeight: FontWeight.bold),
+                      ),
                       const SizedBox(height: 10),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          SizedBox(
-                            width: 150,
+                        children: [
+                          Expanded(
                             child: TextField(
                               controller: _nameController,
                               decoration: const InputDecoration(
+                                labelText: "새 이름 입력",
                                 border: OutlineInputBorder(),
-                                labelText: '이름 변경',
                               ),
                             ),
                           ),
                           IconButton(
                             icon: const Icon(Icons.check_circle,
                                 color: Colors.blueAccent),
-                            onPressed: _updateName,
+                            onPressed: () {
+                              if (_nameController.text.isNotEmpty) {
+                                updateName(_nameController.text);
+                              }
+                            },
                           ),
                         ],
                       ),
@@ -143,90 +222,81 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
 
-              /* 전적 카드 */
+              // 상태 메시지 카드
+              Card(
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      const Text(
+                        "상태 메시지",
+                        style: TextStyle(
+                            fontSize: 25, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 10),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _statusController,
+                              decoration: const InputDecoration(
+                                labelText: "새 상태 메시지 입력",
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.check_circle,
+                                color: Colors.blueAccent),
+                            onPressed: () {
+                              if (_statusController.text.isNotEmpty) {
+                                updateStatus(_statusController.text);
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // 승/패 정보 카드
               Card(
                 elevation: 4,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
                       Column(
                         children: [
                           const Text("승리",
-                              style:
-                                  TextStyle(fontSize: 24, color: Colors.green)),
-                          Text('$win',
-                              style: const TextStyle(
-                                  fontSize: 28, fontWeight: FontWeight.bold)),
+                              style: TextStyle(
+                                  fontSize: 25, color: Colors.green)),
+                          Text(
+                            "$win",
+                            style: const TextStyle(
+                                fontSize: 25,
+                                fontWeight: FontWeight.bold),
+                          ),
                         ],
                       ),
-                      const SizedBox(width: 40),
                       Column(
                         children: [
                           const Text("패배",
                               style: TextStyle(
-                                  fontSize: 24, color: Colors.redAccent)),
-                          Text('$lose',
-                              style: const TextStyle(
-                                  fontSize: 28, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              /* 레벨 카드 */
-              Card(
-                elevation: 4,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      const Text("레벨", style: TextStyle(fontSize: 24)),
-                      const SizedBox(width: 20),
-                      Text('$level',
-                          style: const TextStyle(
-                              fontSize: 28, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              /* 상태 메시지 카드 */
-              Card(
-                elevation: 4,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      const Text("상태 메시지", style: TextStyle(fontSize: 24)),
-                      const SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          SizedBox(
-                            width: 150,
-                            child: TextField(
-                              controller: _statusController,
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                                labelText: '상태 메시지 입력',
-                              ),
-                              onSubmitted: (_) =>
-                                  _updateStatus(), // Enter 키로 상태 메시지 저장
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.check_circle,
-                                color: Colors.blueAccent),
-                            onPressed: _updateStatus,
+                                  fontSize: 25, color: Colors.red)),
+                          Text(
+                            "$loss",
+                            style: const TextStyle(
+                                fontSize: 25,
+                                fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -234,10 +304,15 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
             ],
           ),
         ),
+      ),
+      // 플로팅 액션 버튼 추가
+      floatingActionButton: FloatingActionButton(
+        onPressed: _navigateToGridView, // GridViewScreen으로 이동
+        child: const Icon(Icons.shop),
+        backgroundColor: Colors.blueAccent,
       ),
     );
   }

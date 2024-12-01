@@ -1,55 +1,73 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class GridViewScreen extends StatefulWidget {
+class ShopPage extends StatefulWidget {
+  const ShopPage({Key? key}) : super(key: key);
+
   @override
-  _GridViewScreenState createState() => _GridViewScreenState();
+  _ShopPageState createState() => _ShopPageState();
 }
 
-class _GridViewScreenState extends State<GridViewScreen> {
-  final List<String> imageUrls = [
-    "https://ifh.cc/g/8AckGM.jpg",
-    "https://ifh.cc/g/L59g64.jpg",
-    "https://ifh.cc/g/9sJkbf.jpg",
-    "https://ifh.cc/g/qd2MQr.png",
-    "https://ifh.cc/g/Kbwg5j.jpg",
-    "https://ifh.cc/g/6dRKzO.webp",
+class _ShopPageState extends State<ShopPage> {
+  List<bool> purchased = [];
+  int shopPoints = 0;
+  List<String> itemImages = [];
+  List<int> itemPrices = [0, 150, 200, 250, 300, 350];
+  List<String> itemNames = [
+    "K I T",
+    "주먹두",
+    "꼬부기두",
+    "HUH",
+    "바나나캣",
+    "슬픈고양이"
   ];
+  bool isLoading = true;
 
-  final List<int> prices = [10, 20, 15, 12, 25, 18]; // 각 아이템의 가격
-  List<bool> isPurchased = [false, false, false, false, false, false]; // 구매 여부 관리
-  int userPoints = 100; // 초기 소지 포인트
+  @override
+  void initState() {
+    super.initState();
+    _fetchShopData();
+  }
 
-  void handleTap(int index) {
-    if (isPurchased[index]) {
-      // 이미 구매한 경우 이전 페이지로 URL 전달
-      Navigator.pop(context, imageUrls[index]);
-    } else {
-      // 구매 다이얼로그 표시
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text("구매 확인"),
-          content: Text("${prices[index]} 포인트로 구매하시겠습니까?"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context), // 취소 버튼
-              child: Text("취소"),
-            ),
-            TextButton(
-              onPressed: () {
-                if (userPoints >= prices[index]) {
-                  setState(() {
-                    userPoints -= prices[index]; // 포인트 차감
-                    isPurchased[index] = true; // 구매 상태 업데이트
-                  });
-                }
-                Navigator.pop(context); // 다이얼로그 닫기
-              },
-              child: Text("구매"),
-            ),
-          ],
-        ),
-      );
+  Future<void> _fetchShopData() async {
+    try {
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        throw Exception("사용자가 로그인되지 않았습니다.");
+      }
+
+      String uid = currentUser.uid;
+
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('UserData')
+          .doc(uid)
+          .get();
+
+      QuerySnapshot imageDocs = await FirebaseFirestore.instance
+          .collection('Images')
+          .get();
+
+      List<String> urls = [];
+      for (var doc in imageDocs.docs) {
+        if (doc['URL'] != null) {
+          urls.addAll(List<String>.from(doc['URL']));
+        }
+      }
+
+      if (userDoc.exists) {
+        setState(() {
+          purchased = List<bool>.from(userDoc['purchased'] ?? []);
+          shopPoints = userDoc['shopPt'] ?? 0;
+          itemImages = urls;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print("Error fetching shop data: $e");
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -57,104 +75,157 @@ class _GridViewScreenState extends State<GridViewScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("상점 페이지"),
+        title: const Text('상점'),
         centerTitle: true,
+        backgroundColor: Colors.teal,
       ),
-      body: Column(
-        children: [
-          // 소지 포인트를 표시하는 공간
-          Container(
-            color: Colors.blueGrey[50],
-            padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "소지 포인트",
-                  style: TextStyle(
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  "$userPoints 포인트",
-                  style: TextStyle(
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1.0, color: Colors.grey), // 구분선
-          // GridView 표시
-          Expanded(
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 8.0,
-                mainAxisSpacing: 8.0,
-                childAspectRatio: 0.8,
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : itemImages.isEmpty
+          ? const Center(child: Text('이미지가 없습니다.'))
+          : Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '현재 포인트: $shopPoints',
+              style: const TextStyle(
+                fontSize: 24, // 포인트 텍스트 크기 증가
+                fontWeight: FontWeight.bold,
               ),
-              itemCount: imageUrls.length,
-              padding: const EdgeInsets.all(8.0),
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () => handleTap(index), // 구매 및 클릭 처리 함수 호출
-                  child: Column(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey, width: 1),
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8.0),
-                            child: Image.network(
-                              imageUrls[index],
-                              fit: BoxFit.cover,
-                              loadingBuilder: (context, child, loadingProgress) {
-                                if (loadingProgress == null) {
-                                  return child;
-                                } else {
-                                  return Center(
-                                    child: CircularProgressIndicator(
-                                      value: loadingProgress.expectedTotalBytes != null
-                                          ? loadingProgress.cumulativeBytesLoaded /
-                                          (loadingProgress.expectedTotalBytes ?? 1)
-                                          : null,
-                                    ),
-                                  );
-                                }
-                              },
-                              errorBuilder: (context, error, stackTrace) {
-                                return Center(
-                                    child: Icon(Icons.error, color: Colors.red));
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4.0),
-                      // 구매 여부에 따라 텍스트 변경
-                      Text(
-                        isPurchased[index] ? "구매함" : "${prices[index]} 포인트",
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold,
-                          color: isPurchased[index] ? Colors.green : Colors.black,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView.builder(
+                itemCount: itemImages.length,
+                itemBuilder: (context, index) {
+                  String name = index < itemNames.length
+                      ? itemNames[index]
+                      : "아이템 ${index + 1}";
+                  int price = index < itemPrices.length
+                      ? itemPrices[index]
+                      : 0;
+
+                  return Card(
+                    elevation: 4,
+                    margin: const EdgeInsets.symmetric(
+                        vertical: 8, horizontal: 4),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.all(16.0),
+                      leading: Image.network(
+                        itemImages[index],
+                        width: 80, // 이미지 크기 증가
+                        height: 80,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(
+                            Icons.error,
+                            size: 40, // 에러 아이콘 크기 증가
+                          );
+                        },
+                      ),
+                      title: Text(
+                        name,
+                        style: const TextStyle(
+                          fontSize: 20, // 제목 텍스트 크기 증가
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      subtitle: Text(
+                        '구매 포인트: $price 포인트',
+                        style: const TextStyle(
+                          fontSize: 16, // 부제목 텍스트 크기 증가
+                        ),
+                      ),
+                      trailing: purchased.isNotEmpty &&
+                          purchased.length > index &&
+                          purchased[index]
+                          ? ElevatedButton(
+                        onPressed: () {
+                          _applyItem(itemImages[index]);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                        ),
+                        child: const Text(
+                          '적용',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      )
+                          : ElevatedButton(
+                        onPressed: shopPoints >= price
+                            ? () {
+                          _buyItem(index, price);
+                        }
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                        ),
+                        child: const Text(
+                          '구매',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  void _buyItem(int index, int price) {
+    setState(() {
+      if (purchased.length <= index) {
+        purchased.addAll(List<bool>.filled(index - purchased.length + 1, false));
+      }
+      purchased[index] = true;
+      shopPoints -= price;
+    });
+
+    _updateShopData();
+  }
+
+  Future<void> _updateShopData() async {
+    try {
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        throw Exception("사용자가 로그인되지 않았습니다.");
+      }
+
+      String uid = currentUser.uid;
+      await FirebaseFirestore.instance.collection('UserData').doc(uid).update({
+        'purchased': purchased,
+        'shopPt': shopPoints,
+      });
+    } catch (e) {
+      print("Error updating shop data: $e");
+    }
+  }
+
+  Future<void> _applyItem(String imageUrl) async {
+    try {
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        throw Exception("사용자가 로그인되지 않았습니다.");
+      }
+
+      String uid = currentUser.uid;
+      await FirebaseFirestore.instance.collection('UserData').doc(uid).update({
+        'profileImg': imageUrl,
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('프로필 이미지가 변경되었습니다!')),
+      );
+    } catch (e) {
+      print("Error applying profile image: $e");
+    }
   }
 }

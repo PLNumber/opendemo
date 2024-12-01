@@ -5,10 +5,10 @@ class GameFunction {
   int playerScore = 0;
   int opponentScore = 0;
   final DatabaseReference _questionsRef = FirebaseDatabase.instance.ref("shared/questions");
-
   final DatabaseReference _roomsRef = FirebaseDatabase.instance.ref("rooms");
-  DatabaseReference get roomsRef => _roomsRef; // 방 정보 참조를 외부에서 접근할 수 있도록 하는 getter
-  DatabaseReference get questionsRef => _questionsRef; // 방 정보 참조를 외부에서 접근할 수 있도록 하는 getter
+
+  DatabaseReference get roomsRef => _roomsRef;
+  DatabaseReference get questionsRef => _questionsRef;
 
   List<Question> questions = [];
   int currentQuestionIndex = 0;
@@ -16,16 +16,36 @@ class GameFunction {
   String matchStatus = "문제를 불러오는 중입니다...";
   bool isLoading = true;
 
+  String? myPlayerId; // 내 플레이어 ID
+  String? opponentId; // 상대방 플레이어 ID
+  bool isGameFinished = false; // 게임 종료 여부
+
   // 점수 업데이트 메서드
   void updateScore(bool isCorrect, bool isPlayer) {
     if (isCorrect) {
       if (isPlayer) {
         playerScore += 10; // 플레이어가 정답인 경우
-        opponentScore -= 10; // 상대방 점수 감소
       } else {
         opponentScore += 10; // 상대방이 정답인 경우
-        playerScore -= 10; // 플레이어 점수 감소
       }
+    }
+  }
+
+  Future<void> updateScoreInDatabase(String roomId, String playerId, int scoreChange) async {
+    final playerRef = _roomsRef.child(roomId).child('players').child(playerId);
+
+    // 현재 점수를 가져오기
+    final snapshot = await playerRef.once();
+    if (snapshot.snapshot.exists) {
+      // 안전하게 Map<String, dynamic>으로 변환
+      final currentScoreMap = snapshot.snapshot.value as Map<Object?, Object?>;
+      final currentScore = (currentScoreMap['score'] ?? 0) as int; // 점수 가져오기
+      final newScore = currentScore + scoreChange;
+
+      // 점수 업데이트
+      await playerRef.update({'score': newScore});
+    } else {
+      print("플레이어 데이터가 존재하지 않습니다."); // 디버깅을 위한 로그
     }
   }
 
@@ -34,9 +54,7 @@ class GameFunction {
       final event = await _questionsRef.once();
       final data = event.snapshot.value;
 
-      // 데이터가 Map 형식인지 확인
       if (data is Map<Object?, Object?>) {
-        // 안전하게 변환
         final questionsData = Map<String, dynamic>.from(data);
         questions = _getQuestionsFromSharedData(questionsData);
         isLoading = false;
@@ -51,7 +69,6 @@ class GameFunction {
 
   List<Question> _getQuestionsFromSharedData(Map<String, dynamic> data) {
     return data.entries.map((entry) {
-      // entry.value가 Map<String, dynamic> 형식인지 확인
       if (entry.value is Map<Object?, Object?>) {
         return Question.fromMap(Map<String, dynamic>.from(entry.value));
       } else {
@@ -59,8 +76,6 @@ class GameFunction {
       }
     }).toList();
   }
-
-
 
   void updateMatchStatus(String message) {
     matchStatus = message;
@@ -70,11 +85,9 @@ class GameFunction {
   Future<Map<String, dynamic>> getRoomData(String roomId) async {
     final roomSnapshot = await _roomsRef.child(roomId).once();
 
-    // roomSnapshot의 snapshot을 통해 데이터 존재 여부 확인
     if (roomSnapshot.snapshot.value != null) {
       final data = roomSnapshot.snapshot.value;
 
-      // 데이터가 Map<Object?, Object?> 형식일 경우 안전하게 변환
       if (data is Map<Object?, Object?>) {
         return Map<String, dynamic>.from(data);
       } else {
@@ -85,33 +98,98 @@ class GameFunction {
     }
   }
 
-
-
-  void submitAnswer(bool isPlayer) {
+  Future<void> submitAnswer(String roomId, String playerId, String answer) async {
     if (playerAnswer == null || playerAnswer!.isEmpty) return;
 
-    final isCorrect = questions[currentQuestionIndex].word.trim().toLowerCase() == playerAnswer!.trim().toLowerCase();
+    final isCorrect = questions[currentQuestionIndex].word.trim().toLowerCase() == answer.trim().toLowerCase();
 
     // 점수 업데이트
-    updateScore(isCorrect, isPlayer);
+    if (isCorrect) {
+      // 맞춘 플레이어에게 10점 추가
+      await updateScoreInDatabase(roomId, playerId, 10); // 정답 시 10점 추가
 
-    // 상태 메시지 업데이트
-    matchStatus = isCorrect ? "정답입니다!" : "틀렸습니다. 다시 시도해보세요!";
+      // 정답을 맞춘 경우
+      matchStatus = "정답입니다!";
+      notifyPlayersCorrectAnswers(roomId, playerId);
+      moveToNextQuestion(roomId); // 다음 문제로 이동
+    } else {
+      matchStatus = "틀렸습니다. 다시 시도해보세요!";
+    }
 
-    // 다음 질문으로 이동
-    if (isCorrect && currentQuestionIndex < questions.length - 1) {
-      currentQuestionIndex++;
-      playerAnswer = null; // 답변 초기화
-    } else if (isCorrect) {
-      matchStatus = "모든 문제를 풀었습니다!";
+    playerAnswer = null; // 답변 초기화
+  }
+
+  Future<void> handleOpponentAnswer(String roomId, String opponentId, String answer) async {
+    final isCorrect = questions[currentQuestionIndex].word.trim().toLowerCase() == answer.trim().toLowerCase();
+
+    if (isCorrect) {
+      // 상대방에게 10점 추가
+      await updateScoreInDatabase(roomId, opponentId, 10); // 상대방 점수 증가
+
+      // 정답을 맞춘 경우
+      matchStatus = "$opponentId가 정답을 맞췄습니다!";
+      moveToNextQuestion(roomId); // 다음 문제로 이동
     }
   }
 
+
+
+  // 정답 알리기 및 다음 문제로 이동
+  void notifyPlayersCorrectAnswers(String roomId, String playerId) {
+    roomsRef.child(roomId).child('answers').set({
+      'correctAnswer': questions[currentQuestionIndex].word,
+      'correctPlayerId': playerId, // 정답을 맞춘 플레이어 ID 저장
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    });
+  }
+
+  // 다음 문제로 이동
+  void moveToNextQuestion(String roomId) {
+    if (currentQuestionIndex < questions.length - 1) {
+      currentQuestionIndex++;
+      notifyPlayersNewQuestion(roomId);
+    } else {
+      endQuiz(roomId);
+    }
+  }
+
+  // 플레이어에게 새로운 문제 알리기
+  void notifyPlayersNewQuestion(String roomId) {
+    final question = questions[currentQuestionIndex];
+    roomsRef.child(roomId).child('currentQuestion').set({
+      'question': question.def,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    });
+  }
+
+  // 퀴즈 종료 처리
+  void endQuiz(String roomId) {
+    isGameFinished = true;
+    roomsRef.child(roomId).child('gameStatus').set({
+      'finished': true,
+      'finalScores': {
+        'playerScore': playerScore,
+        'opponentScore': opponentScore,
+      },
+    });
+  }
+
   Future<void> addPlayerToRoom(String roomId, String playerId) async {
+    myPlayerId = playerId; // 내 플레이어 ID 설정
     await _roomsRef.child(roomId).child('players').child(playerId).set({
       "name": playerId,
       "status": "waiting", // 대기 상태
+      "score": 0, // 초기 점수 설정
     });
+
+    // 상대방 ID 설정
+    final playersSnapshot = await _roomsRef.child(roomId).child('players').once();
+    if (playersSnapshot.snapshot.exists) {
+      final players = playersSnapshot.snapshot.value as Map;
+      if (players.length > 1) {
+        opponentId = players.keys.firstWhere((id) => id != playerId); // 상대방 ID 찾기
+      }
+    }
   }
 
   Future<void> updatePlayerStatus(String roomId, String playerId, String status) async {
@@ -128,15 +206,12 @@ class GameFunction {
       if (roomSnapshot.exists) {
         final roomData = roomSnapshot.value as Map;
 
-        // 플레이어가 방에 남아있는지 체크
         final players = roomData['players'] ?? {};
         players.remove(playerId);  // 해당 플레이어를 방에서 제거
 
-        // 방에 남은 플레이어가 없으면 방 삭제
         if (players.isEmpty) {
           await roomRef.remove();  // 방 삭제
         } else {
-          // 플레이어가 남아있다면, 방 상태 업데이트
           await roomRef.update({'players': players});
         }
       }

@@ -23,9 +23,8 @@ class _GameRoomPageState extends State<GameRoomPage> {
 
     // 방에 플레이어 추가
     gameFunctions.addPlayerToRoom(widget.roomId, widget.playerId).then((_) {
-      // 플레이어 추가 리스너 설정
       _setupPlayerListener();
-      // 질문 로드 및 대기 상태 확인
+      _setupScoreListener(); // 점수 리스너 설정
       loadQuestionsAndCheckReady();
     }).catchError((error) {
       print("Error adding player to room: $error");
@@ -70,7 +69,6 @@ class _GameRoomPageState extends State<GameRoomPage> {
     }
   }
 
-
   // 플레이어 추가 리스너 설정
   void _setupPlayerListener() {
     gameFunctions.roomsRef.child(widget.roomId).child('players').onChildAdded.listen((event) {
@@ -85,10 +83,72 @@ class _GameRoomPageState extends State<GameRoomPage> {
     });
   }
 
+  // 점수 리스너 설정
+  void _setupScoreListener() {
+    // 내 플레이어 점수 리스너
+    gameFunctions.roomsRef.child(widget.roomId).child('players').child(widget.playerId).onValue.listen((event) {
+      if (event.snapshot.exists) {
+        final data = event.snapshot.value as Map<Object?, Object?>;
+        setState(() {
+          gameFunctions.playerScore = (data['score'] ?? 0) as int;
+        });
+      }
+    });
+
+    // 상대방 점수 리스너
+    if (gameFunctions.opponentId != null) {
+      gameFunctions.roomsRef.child(widget.roomId).child('players').child(gameFunctions.opponentId!).onValue.listen((event) {
+        if (event.snapshot.exists) {
+          final data = event.snapshot.value as Map<Object?, Object?>;
+          setState(() {
+            gameFunctions.opponentScore = (data['score'] ?? 0) as int;
+          });
+        } else {
+          print("상대방 데이터가 존재하지 않습니다."); // 디버깅용 로그
+        }
+      });
+    }
+
+    // 정답 알림 리스너 추가
+    gameFunctions.roomsRef.child(widget.roomId).child('answers').onValue.listen((event) {
+      if (event.snapshot.exists) {
+        final data = event.snapshot.value as Map<Object?, Object?>;
+        if (data['correctPlayerId'] != null) {
+          // 정답을 맞춘 플레이어에 대한 처리
+          setState(() {
+            gameFunctions.matchStatus = "${data['correctPlayerId']}가 정답을 맞췄습니다!";
+          });
+
+          // 다음 문제로 이동
+          gameFunctions.moveToNextQuestion(widget.roomId);
+        }
+      }
+    });
+  }
+
   // 방에서 나가기 기능
   void _leaveRoom() async {
     await gameFunctions.leaveRoom(widget.roomId, widget.playerId);
     Navigator.pop(context); // 이전 화면으로 돌아가기
+  }
+
+  // 답변 제출 처리
+  void _submitAnswer() async {
+    if (gameFunctions.playerAnswer == null || gameFunctions.playerAnswer!.isEmpty) {
+      return; // 답변이 비어있으면 아무것도 하지 않음
+    }
+
+    try {
+      // 플레이어의 답변 제출
+      await gameFunctions.submitAnswer(widget.roomId, widget.playerId, gameFunctions.playerAnswer!);
+
+      // UI 업데이트
+      setState(() {
+        gameFunctions.playerAnswer = null; // 답변 초기화
+      });
+    } catch (e) {
+      print("답변 제출 중 오류 발생: $e"); // 오류 핸들링
+    }
   }
 
   @override
@@ -136,11 +196,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  gameFunctions.submitAnswer(true); // 플레이어의 답변 제출
-                });
-              },
+              onPressed: _submitAnswer, // 제출 메서드 호출
               child: const Text("제출"),
             ),
             const SizedBox(height: 20),
@@ -148,7 +204,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
               gameFunctions.matchStatus,
               style: TextStyle(
                 fontSize: 16,
-                color: gameFunctions.matchStatus == "정답입니다!" ? Colors.green : Colors.red,
+                color: gameFunctions.matchStatus.contains("정답입니다!") ? Colors.green : Colors.red,
               ),
             ),
             const SizedBox(height: 20),
@@ -161,5 +217,4 @@ class _GameRoomPageState extends State<GameRoomPage> {
       )),
     );
   }
-
 }

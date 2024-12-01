@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:opendemo/Function/Battle/inputDB.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../Function/Ads/ads_provider.dart';
-import '../Function/Profile/secure.dart';
 import '../Pages/ProfilePages/profileMain.dart';
 import '../Pages/BattlePages/battleMain.dart';
 import '../Pages/QuizPages/quizMain.dart';
@@ -16,19 +14,17 @@ import '../Main/Login/pages/auth_page.dart';
 import 'firebase_options.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../Function/Ads/google_ads.dart'; // AdManager를 임포트합니다.
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // 세로 모드로 잠금
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   MobileAds.instance.initialize();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  await migrateWQToSharedDatabase();
   await dotenv.load(fileName: 'assets/config/.env');
   runApp(
     MultiProvider(
@@ -65,26 +61,17 @@ class MainPage extends StatefulWidget {
 
 class _MainPage extends State<MainPage> {
   BannerAd? _bannerAd;
-  String? playerName; // 기본값
+  String userName = ""; // DB에서 가져올 사용자 이름
 
   @override
   void initState() {
     super.initState();
     _loadAd();
-    _loadPlayerProfile();
-  }
-
-  Future<void> _loadPlayerProfile() async {
-    String? savedName = await loadDataSecure('playerName');
-
-    setState(() {
-      playerName = savedName ?? "Player"; // 저장된 이름이 없으면 기본값 사용
-    });
+    _fetchUserName(); // 사용자 이름 가져오기
   }
 
   void _loadAd() {
-    final adVisibilityProvider =
-        Provider.of<AdVisibilityProvider>(context, listen: false);
+    final adVisibilityProvider = Provider.of<AdVisibilityProvider>(context, listen: false);
     if (adVisibilityProvider.isAdVisible) {
       _createBannerAd();
     }
@@ -97,6 +84,34 @@ class _MainPage extends State<MainPage> {
       listener: AdMobService.bannerAdListener,
       request: const AdRequest(),
     )..load();
+  }
+
+  // Firestore에서 사용자 이름을 가져오는 함수
+  Future<void> _fetchUserName() async {
+    try {
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        throw Exception("사용자가 로그인되지 않았습니다.");
+      }
+
+      String uid = currentUser.uid;
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('UserData')
+          .doc(uid)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userName = userDoc['name'] ?? '사용자'; // 'name' 필드 가져오기, 없으면 기본값 '사용자'
+        });
+      } else {
+        setState(() {
+          userName = '사용자';
+        });
+      }
+    } catch (e) {
+      print("Error fetching user name: $e");
+    }
   }
 
   @override
@@ -115,8 +130,7 @@ class _MainPage extends State<MainPage> {
         centerTitle: true,
         backgroundColor: Colors.teal,
       ),
-      body: SingleChildScrollView(
-        // 스크롤 가능하도록 설정
+      body: SingleChildScrollView( // 스크롤 가능하도록 설정
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,14 +151,9 @@ class _MainPage extends State<MainPage> {
               child: Column(
                 children: [
                   Center(
-                    child: Text("안녕하세요, ${playerName}님!",
+                    child: Text("안녕하세요, $userName님!", // 이름을 DB에서 받아와 표시
                         style: TextStyle(
                             fontSize: 24, fontWeight: FontWeight.bold)),
-                  ),
-                  SizedBox(height: 10),
-                  Center(
-                    child: Text("2300 Exp. Points\n32 Ranking",
-                        textAlign: TextAlign.center),
                   ),
                 ],
               ),
@@ -196,17 +205,17 @@ class _MainPage extends State<MainPage> {
               crossAxisCount: 2,
               mainAxisSpacing: 16,
               crossAxisSpacing: 16,
-              shrinkWrap: true,
-              // GridView의 크기를 부모에 맞춤
-              physics: NeverScrollableScrollPhysics(),
-              // 스크롤 비활성화
+              shrinkWrap: true, // GridView의 크기를 부모에 맞춤
+              physics: NeverScrollableScrollPhysics(), // 스크롤 비활성화
               children: [
                 FeatureCard(
                   icon: Icons.sports_esports,
                   title: "대전",
                   onTap: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => BattlePage()));
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => BattlePage()));
                   },
                 ),
                 FeatureCard(
@@ -231,8 +240,10 @@ class _MainPage extends State<MainPage> {
                   icon: Icons.person,
                   title: "프로필 수정",
                   onTap: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => ProfilePage()));
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => ProfilePage()));
                   },
                 ),
               ],
@@ -244,20 +255,20 @@ class _MainPage extends State<MainPage> {
       // 광고 배너
       bottomNavigationBar: adVisibilityProvider.isAdVisible
           ? _bannerAd == null
-              ? Container(
-                  height: 50,
-                  child: const Center(child: CircularProgressIndicator()),
-                )
-              : Container(
-                  height: 50,
-                  child: AdWidget(ad: _bannerAd!),
-                )
+          ? Container(
+        height: 50,
+        child: const Center(child: CircularProgressIndicator()),
+      )
+          : Container(
+        height: 50,
+        child: AdWidget(ad: _bannerAd!),
+      )
           : null,
 
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(
-              context, MaterialPageRoute(builder: (context) => OptionPage()));
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => OptionPage()));
         },
         child: Icon(Icons.settings_outlined),
         backgroundColor: Colors.teal,

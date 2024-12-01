@@ -60,7 +60,8 @@ class _RegisterPageState extends State<RegisterPage> {
           'win' : 0,
           'loss' : 0,
           'shopPt' : 0,
-          'rankPt' : 0
+          'rankPt' : 0,
+          'name' : 'Player'
         });
 
         print("Firestore에 사용자 문서가 생성되었습니다.");
