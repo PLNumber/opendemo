@@ -76,19 +76,20 @@ class _GameRoomPageState extends State<GameRoomPage> {
     }
   }
 
-  // 플레이어 추가 리스너 설정
   void _setupPlayerListener() {
     gameFunctions.roomsRef.child(widget.roomId).child('players').onChildAdded.listen((event) {
       final playerId = event.snapshot.key;
       if (playerId != widget.playerId) {
         setState(() {
           messages.add("$playerId가 들어왔습니다."); // 메시지 추가
+          gameFunctions.opponentId = playerId; // 상대방 ID 설정
           // 플레이어가 들어오면 대기 상태 해제 체크
           _checkIfReady(); // 대기 상태를 체크하여 UI 업데이트
         });
       }
     });
   }
+
 
   void _setupQuestionIndexListener() {
     gameFunctions.roomsRef.child(widget.roomId).child('currentQuestionIndex').onValue.listen((event) {
@@ -100,16 +101,13 @@ class _GameRoomPageState extends State<GameRoomPage> {
     });
   }
 
-
-
   void _setupScoreListener() {
     // 내 점수 리스너
-    gameFunctions.roomsRef.child(widget.roomId).child('players').child(gameFunctions.myPlayerId!).onValue.listen((event) {
+    gameFunctions.roomsRef.child(widget.roomId).child('players').child(widget.playerId).onValue.listen((event) {
       if (event.snapshot.exists) {
         final data = event.snapshot.value as Map<Object?, Object?>;
         setState(() {
           gameFunctions.playerScore = (data['score'] ?? 0) as int;
-          print("상대 점수 업데이트: ${gameFunctions.playerScore}");
         });
       }
     });
@@ -121,14 +119,12 @@ class _GameRoomPageState extends State<GameRoomPage> {
           final data = event.snapshot.value as Map<Object?, Object?>;
           setState(() {
             gameFunctions.opponentScore = (data['score'] ?? 0) as int;
-            print("상대 점수 업데이트: ${gameFunctions.opponentScore}");
+            print("상대 점수 업데이트: ${gameFunctions.opponentScore}"); // 디버깅 로그
           });
-
         }
       });
     }
   }
-
 
 
 // 방 나가기 기능에서 에러 핸들링 추가

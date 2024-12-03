@@ -300,39 +300,41 @@ class _QuizBattlePageState extends State<QuizBattlePage>
 
     return Scaffold(
       appBar: AppBar(title: Text("퀴즈 대결")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            _buildOpponentUI(),
-            SizedBox(height: 20),
-            _buildUserHealthBar(),
-            SizedBox(height: 20),
-            _buildUserCharacter(),
-            SizedBox(height: 40),
-            Text(
-              "문제: ${currentQuestion.def}",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 20),
-            TextField(
-              controller: _answerController,
-              focusNode: _answerFocusNode,
-              decoration: InputDecoration(
-                labelText: '정답을 입력하세요',
-                border: OutlineInputBorder(),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              _buildOpponentUI(),
+              SizedBox(height: 20),
+              _buildUserHealthBar(),
+              SizedBox(height: 20),
+              _buildUserCharacter(),
+              SizedBox(height: 40),
+              Text(
+                "문제: ${currentQuestion.def}",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
               ),
-              onSubmitted: (value) => _checkAnswer(value),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                _checkAnswer(_answerController.text);
-              },
-              child: Text('제출'),
-            ),
-          ],
+              SizedBox(height: 20),
+              TextField(
+                controller: _answerController,
+                focusNode: _answerFocusNode,
+                decoration: InputDecoration(
+                  labelText: '정답을 입력하세요',
+                  border: OutlineInputBorder(),
+                ),
+                onSubmitted: (value) => _checkAnswer(value),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  _checkAnswer(_answerController.text);
+                },
+                child: Text('제출'),
+              ),
+            ],
+          ),
         ),
       ),
     );

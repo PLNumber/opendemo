@@ -126,70 +126,72 @@ class _PVPPageState extends State<PVPPage> {
         centerTitle: true,
         backgroundColor: Colors.blueAccent,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Column(
-              children: [
-                CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.grey[300],
-                  backgroundImage: profileImage != null
-                      ? NetworkImage(profileImage!) // profileImage가 URL일 경우
-                      : AssetImage('assets/images/default.jpg') as ImageProvider, // 로컬 파일일 경우
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Column(
+                children: [
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Colors.grey[300],
+                    backgroundImage: profileImage != null
+                        ? NetworkImage(profileImage!) // profileImage가 URL일 경우
+                        : const AssetImage('assets/images/default.jpg') as ImageProvider, // 로컬 파일일 경우
+                  ),
+        
+                  const SizedBox(height: 10),
+                  Text(
+                    playerName,
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    statusMessage,
+                    style: const TextStyle(fontSize: 16, color: Colors.black54),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 40),
+              ElevatedButton(
+                onPressed: isCreatingRoom ? null : createRoom,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                  backgroundColor: Colors.blueAccent,
                 ),
-
-                const SizedBox(height: 10),
-                Text(
-                  playerName,
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                child: isCreatingRoom
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                  "방 만들기",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 5),
-                Text(
-                  statusMessage,
-                  style: const TextStyle(fontSize: 16, color: Colors.black54),
-                  textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: roomIdController,
+                decoration: const InputDecoration(
+                  labelText: "방 ID 입력",
+                  border: OutlineInputBorder(),
                 ),
-              ],
-            ),
-            const SizedBox(height: 40),
-            ElevatedButton(
-              onPressed: isCreatingRoom ? null : createRoom,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                backgroundColor: Colors.blueAccent,
               ),
-              child: isCreatingRoom
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text(
-                "방 만들기",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: joinRoom,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                  backgroundColor: Colors.green,
+                ),
+                child: const Text(
+                  "들어가기",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: roomIdController,
-              decoration: const InputDecoration(
-                labelText: "방 ID 입력",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: joinRoom,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                backgroundColor: Colors.green,
-              ),
-              child: const Text(
-                "들어가기",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

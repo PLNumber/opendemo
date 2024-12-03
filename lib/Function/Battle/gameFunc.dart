@@ -126,16 +126,11 @@ class GameFunction {
     final isCorrect = questions[currentQuestionIndex].word.trim().toLowerCase() == answer.trim().toLowerCase();
 
     if (isCorrect) {
-      // 상대방에게 10점 추가
       await updateScoreInDatabase(roomId, opponentId, 10); // 상대방 점수 증가
-
-      // 정답을 맞춘 경우
       matchStatus = "$opponentId가 정답을 맞췄습니다!";
       moveToNextQuestion(roomId); // 다음 문제로 이동
     }
   }
-
-
 
   bool isMovingToNextQuestion = false;
 
@@ -156,8 +151,6 @@ class GameFunction {
 
     isMovingToNextQuestion = false; // 이동 완료
   }
-
-
 
   // 플레이어에게 새로운 문제 알리기
   void notifyPlayersNewQuestion(String roomId) {
