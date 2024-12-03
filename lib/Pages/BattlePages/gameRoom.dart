@@ -19,7 +19,13 @@ class _GameRoomPageState extends State<GameRoomPage> {
   @override
   void initState() {
     super.initState();
-    gameFunctions = GameFunction();
+    gameFunctions = GameFunction(
+      onScoreUpdated: () {
+        setState(() {
+          //UI 업데이트 로직
+        });
+      }
+    );
 
     // 방에 플레이어 추가
     gameFunctions.addPlayerToRoom(widget.roomId, widget.playerId).then((_) {
@@ -98,11 +104,12 @@ class _GameRoomPageState extends State<GameRoomPage> {
 
   void _setupScoreListener() {
     // 내 점수 리스너
-    gameFunctions.roomsRef.child(widget.roomId).child('players').child(widget.playerId).onValue.listen((event) {
+    gameFunctions.roomsRef.child(widget.roomId).child('players').child(gameFunctions.myPlayerId!).onValue.listen((event) {
       if (event.snapshot.exists) {
         final data = event.snapshot.value as Map<Object?, Object?>;
         setState(() {
           gameFunctions.playerScore = (data['score'] ?? 0) as int;
+          print("상대 점수 업데이트: ${gameFunctions.playerScore}");
         });
       }
     });
@@ -114,32 +121,20 @@ class _GameRoomPageState extends State<GameRoomPage> {
           final data = event.snapshot.value as Map<Object?, Object?>;
           setState(() {
             gameFunctions.opponentScore = (data['score'] ?? 0) as int;
+            print("상대 점수 업데이트: ${gameFunctions.opponentScore}");
           });
+
         }
       });
     }
-
-    // 정답 알림 리스너 추가
-    gameFunctions.roomsRef.child(widget.roomId).child('answers').onValue.listen((event) {
-      if (event.snapshot.exists) {
-        final data = event.snapshot.value as Map<Object?, Object?>;
-        if (data['correctPlayerId'] != null) {
-          // 정답을 맞춘 플레이어에 대한 처리
-          setState(() {
-            gameFunctions.matchStatus = "${data['correctPlayerId']}가 정답을 맞췄습니다!";
-          });
-
-          // 다음 문제로 이동
-          gameFunctions.moveToNextQuestion(widget.roomId);
-        }
-      }
-    });
   }
+
+
 
 // 방 나가기 기능에서 에러 핸들링 추가
   void _leaveRoom() async {
     try {
-      await gameFunctions.leaveRoom(widget.roomId, widget.playerId);
+      await gameFunctions.leaveRoom(widget.roomId, gameFunctions.myPlayerId!);
       Navigator.pop(context); // 이전 화면으로 돌아가기
     } catch (e) {
       // 에러 메시지를 사용자에게 표시

@@ -20,6 +20,11 @@ class GameFunction {
   String? opponentId; // 상대방 플레이어 ID
   bool isGameFinished = false; // 게임 종료 여부
 
+  Function? onScoreUpdated;
+
+  // 생성자
+  GameFunction({this.onScoreUpdated});
+
   // 점수 업데이트 메서드
   void updateScore(bool isCorrect, bool isPlayer) {
     if (isCorrect) {
@@ -34,20 +39,22 @@ class GameFunction {
   Future<void> updateScoreInDatabase(String roomId, String playerId, int scoreChange) async {
     final playerRef = _roomsRef.child(roomId).child('players').child(playerId);
 
-    // 현재 점수를 가져오기
     final snapshot = await playerRef.once();
     if (snapshot.snapshot.exists) {
-      // 안전하게 Map<String, dynamic>으로 변환
       final currentScoreMap = snapshot.snapshot.value as Map<Object?, Object?>;
-      final currentScore = (currentScoreMap['score'] ?? 0) as int; // 점수 가져오기
+      final currentScore = (currentScoreMap['score'] ?? 0) as int;
       final newScore = currentScore + scoreChange;
 
-      // 점수 업데이트
       await playerRef.update({'score': newScore});
-    } else {
-      print("플레이어 데이터가 존재하지 않습니다."); // 디버깅을 위한 로그
+
+      // 콜백 호출하여 UI 업데이트
+      if (onScoreUpdated != null) {
+        onScoreUpdated!();
+      }
     }
   }
+
+
 
   Future<void> loadSharedQuestions() async {
     try {
@@ -103,21 +110,17 @@ class GameFunction {
 
     final isCorrect = questions[currentQuestionIndex].word.trim().toLowerCase() == answer.trim().toLowerCase();
 
-    // 점수 업데이트
     if (isCorrect) {
-      // 맞춘 플레이어에게 10점 추가
-      await updateScoreInDatabase(roomId, playerId, 10); // 정답 시 10점 추가
-
-      // 정답을 맞춘 경우
+      await updateScoreInDatabase(roomId, playerId, 10); // 점수 업데이트
       matchStatus = "정답입니다!";
       notifyPlayersCorrectAnswers(roomId, playerId);
-      moveToNextQuestion(roomId); // 다음 문제로 이동
     } else {
       matchStatus = "틀렸습니다. 다시 시도해보세요!";
     }
 
     playerAnswer = null; // 답변 초기화
   }
+
 
   Future<void> handleOpponentAnswer(String roomId, String opponentId, String answer) async {
     final isCorrect = questions[currentQuestionIndex].word.trim().toLowerCase() == answer.trim().toLowerCase();
@@ -133,22 +136,27 @@ class GameFunction {
   }
 
 
+
+  bool isMovingToNextQuestion = false;
+
   void moveToNextQuestion(String roomId) async {
-    // 현재 질문 인덱스를 데이터베이스에서 가져옵니다.
+    if (isMovingToNextQuestion) return; // 이미 이동 중이면 무시
+    isMovingToNextQuestion = true;
+
     final currentIndexSnapshot = await roomsRef.child(roomId).child('currentQuestionIndex').once();
     int currentIndex = (currentIndexSnapshot.snapshot.value ?? 0) as int;
 
     if (currentIndex < questions.length - 1) {
       currentIndex++; // 인덱스 증가
-      // 데이터베이스에 현재 질문 인덱스 업데이트
       await roomsRef.child(roomId).child('currentQuestionIndex').set(currentIndex);
-
-      // 새로운 질문을 알립니다.
       notifyPlayersNewQuestion(roomId);
     } else {
       endQuiz(roomId); // 더 이상 질문이 없으면 퀴즈 종료
     }
+
+    isMovingToNextQuestion = false; // 이동 완료
   }
+
 
 
   // 플레이어에게 새로운 문제 알리기

@@ -138,9 +138,10 @@ class _PVPPageState extends State<PVPPage> {
                   radius: 50,
                   backgroundColor: Colors.grey[300],
                   backgroundImage: profileImage != null
-                      ? NetworkImage(profileImage!)
-                      : const AssetImage('assets/images/default.jpg') as ImageProvider,
+                      ? NetworkImage(profileImage!) // profileImage가 URL일 경우
+                      : AssetImage('assets/images/default.jpg') as ImageProvider, // 로컬 파일일 경우
                 ),
+
                 const SizedBox(height: 10),
                 Text(
                   playerName,
