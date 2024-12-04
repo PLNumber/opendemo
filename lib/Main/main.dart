@@ -36,7 +36,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()..init()),
         ChangeNotifierProvider(create: (context) => AdVisibilityProvider()),
-        ChangeNotifierProvider(create: (context) => SoundProvider()), // SoundProvider 사용
+        ChangeNotifierProvider(create: (context) => SoundProvider()..init()), // SoundProvider 사용
       ],
       child: MyApp(),
     ),
