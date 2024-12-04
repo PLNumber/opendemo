@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../Function/class.dart';
-//quiz.dart
+
 class QuizPage extends StatefulWidget {
   @override
   _QuizPageState createState() => _QuizPageState();
@@ -22,10 +23,9 @@ class _QuizPageState extends State<QuizPage> {
   Future<void> _fetchQuestions() async {
     try {
       final snapshot = await FirebaseFirestore.instance.collection('WQ').get();
-      final questions = snapshot.docs.map((doc) => Question.fromMap(doc.data())).toList();
-
+      final questions =
+      snapshot.docs.map((doc) => Question.fromMap(doc.data())).toList();
       questions.shuffle();
-
       setState(() {
         _questions = questions;
         _isLoading = false;
@@ -116,26 +116,48 @@ class _QuizPageState extends State<QuizPage> {
     });
   }
 
-  // 오답 저장
   void _saveWrongAnswer(Question question) async {
     try {
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('wrongAnswers')
-          .where('w_id', isEqualTo: question.wId)
-          .get();
-
-      if (querySnapshot.docs.isEmpty) {
-        final docRef =
-            FirebaseFirestore.instance.collection('wrongAnswers').doc();
-        await docRef.set(question.toMap());
-        print('Wrong answer saved.');
-      } else {
-        print('This question has already been saved in wrong answers.');
+      // 현재 사용자 UID 가져오기
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception("사용자가 로그인되어 있지 않습니다.");
       }
+      final uid = user.uid;
+
+      // 사용자 문서 참조
+      final userDoc = FirebaseFirestore.instance.collection('UserData').doc(uid);
+
+      // Firestore 트랜잭션을 사용하여 문서 업데이트 또는 생성
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final snapshot = await transaction.get(userDoc);
+
+        if (!snapshot.exists) {
+          // 문서가 없는 경우 새로 생성
+          transaction.set(userDoc, {
+            'wrongAnswerIds': [question.wId], // 초기값으로 리스트 생성
+          });
+        } else {
+          // 기존 문서가 있으면 리스트에 추가
+          final data = snapshot.data() as Map<String, dynamic>;
+          final wrongAnswerIds = List<int>.from(data['wrongAnswerIds'] ?? []);
+
+          // 중복 방지
+          if (!wrongAnswerIds.contains(question.wId)) {
+            wrongAnswerIds.add(question.wId);
+            transaction.update(userDoc, {
+              'wrongAnswerIds': wrongAnswerIds,
+            });
+          }
+        }
+      });
+
+      print('틀린 문제 ID가 성공적으로 저장되었습니다: ${question.wId}');
     } catch (e) {
-      print('Error saving wrong answer: $e');
+      print('오답 저장 중 오류 발생: $e');
     }
   }
+
 
   // 결과 다이얼로그
   void _showResultDialog(bool isCorrect) {

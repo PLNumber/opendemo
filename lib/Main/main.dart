@@ -25,6 +25,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   MobileAds.instance.initialize();
+  // SoundProvider 초기화
+  final soundProvider = SoundProvider();
+  await soundProvider.init(); // 초기화 시 소리 설정을 로드합니다.
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -49,7 +53,7 @@ class MyApp extends StatelessWidget {
       builder: (context, themeProvider, child) {
         return MaterialApp(
           title: '문해북',
-          theme: themeProvider.currentTheme,
+          theme: Provider.of<ThemeProvider>(context).currentTheme,
           home: MainPage(),
         );
       },
@@ -80,19 +84,9 @@ class _MainPage extends State<MainPage> {
     _fetchUserName();
     _checkLastQuizAttempt();
     _scheduleResetAtMidnight();
-    _updateSound(); // 초기 사운드 상태 업데이트
 
   }
 
-  Future<void> _updateSound() async {
-    final soundProvider = Provider.of<SoundProvider>(context, listen: false); // listen: false로 가져오기
-    if (soundProvider.isSoundOn) {
-      await player.setSource(AssetSource('audio/main.mp3'));
-      await player.resume();
-    } else {
-      await player.pause(); // 사운드 꺼졌을 때 정지
-    }
-  }
 
   void _loadAd() {
     final adVisibilityProvider = Provider.of<AdVisibilityProvider>(context, listen: false);

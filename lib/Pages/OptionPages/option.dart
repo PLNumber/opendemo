@@ -35,21 +35,26 @@ class _OptionPageState extends State<OptionPage> {
             mainAxisSpacing: 20.0,
             children: <Widget>[
 
-              // 소리 on/off 버튼
-              _buildOptionItem(
-                icon: soundProvider.isSoundOn ? Icons.volume_up : Icons.volume_off,
-                label: soundProvider.isSoundOn ? "소리 끄기" : "소리 켜기",
-                onPressed: () {
-                  soundProvider.toggleSound(); // SoundProvider의 toggleSound 호출
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(soundProvider.isSoundOn ? "소리가 켜졌습니다." : "소리가 꺼졌습니다."),
-                      duration: const Duration(milliseconds: 100),
-                    ),
+// 소리 on/off 버튼
+              Consumer<SoundProvider>(
+                builder: (context, soundProvider, child) {
+                  return _buildOptionItem(
+                    icon: soundProvider.isSoundOn ? Icons.volume_up : Icons.volume_off,
+                    label: soundProvider.isSoundOn ? "소리 끄기" : "소리 켜기",
+                    onPressed: () async {
+                      await soundProvider.toggleSound();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            soundProvider.isSoundOn ? "소리가 켜졌습니다." : "소리가 꺼졌습니다.",
+                          ),
+                          duration: const Duration(milliseconds: 100),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
-
 
               // 다크 모드 on/off 버튼
               _buildOptionItem(

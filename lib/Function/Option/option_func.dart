@@ -93,27 +93,47 @@ Future<void> launchURL(String url) async {
 
 // 사운드 함수
 class SoundProvider with ChangeNotifier {
-  bool _isSoundOn = true; // 기본적으로 사운드 켜짐 설정
-
+  bool _isSoundOn = true; // 기본값: 소리 켜짐
   bool get isSoundOn => _isSoundOn;
 
-  // 사운드 설정을 저장하는 메서드
-  Future<void> _loadSound() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    _isSoundOn = prefs.getBool('isSoundOn') ?? true; // 저장된 값이 없다면 기본값 true (사운드 켜짐)
-    notifyListeners(); // 상태 변경을 알림
-  }
+  AudioPlayer _audioPlayer = AudioPlayer();
 
-  // 사운드 전환 메서드
-  Future<void> toggleSound() async {
-    _isSoundOn = !_isSoundOn; // 사운드 상태 변경
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isSoundOn', _isSoundOn); // 상태를 로컬에 저장
-    notifyListeners(); // 상태 변경을 알림
-  }
-
-  // 앱 시작 시 호출되어야 할 메서드
+  // 저장된 소리 설정을 로드
   Future<void> init() async {
-    await _loadSound(); // 앱 시작 시 저장된 사운드 상태를 로드
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _isSoundOn = prefs.getBool('isSoundOn') ?? true; // 기본값 true
+    notifyListeners();
+
+    if (_isSoundOn) {
+      await _playSound(); // 앱 시작 시 소리가 켜져 있으면 사운드 재생
+    }
+  }
+
+
+  // 소리 on/off 전환
+  Future<void> toggleSound() async {
+    _isSoundOn = !_isSoundOn;
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isSoundOn', _isSoundOn);
+    notifyListeners();
+
+    // 상태에 따라 소리 재생 또는 정지
+    if (_isSoundOn) {
+      await _playSound(); // 소리 켜졌을 때 소리 재생
+    } else {
+      await _stopSound(); // 소리 꺼졌을 때 소리 정지
+    }
+  }
+
+
+
+  // 오디오 재생 함수
+  Future<void> _playSound() async {
+    await _audioPlayer.play(AssetSource('audio/main.mp3'));  // assets에 있는 main.mp3 파일 재생
+  }
+
+  // 오디오 정지 함수
+  Future<void> _stopSound() async {
+    await _audioPlayer.stop(); // 소리 정지
   }
 }
