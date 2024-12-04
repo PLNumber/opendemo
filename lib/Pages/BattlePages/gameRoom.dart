@@ -91,7 +91,6 @@ class _GameRoomPageState extends State<GameRoomPage> {
     });
   }
 
-
   void _setupQuestionIndexListener() {
     gameFunctions.roomsRef.child(widget.roomId).child('currentQuestionIndex').onValue.listen((event) {
       if (event.snapshot.exists) {
@@ -127,8 +126,6 @@ class _GameRoomPageState extends State<GameRoomPage> {
       });
     }
   }
-
-
 
 // 방 나가기 기능에서 에러 핸들링 추가
   void _leaveRoom() async {

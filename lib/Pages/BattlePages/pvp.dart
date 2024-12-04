@@ -169,11 +169,11 @@
     @override
     Widget build(BuildContext context) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text("PVP 창"),
-          centerTitle: true,
-          backgroundColor: Colors.blueAccent,
-        ),
+        // appBar: AppBar(
+        //   title: const Text("PVP 창"),
+        //   centerTitle: true,
+        //   backgroundColor: Colors.blueAccent,
+        // ),
         body: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(20.0),

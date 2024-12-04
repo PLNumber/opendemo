@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../Function/class.dart';
-
+//quiz.dart
 class QuizPage extends StatefulWidget {
   @override
   _QuizPageState createState() => _QuizPageState();
@@ -22,8 +22,10 @@ class _QuizPageState extends State<QuizPage> {
   Future<void> _fetchQuestions() async {
     try {
       final snapshot = await FirebaseFirestore.instance.collection('WQ').get();
-      final questions =
-          snapshot.docs.map((doc) => Question.fromMap(doc.data())).toList();
+      final questions = snapshot.docs.map((doc) => Question.fromMap(doc.data())).toList();
+
+      questions.shuffle();
+
       setState(() {
         _questions = questions;
         _isLoading = false;

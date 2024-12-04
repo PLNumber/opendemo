@@ -124,7 +124,6 @@ class GameFunction {
     playerAnswer = null; // 답변 초기화
   }
 
-
   Future<void> handleOpponentAnswer(String roomId, String opponentId, String answer) async {
     final isCorrect = questions[currentQuestionIndex].word.trim().toLowerCase() == answer.trim().toLowerCase();
 

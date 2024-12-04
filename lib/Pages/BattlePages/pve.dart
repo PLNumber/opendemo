@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../Function/class.dart';
 
 class QuizBattlePage extends StatefulWidget {
@@ -26,13 +27,17 @@ class _QuizBattlePageState extends State<QuizBattlePage>
   bool _rotateOpponent = false;
   bool _rotateUser = false;
 
+  Map<String, dynamic>? _userData; // 사용자 데이터 저장
+  bool _isUserDataLoading = true; // 사용자 데이터 로딩 상태
+
   @override
   void initState() {
     super.initState();
     _rotationController = AnimationController(
-      duration: Duration(seconds: 1), // 회전 속도 조절
+      duration: Duration(seconds: 1),
       vsync: this,
     );
+    _fetchUserData(); // 사용자 데이터 가져오기
     _fetchQuestions();
   }
 
@@ -46,11 +51,42 @@ class _QuizBattlePageState extends State<QuizBattlePage>
     super.dispose();
   }
 
+  Future<void> _fetchUserData() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception("User not logged in");
+      }
+      final userDoc = await FirebaseFirestore.instance
+          .collection('UserData')
+          .doc(user.uid)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          _userData = userDoc.data();
+          _isUserDataLoading = false;
+        });
+      } else {
+        throw Exception("User data not found");
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('사용자 데이터를 가져오는 데 실패했습니다. 다시 시도해주세요.')),
+      );
+      setState(() {
+        _isUserDataLoading = false;
+      });
+    }
+  }
+
   Future<void> _fetchQuestions() async {
     try {
       final snapshot = await FirebaseFirestore.instance.collection('WQ').get();
       final questions =
       snapshot.docs.map((doc) => Question.fromMap(doc.data())).toList();
+      questions.shuffle();
       setState(() {
         _questions = questions;
         _isLoading = false;
@@ -125,14 +161,14 @@ class _QuizBattlePageState extends State<QuizBattlePage>
         if (userAnswer.toLowerCase() == correctAnswer) {
           _aiHealth = max(0, _aiHealth - 10);
           _resultMessage = '정답입니다!';
-          _triggerRotation(isOpponent: true); // 상대 회전
+          _triggerRotation(isOpponent: true);
         } else {
           _resultMessage = '오답입니다!';
           return;
         }
       } else if (!isUser && correctAnswer == question.word.toLowerCase()) {
         _userHealth = max(0, _userHealth - 10);
-        _triggerRotation(isOpponent: false); // 사용자 회전
+        _triggerRotation(isOpponent: false);
       }
 
       _timer.cancel();
@@ -165,14 +201,36 @@ class _QuizBattlePageState extends State<QuizBattlePage>
     });
   }
 
-  void _showGameOverDialog() {
+  void _showGameOverDialog() async {
     String winner = _userHealth > 0 ? "사용자" : "AI";
+    String message = "$winner가 승리했습니다!";
+
+    if (winner == "사용자" && _userData != null) {
+      try {
+        final uid = FirebaseAuth.instance.currentUser?.uid;
+        if (uid != null) {
+          // Update the shopPt in Firestore
+          await FirebaseFirestore.instance
+              .collection('UserData')
+              .doc(uid)
+              .update({'shopPt': FieldValue.increment(100)});
+          // Add bonus message for user
+          message += "\n100 상점 포인트 획득!";
+        }
+      } catch (e) {
+        print('Error updating shopPt: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('점수를 업데이트하는 데 실패했습니다.')),
+        );
+      }
+    }
+
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: Text("게임 종료"),
-          content: Text("$winner가 승리했습니다!"),
+          content: Text(message),
           actions: [
             TextButton(
               onPressed: () {
@@ -186,6 +244,7 @@ class _QuizBattlePageState extends State<QuizBattlePage>
       },
     );
   }
+
 
   void _showCompletionDialog() {
     showDialog(
@@ -212,7 +271,7 @@ class _QuizBattlePageState extends State<QuizBattlePage>
     return Column(
       children: [
         Text(
-          "상대",
+          "AI",
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         LinearProgressIndicator(
@@ -226,7 +285,7 @@ class _QuizBattlePageState extends State<QuizBattlePage>
           animation: _rotationController,
           builder: (context, child) {
             double rotationValue = _rotateOpponent
-                ? _rotationController.value * pi * 4// 3회전
+                ? _rotationController.value * pi * 4
                 : 0;
             return Transform(
               transform: Matrix4.rotationY(rotationValue),
@@ -234,7 +293,20 @@ class _QuizBattlePageState extends State<QuizBattlePage>
               child: Container(
                 width: 100,
                 height: 100,
-                color: Colors.red,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.red,
+                ),
+                child: Center(
+                  child: Text(
+                    'AI',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                ),
               ),
             );
           },
@@ -243,19 +315,42 @@ class _QuizBattlePageState extends State<QuizBattlePage>
     );
   }
 
+
   Widget _buildUserCharacter() {
+    if (_isUserDataLoading || _userData == null) {
+      return CircularProgressIndicator();
+    }
+
+    String profileImg = _userData!['profileImg'] ?? '';
+
     return AnimatedBuilder(
       animation: _rotationController,
       builder: (context, child) {
-        double rotationValue =
-        _rotateUser ? _rotationController.value * pi * 4 : 0;
+        double rotationValue = _rotateUser ? _rotationController.value * pi * 4 : 0;
         return Transform(
           transform: Matrix4.rotationY(rotationValue),
           alignment: Alignment.center,
           child: Container(
             width: 100,
             height: 100,
-            color: Colors.green,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              image: profileImg.isNotEmpty
+                  ? DecorationImage(
+                image: NetworkImage(profileImg),
+                fit: BoxFit.cover,
+              )
+                  : null,
+              color: profileImg.isEmpty ? Colors.green : null,
+            ),
+            child: profileImg.isEmpty
+                ? Center(
+              child: Text(
+                'USER',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            )
+                : null,
           ),
         );
       },

@@ -25,7 +25,7 @@ class _OptionPageState extends State<OptionPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("옵션 창"),
+        title: const Text("설정"),
         centerTitle: true,
       ),
       body: Center(
