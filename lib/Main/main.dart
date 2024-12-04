@@ -25,20 +25,18 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   MobileAds.instance.initialize();
-  // SoundProvider 초기화
-  final soundProvider = SoundProvider();
-  await soundProvider.init(); // 초기화 시 소리 설정을 로드합니다.
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await dotenv.load(fileName: 'assets/config/.env');
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()..init()),
         ChangeNotifierProvider(create: (context) => AdVisibilityProvider()),
-        ChangeNotifierProvider(create: (context) => SoundProvider()..init()), // SoundProvider 초기화
+        ChangeNotifierProvider(create: (context) => SoundProvider()), // SoundProvider 사용
       ],
       child: MyApp(),
     ),
@@ -78,8 +76,6 @@ class _MainPage extends State<MainPage> {
   @override
   void initState() {
     super.initState();
-    player = AudioPlayer();
-    player.setReleaseMode(ReleaseMode.loop);
     _loadAd();
     _fetchUserName();
     _checkLastQuizAttempt();

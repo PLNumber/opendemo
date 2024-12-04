@@ -97,6 +97,7 @@ class SoundProvider with ChangeNotifier {
   bool get isSoundOn => _isSoundOn;
 
   AudioPlayer _audioPlayer = AudioPlayer();
+  bool _isPlaying = false; // 현재 재생 중인지 여부
 
   // 저장된 소리 설정을 로드
   Future<void> init() async {
@@ -104,11 +105,11 @@ class SoundProvider with ChangeNotifier {
     _isSoundOn = prefs.getBool('isSoundOn') ?? true; // 기본값 true
     notifyListeners();
 
+    // 앱 실행 시 소리가 켜져 있으면 사운드 재생
     if (_isSoundOn) {
-      await _playSound(); // 앱 시작 시 소리가 켜져 있으면 사운드 재생
+      await _playSound();
     }
   }
-
 
   // 소리 on/off 전환
   Future<void> toggleSound() async {
@@ -125,15 +126,25 @@ class SoundProvider with ChangeNotifier {
     }
   }
 
-
-
   // 오디오 재생 함수
   Future<void> _playSound() async {
-    await _audioPlayer.play(AssetSource('audio/main.mp3'));  // assets에 있는 main.mp3 파일 재생
+    if (!_isPlaying) { // 이미 재생 중이 아닐 때만 재생
+      await _audioPlayer.play(AssetSource('audio/main.mp3')); // assets에 있는 main.mp3 파일 재생
+      _isPlaying = true; // 재생 상태 업데이트
+    }
   }
 
   // 오디오 정지 함수
   Future<void> _stopSound() async {
-    await _audioPlayer.stop(); // 소리 정지
+    if (_isPlaying) { // 현재 재생 중일 때만 정지
+      await _audioPlayer.stop(); // 소리 정지
+      _isPlaying = false; // 재생 상태 업데이트
+    }
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose(); // AudioPlayer 리소스 해제
+    super.dispose();
   }
 }
