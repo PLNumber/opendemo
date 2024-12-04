@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -91,3 +92,28 @@ Future<void> launchURL(String url) async {
 }
 
 // 사운드 함수
+class SoundProvider with ChangeNotifier {
+  bool _isSoundOn = true; // 기본적으로 사운드 켜짐 설정
+
+  bool get isSoundOn => _isSoundOn;
+
+  // 사운드 설정을 저장하는 메서드
+  Future<void> _loadSound() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _isSoundOn = prefs.getBool('isSoundOn') ?? true; // 저장된 값이 없다면 기본값 true (사운드 켜짐)
+    notifyListeners(); // 상태 변경을 알림
+  }
+
+  // 사운드 전환 메서드
+  Future<void> toggleSound() async {
+    _isSoundOn = !_isSoundOn; // 사운드 상태 변경
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isSoundOn', _isSoundOn); // 상태를 로컬에 저장
+    notifyListeners(); // 상태 변경을 알림
+  }
+
+  // 앱 시작 시 호출되어야 할 메서드
+  Future<void> init() async {
+    await _loadSound(); // 앱 시작 시 저장된 사운드 상태를 로드
+  }
+}

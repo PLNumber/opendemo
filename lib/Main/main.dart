@@ -1,26 +1,28 @@
+import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../Function/Ads/ads_provider.dart';
-import '../Function/splash_screen/splash_screen.dart';
+import '../Function/Battle/inputDB.dart';
 import '../Pages/ProfilePages/profileMain.dart';
 import '../Pages/BattlePages/battleMain.dart';
 import '../Pages/QuizPages/quizMain.dart';
+import '../Pages/QuizPages/dailyQuiz.dart';
 import '../Pages/OptionPages/option.dart';
 import '../Pages/DictionaryPages/dictionary.dart';
 import '../Function/Option/option_func.dart';
-import '../Main/Login/pages/auth_page.dart';
 import 'firebase_options.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import '../Function/Ads/google_ads.dart'; // AdManager를 임포트합니다.
+import '../Function/Ads/google_ads.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // 세로 모드로 잠금
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   MobileAds.instance.initialize();
   await Firebase.initializeApp(
@@ -32,10 +34,12 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()..init()),
         ChangeNotifierProvider(create: (context) => AdVisibilityProvider()),
+        ChangeNotifierProvider(create: (context) => SoundProvider()..init()), // SoundProvider 초기화
       ],
       child: MyApp(),
     ),
   );
+  await migrateWQToSharedDatabase();
 }
 
 class MyApp extends StatelessWidget {
@@ -46,7 +50,7 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
           title: '문해북',
           theme: themeProvider.currentTheme,
-          home: SplashScreen(),
+          home: MainPage(),
         );
       },
     );
@@ -61,14 +65,33 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPage extends State<MainPage> {
+  late AudioPlayer player;
   BannerAd? _bannerAd;
   String userName = ""; // DB에서 가져올 사용자 이름
+  bool _isQuizButtonDisabled = false;
+  Timer? _resetTimer;
 
   @override
   void initState() {
     super.initState();
+    player = AudioPlayer();
+    player.setReleaseMode(ReleaseMode.loop);
     _loadAd();
-    _fetchUserName(); // 사용자 이름 가져오기
+    _fetchUserName();
+    _checkLastQuizAttempt();
+    _scheduleResetAtMidnight();
+    _updateSound(); // 초기 사운드 상태 업데이트
+
+  }
+
+  Future<void> _updateSound() async {
+    final soundProvider = Provider.of<SoundProvider>(context, listen: false); // listen: false로 가져오기
+    if (soundProvider.isSoundOn) {
+      await player.setSource(AssetSource('audio/main.mp3'));
+      await player.resume();
+    } else {
+      await player.pause(); // 사운드 꺼졌을 때 정지
+    }
   }
 
   void _loadAd() {
@@ -87,7 +110,6 @@ class _MainPage extends State<MainPage> {
     )..load();
   }
 
-  // Firestore에서 사용자 이름을 가져오는 함수
   Future<void> _fetchUserName() async {
     try {
       User? currentUser = FirebaseAuth.instance.currentUser;
@@ -103,7 +125,7 @@ class _MainPage extends State<MainPage> {
 
       if (userDoc.exists) {
         setState(() {
-          userName = userDoc['name'] ?? '사용자'; // 'name' 필드 가져오기, 없으면 기본값 '사용자'
+          userName = userDoc['name'] ?? '사용자';
         });
       } else {
         setState(() {
@@ -115,9 +137,57 @@ class _MainPage extends State<MainPage> {
     }
   }
 
+  Future<void> _checkLastQuizAttempt() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastAttemptString = prefs.getString('lastQuizAttemptTime');
+
+    if (lastAttemptString != null) {
+      final lastAttempt = DateTime.parse(lastAttemptString);
+      final now = DateTime.now();
+
+      if (_isSameDay(lastAttempt, now)) {
+        setState(() {
+          _isQuizButtonDisabled = true; // 오늘 퀴즈를 이미 풀었으므로 버튼 비활성화
+        });
+      }
+    }
+  }
+
+  void _scheduleResetAtMidnight() {
+    final now = DateTime.now();
+    final midnight = DateTime(now.year, now.month, now.day + 1); // 다음 자정
+    final duration = midnight.difference(now);
+
+    _resetTimer = Timer(duration, () {
+      setState(() {
+        _isQuizButtonDisabled = false; // 자정이 되면 버튼 활성화
+      });
+    });
+  }
+
+  Future<void> _onStartQuiz() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+        'lastQuizAttemptTime', DateTime.now().toIso8601String());
+    setState(() {
+      _isQuizButtonDisabled = true; // 퀴즈 시작 시 버튼 비활성화
+    });
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => SingleQuizPage()),
+    );
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
   @override
   void dispose() {
     _bannerAd?.dispose();
+    _resetTimer?.cancel();
+    player.dispose(); // AudioPlayer 리소스 해제y
     super.dispose();
   }
 
@@ -131,7 +201,7 @@ class _MainPage extends State<MainPage> {
         centerTitle: true,
         backgroundColor: Colors.teal,
       ),
-      body: SingleChildScrollView( // 스크롤 가능하도록 설정
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,7 +222,7 @@ class _MainPage extends State<MainPage> {
               child: Column(
                 children: [
                   Center(
-                    child: Text("안녕하세요, $userName님!", // 이름을 DB에서 받아와 표시
+                    child: Text("안녕하세요, $userName님!",
                         style: TextStyle(
                             fontSize: 24, fontWeight: FontWeight.bold)),
                   ),
@@ -177,20 +247,15 @@ class _MainPage extends State<MainPage> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("일일 퀴즈",
+                      Text("일일 픽업 퀴즈",
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold)),
                       SizedBox(height: 5),
-                      Text("20문항", style: TextStyle(fontSize: 14)),
+                      Text("하루에 한 번! 다량의 포인트 획득 기회", style: TextStyle(fontSize: 14)),
                     ],
                   ),
                   ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => QuizMainPage()));
-                    },
+                    onPressed: _isQuizButtonDisabled ? null : _onStartQuiz,
                     child: Text("시작하기"),
                   ),
                 ],
@@ -252,8 +317,6 @@ class _MainPage extends State<MainPage> {
           ],
         ),
       ),
-
-      // 광고 배너
       bottomNavigationBar: adVisibilityProvider.isAdVisible
           ? _bannerAd == null
           ? Container(
@@ -265,7 +328,6 @@ class _MainPage extends State<MainPage> {
         child: AdWidget(ad: _bannerAd!),
       )
           : null,
-
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(context,
@@ -283,32 +345,25 @@ class FeatureCard extends StatelessWidget {
   final String title;
   final VoidCallback onTap;
 
-  const FeatureCard({
-    Key? key,
-    required this.icon,
-    required this.title,
-    required this.onTap,
-  }) : super(key: key);
+  const FeatureCard(
+      {Key? key, required this.icon, required this.title, required this.onTap})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        color: Color(0xFFFFFFFF),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 60, color: Colors.teal),
+            Icon(icon, size: 48, color: Colors.teal),
             SizedBox(height: 8),
             Text(
               title,
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
           ],

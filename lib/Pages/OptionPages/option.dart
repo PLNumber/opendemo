@@ -6,7 +6,7 @@ import '../../Function/Ads/ads_provider.dart';
 import '../../Function/Option/option_func.dart';
 import '../../Main/Login/pages/home_page.dart';
 import '../../Main/Login/pages/auth_page.dart';
-import '../../Function/Ads/ads.dart'; // AdManager를 임포트합니다.
+import '../../Function/Ads/ads.dart';
 
 class OptionPage extends StatefulWidget {
   const OptionPage({Key? key}) : super(key: key);
@@ -16,12 +16,10 @@ class OptionPage extends StatefulWidget {
 }
 
 class _OptionPageState extends State<OptionPage> {
-  bool soundMuted = false;
-  bool lighted = false;
-
   @override
   Widget build(BuildContext context) {
     final adVisibilityProvider = Provider.of<AdVisibilityProvider>(context);
+    final soundProvider = Provider.of<SoundProvider>(context); // SoundProvider 가져오기
 
     return Scaffold(
       appBar: AppBar(
@@ -36,37 +34,33 @@ class _OptionPageState extends State<OptionPage> {
             crossAxisSpacing: 20.0,
             mainAxisSpacing: 20.0,
             children: <Widget>[
+
               // 소리 on/off 버튼
               _buildOptionItem(
-                icon: soundMuted ? Icons.volume_off : Icons.volume_up,
-                label: soundMuted ? "소리 끄기" : "소리 켜기",
+                icon: soundProvider.isSoundOn ? Icons.volume_up : Icons.volume_off,
+                label: soundProvider.isSoundOn ? "소리 끄기" : "소리 켜기",
                 onPressed: () {
-                  setState(() {
-                    soundMuted = !soundMuted;
-                  });
+                  soundProvider.toggleSound(); // SoundProvider의 toggleSound 호출
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(soundMuted ? "소리가 꺼졌습니다." : "소리가 켜졌습니다."),
+                      content: Text(soundProvider.isSoundOn ? "소리가 켜졌습니다." : "소리가 꺼졌습니다."),
                       duration: const Duration(milliseconds: 100),
                     ),
                   );
                 },
               ),
 
+
               // 다크 모드 on/off 버튼
               _buildOptionItem(
-                icon: lighted ? Icons.wb_sunny : Icons.dark_mode,
-                label: lighted ? "라이트 모드" : "다크 모드",
+                icon: Provider.of<ThemeProvider>(context).isDarkMode ? Icons.wb_sunny : Icons.dark_mode,
+                label: Provider.of<ThemeProvider>(context).isDarkMode ? "라이트 모드" : "다크 모드",
                 onPressed: () {
-                  Provider.of<ThemeProvider>(context, listen: false)
-                      .toggleTheme();
-                  setState(() {
-                    lighted = !lighted;
-                  });
+                  Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                          lighted ? "라이트 모드가 활성화되었습니다." : "다크 모드가 활성화되었습니다."),
+                          Provider.of<ThemeProvider>(context).isDarkMode ? "라이트 모드가 활성화되었습니다." : "다크 모드가 활성화되었습니다."),
                       duration: const Duration(milliseconds: 100),
                     ),
                   );
@@ -80,8 +74,7 @@ class _OptionPageState extends State<OptionPage> {
                     : Icons.check_circle,
                 label: adVisibilityProvider.isAdVisible ? "광고 차단" : "광고 표시",
                 onPressed: () async {
-                  await adVisibilityProvider
-                      .setAdVisibility(!adVisibilityProvider.isAdVisible);
+                  await adVisibilityProvider.setAdVisibility(!adVisibilityProvider.isAdVisible);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(adVisibilityProvider.isAdVisible
@@ -90,7 +83,6 @@ class _OptionPageState extends State<OptionPage> {
                       duration: const Duration(milliseconds: 100),
                     ),
                   );
-                  // 옵션 페이지를 닫지 않고 광고 표시 여부가 변경된 상태를 적용합니다.
                   setState(() {}); // 상태를 업데이트하여 UI를 재구성
                 },
               ),
@@ -123,7 +115,7 @@ class _OptionPageState extends State<OptionPage> {
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (context) => const AuthPage()),
-                    (Route<dynamic> route) => false,
+                        (Route<dynamic> route) => false,
                   );
                 },
               )
@@ -137,8 +129,8 @@ class _OptionPageState extends State<OptionPage> {
   // 옵션 아이템을 생성하는 함수
   Widget _buildOptionItem(
       {required IconData icon,
-      required String label,
-      required VoidCallback onPressed}) {
+        required String label,
+        required VoidCallback onPressed}) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
