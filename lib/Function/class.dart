@@ -1,3 +1,4 @@
+//class.dart
 class Question {
   int wId; // Firestore 필드명: w_id
   bool isCorrect;

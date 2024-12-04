@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../Function/Battle/gameFunc.dart';
-
+//gameRoom.dart
 class GameRoomPage extends StatefulWidget {
   final String roomId;
   final String playerId;
@@ -30,7 +30,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
     // 방에 플레이어 추가
     gameFunctions.addPlayerToRoom(widget.roomId, widget.playerId).then((_) {
       _setupPlayerListener();
-      _setupScoreListener(); // 점수 리스너 설정
+      //_setupScoreListener(); // 점수 리스너 설정
       _setupQuestionIndexListener();
       loadQuestionsAndCheckReady();
     }).catchError((error) {
@@ -85,6 +85,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
           gameFunctions.opponentId = playerId; // 상대방 ID 설정
           // 플레이어가 들어오면 대기 상태 해제 체크
           _checkIfReady(); // 대기 상태를 체크하여 UI 업데이트
+          _setupScoreListener(); // 상대방 ID가 설정된 후 점수 리스너 설정
         });
       }
     });
@@ -109,6 +110,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
         setState(() {
           gameFunctions.playerScore = (data['score'] ?? 0) as int;
         });
+        print("내 점수: ${gameFunctions.playerScore}"); // 내 점수 출력
       }
     });
 
@@ -119,12 +121,13 @@ class _GameRoomPageState extends State<GameRoomPage> {
           final data = event.snapshot.value as Map<Object?, Object?>;
           setState(() {
             gameFunctions.opponentScore = (data['score'] ?? 0) as int;
-            print("상대 점수 업데이트: ${gameFunctions.opponentScore}"); // 디버깅 로그
           });
+          print("상대 점수 업데이트: ${gameFunctions.opponentScore}"); // 상대 점수 출력
         }
       });
     }
   }
+
 
 
 // 방 나가기 기능에서 에러 핸들링 추가
@@ -139,7 +142,6 @@ class _GameRoomPageState extends State<GameRoomPage> {
       );
     }
   }
-
 
   // 답변 제출 처리
   void _submitAnswer() async {
@@ -162,6 +164,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
 
   @override
   Widget build(BuildContext context) {
+    print("내 점수22: ${gameFunctions.playerScore}, 상대 점수22: ${gameFunctions.opponentScore}"); // UI 갱신 후 점수 출력
     return Scaffold(
       appBar: AppBar(
         title: const Text("게임 방"),

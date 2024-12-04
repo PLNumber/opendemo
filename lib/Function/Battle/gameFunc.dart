@@ -1,7 +1,10 @@
 import 'package:firebase_database/firebase_database.dart';
 import '../../Function/class.dart';
 
+//gameFunc.dart
 class GameFunction {
+  String? roomId;
+
   int playerScore = 0;
   int opponentScore = 0;
   final DatabaseReference _questionsRef = FirebaseDatabase.instance.ref("shared/questions");
@@ -34,6 +37,8 @@ class GameFunction {
         opponentScore += 10; // 상대방이 정답인 경우
       }
     }
+    print("내 점수33: ${playerScore}, 상대 점수33: ${opponentScore}");
+
   }
 
   Future<void> updateScoreInDatabase(String roomId, String playerId, int scoreChange) async {
@@ -53,8 +58,6 @@ class GameFunction {
       }
     }
   }
-
-
 
   Future<void> loadSharedQuestions() async {
     try {
@@ -127,6 +130,7 @@ class GameFunction {
 
     if (isCorrect) {
       await updateScoreInDatabase(roomId, opponentId, 10); // 상대방 점수 증가
+      print("상대 점수 업데이트 호출됨: $opponentId"); // 로그 추가
       matchStatus = "$opponentId가 정답을 맞췄습니다!";
       moveToNextQuestion(roomId); // 다음 문제로 이동
     }
@@ -185,22 +189,36 @@ class GameFunction {
   }
 
   Future<void> addPlayerToRoom(String roomId, String playerId) async {
+    this.roomId = roomId; // 방 ID 설정
     myPlayerId = playerId; // 내 플레이어 ID 설정
     await _roomsRef.child(roomId).child('players').child(playerId).set({
       "name": playerId,
-      "status": "waiting", // 대기 상태
-      "score": 0, // 초기 점수 설정
+      "status": "waiting",
+      "score": 0,
     });
 
-    // 상대방 ID 설정
     final playersSnapshot = await _roomsRef.child(roomId).child('players').once();
     if (playersSnapshot.snapshot.exists) {
       final players = playersSnapshot.snapshot.value as Map;
       if (players.length > 1) {
-        opponentId = players.keys.firstWhere((id) => id != playerId); // 상대방 ID 찾기
+        opponentId = players.keys.firstWhere((id) => id != playerId);
+        _setupScoreListener(); // 리스너 설정
       }
     }
   }
+
+  void _setupScoreListener() {
+    if (opponentId != null) {
+      roomsRef.child(roomId!).child('players').child(opponentId!).onValue.listen((event) {
+        if (event.snapshot.exists) {
+          final data = event.snapshot.value as Map<Object?, Object?>;
+          opponentScore = (data['score'] ?? 0) as int;
+          print("상대 점수 업데이트: $opponentScore");
+        }
+      });
+    }
+  }
+
 
   Future<void> updatePlayerStatus(String roomId, String playerId, String status) async {
     await _roomsRef.child(roomId).child('players').child(playerId).update({
