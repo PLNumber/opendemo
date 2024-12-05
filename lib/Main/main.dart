@@ -23,6 +23,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final soundProvider = SoundProvider();
+  await soundProvider.init(); // SoundProvider 초기화
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   MobileAds.instance.initialize();
 
@@ -36,7 +38,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()..init()),
         ChangeNotifierProvider(create: (context) => AdVisibilityProvider()),
-        ChangeNotifierProvider(create: (context) => SoundProvider()..init()), // SoundProvider 사용
+        ChangeNotifierProvider(create: (_) => soundProvider), // 초기화된 SoundProvider 전달
       ],
       child: MyApp(),
     ),

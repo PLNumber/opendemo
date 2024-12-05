@@ -88,6 +88,7 @@ Future<void> launchURL(String url) async {
     await launchUrl(uri);
   } else {
     throw 'Could not launch $url';
+
   }
 }
 
@@ -99,15 +100,16 @@ class SoundProvider with ChangeNotifier {
   AudioPlayer _audioPlayer = AudioPlayer();
   bool _isPlaying = false; // 현재 재생 중인지 여부
 
-  // 저장된 소리 설정을 로드
+  // 저장된 소리 설정을 로드하고 초기 상태에 따라 동작
   Future<void> init() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    _isSoundOn = prefs.getBool('isSoundOn') ?? true; // 기본값 true
+    _isSoundOn = prefs.getBool('isSoundOn') ?? true;
     notifyListeners();
 
-    // 앱 실행 시 소리가 켜져 있으면 사운드 재생
     if (_isSoundOn) {
-      await _playSound();
+      await _playSound(); // 소리가 켜진 상태라면 재생
+    } else {
+      await _stopSound(); // 꺼진 상태라면 정지
     }
   }
 
@@ -118,7 +120,6 @@ class SoundProvider with ChangeNotifier {
     await prefs.setBool('isSoundOn', _isSoundOn);
     notifyListeners();
 
-    // 상태에 따라 소리 재생 또는 정지
     if (_isSoundOn) {
       await _playSound(); // 소리 켜졌을 때 소리 재생
     } else {
@@ -129,16 +130,16 @@ class SoundProvider with ChangeNotifier {
   // 오디오 재생 함수
   Future<void> _playSound() async {
     if (!_isPlaying) { // 이미 재생 중이 아닐 때만 재생
-      await _audioPlayer.play(AssetSource('audio/main.mp3')); // assets에 있는 main.mp3 파일 재생
-      _isPlaying = true; // 재생 상태 업데이트
+      await _audioPlayer.play(AssetSource('audio/cozy_main.mp3'));
+      _isPlaying = true;
     }
   }
 
   // 오디오 정지 함수
   Future<void> _stopSound() async {
     if (_isPlaying) { // 현재 재생 중일 때만 정지
-      await _audioPlayer.stop(); // 소리 정지
-      _isPlaying = false; // 재생 상태 업데이트
+      await _audioPlayer.stop();
+      _isPlaying = false;
     }
   }
 

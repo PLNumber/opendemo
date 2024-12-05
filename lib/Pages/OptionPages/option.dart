@@ -16,10 +16,20 @@ class OptionPage extends StatefulWidget {
 }
 
 class _OptionPageState extends State<OptionPage> {
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<SoundProvider>(context, listen: false).init();
+    });
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final adVisibilityProvider = Provider.of<AdVisibilityProvider>(context);
-    final soundProvider = Provider.of<SoundProvider>(context); // SoundProvider 가져오기
+    final soundProvider = Provider.of<SoundProvider>(context); // 가져온 값을 활용
 
     return Scaffold(
       appBar: AppBar(
@@ -34,24 +44,19 @@ class _OptionPageState extends State<OptionPage> {
             crossAxisSpacing: 20.0,
             mainAxisSpacing: 20.0,
             children: <Widget>[
-
-// 소리 on/off 버튼
-              Consumer<SoundProvider>(
-                builder: (context, soundProvider, child) {
-                  return _buildOptionItem(
-                    icon: soundProvider.isSoundOn ? Icons.volume_up : Icons.volume_off,
-                    label: soundProvider.isSoundOn ? "소리 끄기" : "소리 켜기",
-                    onPressed: () async {
-                      await soundProvider.toggleSound();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            soundProvider.isSoundOn ? "소리가 켜졌습니다." : "소리가 꺼졌습니다.",
-                          ),
-                          duration: const Duration(milliseconds: 100),
-                        ),
-                      );
-                    },
+              // 소리 on/off 버튼
+              _buildOptionItem(
+                icon: soundProvider.isSoundOn ? Icons.volume_up : Icons.volume_off,
+                label: soundProvider.isSoundOn ? "소리 끄기" : "소리 켜기",
+                onPressed: () async {
+                  await soundProvider.toggleSound();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        soundProvider.isSoundOn ? "소리가 켜졌습니다." : "소리가 꺼졌습니다.",
+                      ),
+                      duration: const Duration(milliseconds: 100),
+                    ),
                   );
                 },
               ),
