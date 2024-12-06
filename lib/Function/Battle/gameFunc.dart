@@ -225,25 +225,40 @@ class GameFunction {
     });
   }
 
+  // 상대방이 나간 후 방 삭제 처리 (leaveRoom 메서드 수정)
   Future<void> leaveRoom(String roomId, String playerId) async {
     try {
-      final roomRef = _roomsRef.child(roomId);
+      final roomRef = roomsRef.child(roomId);
       final roomSnapshot = await roomRef.get();
 
       if (roomSnapshot.exists) {
         final roomData = roomSnapshot.value as Map;
-
         final players = roomData['players'] ?? {};
-        players.remove(playerId);  // 해당 플레이어를 방에서 제거
 
-        if (players.isEmpty) {
-          await roomRef.remove();  // 방 삭제
-        } else {
-          await roomRef.update({'players': players});
-        }
+        // 해당 플레이어를 방에서 제거
+        players.remove(playerId);
+
+        // 메시지 삭제
+        await roomRef.child('messages').once().then((snapshot) {
+          if (snapshot.snapshot.exists) {
+            final messages = snapshot.snapshot.value as Map;
+            messages.forEach((key, value) {
+              roomRef.child('messages').child(key).remove(); // 모든 메시지 삭제
+            });
+          }
+        });
+
+        // 방 삭제
+        await roomRef.remove();
+        print("플레이어가 나갔으므로 방과 메시지가 삭제되었습니다.");
       }
     } catch (e) {
       print("방을 떠나는 중 오류 발생: $e");
     }
   }
+
+
+
+
+
 }
