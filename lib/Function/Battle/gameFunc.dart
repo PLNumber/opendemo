@@ -219,6 +219,7 @@ class GameFunction {
   }
 
 
+
   Future<void> updatePlayerStatus(String roomId, String playerId, String status) async {
     await _roomsRef.child(roomId).child('players').child(playerId).update({
       "status": status,
