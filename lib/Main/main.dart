@@ -82,7 +82,7 @@ class _MainPage extends State<MainPage> {
     super.initState();
     if (!kIsWeb) {
       // 앱(Android/iOS) 환경에서만 AudioPlayer 초기화
-      player = AudioPlayer();
+      //player = AudioPlayer();
       _loadAd();
     }
     _fetchUserName();
@@ -190,8 +190,9 @@ class _MainPage extends State<MainPage> {
   void dispose() {
     if (!kIsWeb) {
       _bannerAd?.dispose();
-      player.dispose(); // AudioPlayer 리소스 해제
+      //player.dispose(); // AudioPlayer 리소스 해제
     }
+    player.dispose();
     _resetTimer?.cancel();
     super.dispose();
   }
@@ -322,17 +323,16 @@ class _MainPage extends State<MainPage> {
           ],
         ),
       ),
-      bottomNavigationBar: adVisibilityProvider.isAdVisible
+
+      bottomNavigationBar: (!kIsWeb && adVisibilityProvider.isAdVisible)
           ? _bannerAd == null
-          ? Container(
-        height: 50,
-        child: const Center(child: CircularProgressIndicator()),
-      )
+          ? null // 웹에서는 로딩창도 출력하지 않음
           : Container(
         height: 50,
         child: AdWidget(ad: _bannerAd!),
       )
           : null,
+
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(context,
