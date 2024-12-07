@@ -1,6 +1,6 @@
 {
-    "name": "opendemo",
-    "short_name": "opendemo",
+    "name": "문해북",
+    "short_name": "문해북",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

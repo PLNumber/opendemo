@@ -7,14 +7,14 @@ class Question {
   final String def; // 질문
   final String word; // 정답
   final List<String> options; // 선택지
-  final int wId; // 문제 ID
+  final int w_id; // 문제 ID
   bool isCorrect; // 사용자가 문제를 맞췄는지 여부
 
   Question({
     required this.def,
     required this.word,
     required this.options,
-    required this.wId,
+    required this.w_id,
     this.isCorrect = true,
   });
 
@@ -23,7 +23,7 @@ class Question {
       def: map['def'] as String,
       word: map['word'] as String,
       options: List<String>.from(map['options']), // Firestore의 options 필드 매핑
-      wId: map['wId'] as int,
+      w_id: map['w_id'] as int, // wId에서 w_id로 변경
     );
   }
 }
@@ -165,14 +165,14 @@ class _ChoiceQuizPageState extends State<ChoiceQuizPage> {
 
         if (!snapshot.exists) {
           transaction.set(userDoc, {
-            'wrongAnswerIds': [question.wId],
+            'wrongAnswerIds': [question.w_id], // wId에서 w_id로 변경
           });
         } else {
           final data = snapshot.data() as Map<String, dynamic>;
           final wrongAnswerIds = List<int>.from(data['wrongAnswerIds'] ?? []);
 
-          if (!wrongAnswerIds.contains(question.wId)) {
-            wrongAnswerIds.add(question.wId);
+          if (!wrongAnswerIds.contains(question.w_id)) {
+            wrongAnswerIds.add(question.w_id);
             transaction.update(userDoc, {
               'wrongAnswerIds': wrongAnswerIds,
             });
@@ -180,7 +180,7 @@ class _ChoiceQuizPageState extends State<ChoiceQuizPage> {
         }
       });
 
-      print('틀린 문제 ID가 성공적으로 저장되었습니다: ${question.wId}');
+      print('틀린 문제 ID가 성공적으로 저장되었습니다: ${question.w_id}');
     } catch (e) {
       print('오답 저장 중 오류 발생: $e');
     }

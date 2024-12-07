@@ -77,6 +77,12 @@ flutter_launcher_icons:
   min_sdk_android: 23
   adaptive_icon_background: "#ffffff"
   adaptive_icon_foreground: "assets/images/android_512.png"
+  web:
+    generate: true
+    image_path: "assets/images/web_512.png"
+    background_color: "#ffffff"
+    theme_color: "#ffffff"
+
 
 
 # The following section is specific to Flutter packages.

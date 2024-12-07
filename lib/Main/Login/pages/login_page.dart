@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../../main.dart';
 import '../component/button.dart';
 import '../component/squaretitle.dart';
 import '../component/textfield.dart';
@@ -23,6 +24,7 @@ class _LoginPageState extends State<LoginPage> {
   final passwordController = TextEditingController();
 
   //로그인 함수
+// 로그인 함수
   void signUserIn() async {
     //로딩 화면
     showDialog(
@@ -39,14 +41,23 @@ class _LoginPageState extends State<LoginPage> {
         email: emailController.text,
         password: passwordController.text,
       );
-      Navigator.pop(context);
-    } on FirebaseAuthException catch (e) {
+
+      // 로그인 성공 후 로딩 다이얼로그 닫기
       Navigator.pop(context);
 
-      ErrorMessage(e.code);
+      // 로그인 성공 후 메인 페이지로 이동 (여기서 적절한 페이지로 이동)
+      // 예를 들어, `Navigator.pushReplacement`를 사용할 수 있습니다.
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MainPage()), // MainPage()는 메인 페이지로 변경
+      );
+    } on FirebaseAuthException catch (e) {
+      Navigator.pop(context); // 로그인 실패 시 로딩 다이얼로그 닫기
+
+      ErrorMessage(e.code); // 에러 메시지 출력 함수
     }
-    //Navigator.pop(context);
   }
+
 
   //에러 메시지 출력 함수
   void ErrorMessage(String message) {
@@ -73,7 +84,7 @@ class _LoginPageState extends State<LoginPage> {
                 style: TextButton.styleFrom(
                   backgroundColor: Colors.black,
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -195,7 +206,14 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     //구글로 로그인 버튼
                     SquareTitle(
-                        onTap: () => AuthService().signInWithGoogle(),
+                        onTap: () async {
+                          final userCredential = await AuthService().signInWithGoogle();
+                          if (userCredential != null) {
+                            print('로그인 성공: ${userCredential.user!.email}');
+                          } else {
+                            print('로그인 실패');
+                          }
+                        },
                         imagePath: 'assets/images/google.png'),
 
                     //SizedBox(width: 25),

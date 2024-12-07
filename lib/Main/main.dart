@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -79,7 +80,11 @@ class _MainPage extends State<MainPage> {
   @override
   void initState() {
     super.initState();
-    _loadAd();
+    if (!kIsWeb) {
+      // 앱(Android/iOS) 환경에서만 AudioPlayer 초기화
+      player = AudioPlayer();
+      _loadAd();
+    }
     _fetchUserName();
     _checkLastQuizAttempt();
     _scheduleResetAtMidnight();
@@ -88,19 +93,24 @@ class _MainPage extends State<MainPage> {
 
 
   void _loadAd() {
-    final adVisibilityProvider = Provider.of<AdVisibilityProvider>(context, listen: false);
-    if (adVisibilityProvider.isAdVisible) {
-      _createBannerAd();
+    if (!kIsWeb) {
+      final adVisibilityProvider =
+      Provider.of<AdVisibilityProvider>(context, listen: false);
+      if (adVisibilityProvider.isAdVisible) {
+        _createBannerAd();
+      }
     }
   }
 
   void _createBannerAd() {
-    _bannerAd = BannerAd(
-      size: AdSize.fullBanner,
-      adUnitId: AdMobService.bannerAdUnitId!,
-      listener: AdMobService.bannerAdListener,
-      request: const AdRequest(),
-    )..load();
+    if (!kIsWeb) {
+      _bannerAd = BannerAd(
+        size: AdSize.fullBanner,
+        adUnitId: AdMobService.bannerAdUnitId!,
+        listener: AdMobService.bannerAdListener,
+        request: const AdRequest(),
+      )..load();
+    }
   }
 
   Future<void> _fetchUserName() async {
@@ -178,9 +188,11 @@ class _MainPage extends State<MainPage> {
 
   @override
   void dispose() {
-    _bannerAd?.dispose();
+    if (!kIsWeb) {
+      _bannerAd?.dispose();
+      player.dispose(); // AudioPlayer 리소스 해제
+    }
     _resetTimer?.cancel();
-    player.dispose(); // AudioPlayer 리소스 해제y
     super.dispose();
   }
 
