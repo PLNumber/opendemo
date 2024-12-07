@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:lottie/lottie.dart';
 import '../../Function/class.dart';
 
 class QuizBattlePage extends StatefulWidget {
@@ -11,7 +12,7 @@ class QuizBattlePage extends StatefulWidget {
 }
 
 class _QuizBattlePageState extends State<QuizBattlePage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   List<Question> _questions = [];
   int _currentQuestionIndex = 0;
   int _userHealth = 100;
@@ -27,8 +28,16 @@ class _QuizBattlePageState extends State<QuizBattlePage>
   bool _rotateOpponent = false;
   bool _rotateUser = false;
 
-  Map<String, dynamic>? _userData; // 사용자 데이터 저장
-  bool _isUserDataLoading = true; // 사용자 데이터 로딩 상태
+  late AnimationController _userHealthController;
+  late AnimationController _aiHealthController;
+
+  double _userHealthTotalFrames = 61; // Default value if not available
+  double _aiHealthTotalFrames = 61; // Default value if not available
+
+  Map<String, dynamic>? _userData;
+  bool _isUserDataLoading = true;
+
+  String _opponentAnimationPath = 'assets/animation/default.json';
 
   @override
   void initState() {
@@ -37,7 +46,18 @@ class _QuizBattlePageState extends State<QuizBattlePage>
       duration: Duration(seconds: 1),
       vsync: this,
     );
-    _fetchUserData(); // 사용자 데이터 가져오기
+
+    _userHealthController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 500),
+    );
+
+    _aiHealthController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 500),
+    );
+
+    _fetchUserData();
     _fetchQuestions();
   }
 
@@ -46,6 +66,8 @@ class _QuizBattlePageState extends State<QuizBattlePage>
     _timer.cancel();
     _aiTimer?.cancel();
     _rotationController.dispose();
+    _userHealthController.dispose();
+    _aiHealthController.dispose();
     _answerController.dispose();
     _answerFocusNode.dispose();
     super.dispose();
@@ -128,23 +150,18 @@ class _QuizBattlePageState extends State<QuizBattlePage>
     });
   }
 
-  void _triggerRotation({required bool isOpponent}) {
-    setState(() {
-      if (isOpponent) {
-        _rotateOpponent = true;
-      } else {
-        _rotateUser = true;
-      }
-    });
+  void _updateHealthBar(AnimationController controller, int health, double totalFrames) {
+    // 목표 프레임을 체력 비율에 맞게 계산
+    double targetFrame = totalFrames * (health / 100);
 
-    _rotationController.forward(from: 0).whenComplete(() {
-      setState(() {
-        if (isOpponent) {
-          _rotateOpponent = false;
-        } else {
-          _rotateUser = false;
-        }
-      });
+    // 애니메이션을 목표 위치로 이동 (역방향일 경우 낮은 프레임으로 이동)
+    controller.animateTo(targetFrame / totalFrames);
+
+    // 현재 프레임 값을 출력하여 디버깅 확인
+    controller.addListener(() {
+      double currentFrame = totalFrames * controller.value;
+      print("Current Frame: ${currentFrame.toStringAsFixed(2)}");
+      print("Current Frame: ${currentFrame.toStringAsFixed(2)}");
     });
   }
 
@@ -161,6 +178,7 @@ class _QuizBattlePageState extends State<QuizBattlePage>
         if (userAnswer.toLowerCase() == correctAnswer) {
           _aiHealth = max(0, _aiHealth - 10);
           _resultMessage = '정답입니다!';
+          _updateHealthBar(_aiHealthController, _aiHealth, _aiHealthTotalFrames);
           _triggerRotation(isOpponent: true);
         } else {
           _resultMessage = '오답입니다!';
@@ -168,12 +186,50 @@ class _QuizBattlePageState extends State<QuizBattlePage>
         }
       } else if (!isUser && correctAnswer == question.word.toLowerCase()) {
         _userHealth = max(0, _userHealth - 10);
+        _updateHealthBar(_userHealthController, _userHealth, _userHealthTotalFrames);
         _triggerRotation(isOpponent: false);
       }
 
       _timer.cancel();
       _aiTimer?.cancel();
       _moveToNextQuestion();
+    });
+  }
+
+  void _triggerRotation({required bool isOpponent}) {
+    setState(() {
+      if (isOpponent) {
+        _rotateOpponent = true;
+      } else {
+        _rotateUser = true;
+      }
+    });
+
+    // Change AI character animation to angry before rotation
+    if (isOpponent) {
+      setState(() {
+        _opponentAnimationPath = 'assets/animation/angry.json';
+      });
+    } else {
+      // Change AI character animation to laugh when user is attacked
+      setState(() {
+        _opponentAnimationPath = 'assets/animation/laugh.json';
+      });
+    }
+    _rotationController.forward(from: 0).whenComplete(() {
+      setState(() {
+        if (isOpponent) {
+          _rotateOpponent = false;
+          _opponentAnimationPath = _aiHealth > 50
+              ? 'assets/animation/default.json'
+              : 'assets/animation/desperate.json';
+        } else {
+          _rotateUser = false;
+          _opponentAnimationPath = _aiHealth > 50
+              ? 'assets/animation/default.json'
+              : 'assets/animation/desperate.json';
+        }
+      });
     });
   }
 
@@ -209,12 +265,10 @@ class _QuizBattlePageState extends State<QuizBattlePage>
       try {
         final uid = FirebaseAuth.instance.currentUser?.uid;
         if (uid != null) {
-          // Update the shopPt in Firestore
           await FirebaseFirestore.instance
               .collection('UserData')
               .doc(uid)
               .update({'shopPt': FieldValue.increment(100)});
-          // Add bonus message for user
           message += "\n100 상점 포인트 획득!";
         }
       } catch (e) {
@@ -245,7 +299,6 @@ class _QuizBattlePageState extends State<QuizBattlePage>
     );
   }
 
-
   void _showCompletionDialog() {
     showDialog(
       context: context,
@@ -267,54 +320,34 @@ class _QuizBattlePageState extends State<QuizBattlePage>
     );
   }
 
-  Widget _buildOpponentUI() {
+  Widget _buildOpponentHealthBar() {
     return Column(
       children: [
         Text(
           "AI",
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
-        LinearProgressIndicator(
-          value: _aiHealth / 100,
-          color: Colors.green,
-          backgroundColor: Colors.red,
-          minHeight: 20,
-        ),
         SizedBox(height: 10),
-        AnimatedBuilder(
-          animation: _rotationController,
-          builder: (context, child) {
-            double rotationValue = _rotateOpponent
-                ? _rotationController.value * pi * 4
-                : 0;
-            return Transform(
-              transform: Matrix4.rotationY(rotationValue),
-              alignment: Alignment.center,
-              child: Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.red,
-                ),
-                child: Center(
-                  child: Text(
-                    'AI',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                ),
-              ),
-            );
+        Lottie.asset(
+          'assets/animation/health_bar.json',
+          controller: _aiHealthController,
+          onLoaded: (composition) {
+            _aiHealthController.duration = composition.duration;
+            _aiHealthTotalFrames = composition.duration.inSeconds * composition.frameRate;
+            // 프레임 수 출력
+            print("AI Health Animation Total Frames: $_aiHealthTotalFrames");
+
+            _aiHealthController.addListener(() {
+              double currentFrame = _aiHealthTotalFrames * _aiHealthController.value;
+              print("AI Health Animation Current Frame: ${currentFrame.toStringAsFixed(2)}");
+            });
+
+            _updateHealthBar(_aiHealthController, _aiHealth, _aiHealthTotalFrames);
           },
         ),
       ],
     );
   }
-
 
   Widget _buildUserCharacter() {
     if (_isUserDataLoading || _userData == null) {
@@ -356,7 +389,26 @@ class _QuizBattlePageState extends State<QuizBattlePage>
       },
     );
   }
-
+  Widget _buildOpponentCharacter() {
+    return AnimatedBuilder(
+      animation: _rotationController,
+      builder: (context, child) {
+        double rotationValue = _rotateOpponent ? _rotationController.value * pi * 4 : 0;
+        return Transform(
+          transform: Matrix4.rotationY(rotationValue),
+          alignment: Alignment.center,
+          child: Container(
+            width: 100,
+            height: 100,
+            child: Lottie.asset(
+              _opponentAnimationPath,
+              repeat: true,
+            ),
+          ),
+        );
+      },
+    );
+  }
   Widget _buildUserHealthBar() {
     return Column(
       children: [
@@ -365,11 +417,20 @@ class _QuizBattlePageState extends State<QuizBattlePage>
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         SizedBox(height: 10),
-        LinearProgressIndicator(
-          value: _userHealth / 100,
-          color: Colors.green,
-          backgroundColor: Colors.red,
-          minHeight: 20,
+        Lottie.asset(
+          'assets/animation/health_bar.json',
+          controller: _userHealthController,
+          onLoaded: (composition) {
+            _userHealthController.duration = composition.duration;
+            _userHealthTotalFrames = composition.duration.inSeconds * composition.frameRate;
+            // 프레임 수 출력
+            print("User Health Animation Total Frames: $_userHealthTotalFrames");
+            _userHealthController.addListener(() {
+              double currentFrame = _userHealthTotalFrames * _userHealthController.value;
+              print("User Health Animation Current Frame: ${currentFrame.toStringAsFixed(2)}");
+            });
+            _updateHealthBar(_userHealthController, _userHealth, _userHealthTotalFrames);
+          },
         ),
       ],
     );
@@ -400,11 +461,13 @@ class _QuizBattlePageState extends State<QuizBattlePage>
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              _buildOpponentUI(),
+              _buildOpponentCharacter(),
               SizedBox(height: 20),
-              _buildUserHealthBar(),
+              _buildOpponentHealthBar(),
               SizedBox(height: 20),
               _buildUserCharacter(),
+              SizedBox(height: 20),
+              _buildUserHealthBar(),
               SizedBox(height: 40),
               Text(
                 "문제: ${currentQuestion.def}",

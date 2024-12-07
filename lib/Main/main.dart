@@ -8,6 +8,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../Function/Ads/ads_provider.dart';
 import '../Function/Battle/inputDB.dart';
+import '../Function/splash_screen/splash_screen.dart';
 import '../Pages/ProfilePages/profileMain.dart';
 import '../Pages/BattlePages/battleMain.dart';
 import '../Pages/QuizPages/quizMain.dart';
@@ -54,7 +55,7 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
           title: '문해북',
           theme: Provider.of<ThemeProvider>(context).currentTheme,
-          home: MainPage(),
+          home: SplashScreen(),
         );
       },
     );

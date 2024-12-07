@@ -92,7 +92,7 @@ flutter:
     - assets/config/.env
     - assets/images/
     - assets/images/default.jpg
-    - assets/animation/Animation - 1732971002218.json
+    - assets/animation/
     - assets/audio/
 
   #   - images/a_dot_burr.jpeg
