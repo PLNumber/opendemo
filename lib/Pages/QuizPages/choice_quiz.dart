@@ -1,20 +1,43 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../../Function/class.dart';
 
-class QuizPage extends StatefulWidget {
-  @override
-  _QuizPageState createState() => _QuizPageState();
+// Question 클래스 정의
+class Question {
+  final String def; // 질문
+  final String word; // 정답
+  final List<String> options; // 선택지
+  final int wId; // 문제 ID
+  bool isCorrect; // 사용자가 문제를 맞췄는지 여부
+
+  Question({
+    required this.def,
+    required this.word,
+    required this.options,
+    required this.wId,
+    this.isCorrect = true,
+  });
+
+  factory Question.fromMap(Map<String, dynamic> map) {
+    return Question(
+      def: map['def'] as String,
+      word: map['word'] as String,
+      options: List<String>.from(map['options']), // Firestore의 options 필드 매핑
+      wId: map['wId'] as int,
+    );
+  }
 }
 
-class _QuizPageState extends State<QuizPage> {
+// ChoiceQuizPage 정의
+class ChoiceQuizPage extends StatefulWidget {
+  @override
+  _ChoiceQuizPageState createState() => _ChoiceQuizPageState();
+}
+
+class _ChoiceQuizPageState extends State<ChoiceQuizPage> {
   List<Question> _questions = [];
   int _currentQuestionIndex = 0;
-  final TextEditingController _answerController = TextEditingController();
   bool _isLoading = true;
-  String? _currentHint;
-  bool _isHintUsed = false;
 
   @override
   void initState() {
@@ -24,9 +47,8 @@ class _QuizPageState extends State<QuizPage> {
 
   Future<void> _fetchQuestions() async {
     try {
-      final snapshot = await FirebaseFirestore.instance.collection('WQ').get();
-      final questions =
-      snapshot.docs.map((doc) => Question.fromMap(doc.data())).toList();
+      final snapshot = await FirebaseFirestore.instance.collection('CQ').get();
+      final questions = snapshot.docs.map((doc) => Question.fromMap(doc.data())).toList();
       questions.shuffle();
       setState(() {
         _questions = questions;
@@ -44,23 +66,17 @@ class _QuizPageState extends State<QuizPage> {
   }
 
   @override
-  void dispose() {
-    _answerController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: Text('퀴즈 풀기')),
+        appBar: AppBar(title: Text('객관식 퀴즈')),
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_questions.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: Text('퀴즈 풀기')),
+        appBar: AppBar(title: Text('객관식 퀴즈')),
         body: Center(child: Text('퀴즈 데이터가 없습니다.')),
       );
     }
@@ -68,74 +84,69 @@ class _QuizPageState extends State<QuizPage> {
     final currentQuestion = _questions[_currentQuestionIndex];
 
     return Scaffold(
-      appBar: AppBar(title: Text('퀴즈 풀기')),
+      appBar: AppBar(title: Text('객관식 퀴즈')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 질문 표시
-            Text(
-              "문제: ${currentQuestion.def}",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 20),
-            // 답 입력 필드
-            TextField(
-              controller: _answerController,
-              decoration: InputDecoration(
-                labelText: '정답을 입력하세요',
-                border: OutlineInputBorder(),
+            // 질문 카드
+            Container(
+              padding: const EdgeInsets.all(20.0),
+              decoration: BoxDecoration(
+                color: Colors.teal.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.teal, width: 2),
+              ),
+              child: Text(
+                "문제: ${currentQuestion.def}",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
               ),
             ),
-            SizedBox(height: 20),
-            // 제출 및 힌트 버튼
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center, // 버튼들을 중앙 정렬
-              children: [
-                // 힌트 버튼
-                ElevatedButton(
-                  onPressed: _isHintUsed
-                      ? null
-                      : () {
-                    setState(() {
-                      _isHintUsed = true;
-                    });
-                  },
-                  child: Text(_isHintUsed ? currentQuestion.hint : '힌트 보기'),
-                ),
-                SizedBox(width: 16), // 버튼 사이 간격 조절
-                // 제출 버튼
-                ElevatedButton(
-                  onPressed: () => _checkAnswer(currentQuestion),
-                  child: Text('제출'),
-                ),
-              ],
-            )
-
+            const SizedBox(height: 20),
+            // 선택지 카드
+            Expanded(
+              child: ListView.builder(
+                itemCount: currentQuestion.options.length,
+                itemBuilder: (context, index) {
+                  final option = currentQuestion.options[index];
+                  return GestureDetector(
+                    onTap: () => _checkAnswer(currentQuestion, option),
+                    child: Card(
+                      elevation: 4,
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text(
+                          option,
+                          style: TextStyle(fontSize: 18),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-
-  // 정답 체크 및 오답 처리
-  void _checkAnswer(Question question) {
-    String userAnswer = _answerController.text.trim();
-
+  void _checkAnswer(Question question, String selectedOption) {
     setState(() {
-      if (userAnswer.toLowerCase() == question.word.toLowerCase()) {
+      if (selectedOption == question.word) {
         _showResultDialog(true);
       } else {
         question.isCorrect = false;
         _saveWrongAnswer(question);
         _showResultDialog(false);
       }
-
-      _answerController.clear();
-      _resetHint();
     });
   }
 
@@ -175,23 +186,6 @@ class _QuizPageState extends State<QuizPage> {
     }
   }
 
-  // 힌트 보기 기능
-  void _showHint(Question question) {
-    setState(() {
-      _currentHint = question.hint; // `hint` 필드 사용
-      _isHintUsed = true;
-    });
-  }
-
-  // 힌트 초기화
-  void _resetHint() {
-    setState(() {
-      _currentHint = null;
-      _isHintUsed = false;
-    });
-  }
-
-  // 결과 다이얼로그
   void _showResultDialog(bool isCorrect) {
     showDialog(
       context: context,
@@ -217,7 +211,6 @@ class _QuizPageState extends State<QuizPage> {
     );
   }
 
-  // 다음 문제로 넘어가기
   void _moveToNextQuestion() {
     setState(() {
       if (_currentQuestionIndex < _questions.length - 1) {
@@ -228,7 +221,6 @@ class _QuizPageState extends State<QuizPage> {
     });
   }
 
-  // 퀴즈 완료 다이얼로그
   void _showCompletionDialog() {
     showDialog(
       context: context,

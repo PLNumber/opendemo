@@ -9,16 +9,14 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedSplashScreen(
-        splash: Center(
-          child: Lottie.asset(
-              'assets/animation/Animation - 1732971002218.json',
-            width: 500,
-            height: 500,
-          )
-        ),
-        nextScreen: const AuthPage(),
-      duration: 5000,//5초간 실행 시간 더 늘려도 됨
-      backgroundColor: Colors.white,
+      splash: Lottie.asset(
+          'assets/animation/Animation - 1732971002218.json',
+          fit: BoxFit.contain
+      ),
+      splashIconSize: MediaQuery.of(context).size.width * 0.3,//애니매이션 크기 동적 지정
+      nextScreen: const AuthPage(),
+      duration: 3000,//3초간 실행
+      backgroundColor: Colors.white,//배경색
     );
   }
 }

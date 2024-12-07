@@ -10,6 +10,7 @@ class NotePage extends StatefulWidget {
 class _NotePageState extends State<NotePage> {
   List<Map<String, dynamic>> _wrongAnswers = [];
   bool _isLoading = true;
+  List<int> _selectedIds = []; // 선택된 문제 ID를 저장할 리스트
 
   @override
   void initState() {
@@ -30,22 +31,48 @@ class _NotePageState extends State<NotePage> {
           .doc(uid)
           .get();
 
-      final wrongAnswerIds =
-      List<int>.from(userDoc.data()?['wrongAnswerIds'] ?? []);
+      final wrongAnswerIds = List<int>.from(userDoc.data()?['wrongAnswerIds'] ?? []);
 
       if (wrongAnswerIds.isNotEmpty) {
-        final snapshot = await FirebaseFirestore.instance
+        // WQ 컬렉션에서 문제 가져오기
+        final wqSnapshot = await FirebaseFirestore.instance
             .collection('WQ')
             .where('w_id', whereIn: wrongAnswerIds)
             .get();
 
+        // CQ 컬렉션에서 문제 가져오기
+        final cqSnapshot = await FirebaseFirestore.instance
+            .collection('CQ')
+            .where('w_id', whereIn: wrongAnswerIds)
+            .get();
+
+        // 두 컬렉션에서 가져온 문제를 합칩니다.
+        final uniqueAnswers = <Map<String, dynamic>>{};
+
+        // WQ에서 가져온 문제 추가
+        for (var doc in wqSnapshot.docs) {
+          uniqueAnswers.add({
+            'w_id': doc['w_id'],
+            'def': doc['def'],
+            'word': doc['word'],
+            'source': 'WQ', // 출처 추가
+          });
+        }
+
+        // CQ에서 가져온 문제 추가
+        for (var doc in cqSnapshot.docs) {
+          uniqueAnswers.add({
+            'w_id': doc['w_id'],
+            'def': doc['def'],
+            'word': doc['word'],
+            'source': 'CQ', // 출처 추가
+          });
+        }
+
+        // 오답 노트에 추가할 때, 중복 문제를 제거합니다.
         setState(() {
-          _wrongAnswers = snapshot.docs.map((doc) {
-            return {
-              'w_id': doc['w_id'],
-              'def': doc['def'],
-              'word': doc['word'],
-            };
+          _wrongAnswers = uniqueAnswers.where((answer) {
+            return wrongAnswerIds.contains(answer['w_id']);
           }).toList();
           _isLoading = false;
         });
@@ -100,6 +127,46 @@ class _NotePageState extends State<NotePage> {
     }
   }
 
+  Future<void> _removeSelectedAnswers() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception("사용자가 로그인되어 있지 않습니다.");
+      }
+
+      final uid = user.uid;
+      final userDocRef =
+      FirebaseFirestore.instance.collection('UserData').doc(uid);
+
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final snapshot = await transaction.get(userDocRef);
+        if (!snapshot.exists) {
+          throw Exception("사용자 데이터가 존재하지 않습니다.");
+        }
+
+        final data = snapshot.data() as Map<String, dynamic>;
+        final wrongAnswerIds = List<int>.from(data['wrongAnswerIds'] ?? []);
+
+        // 선택된 문제 IDs를 제거
+        for (var id in _selectedIds) {
+          wrongAnswerIds.remove(id);
+        }
+
+        transaction.update(userDocRef, {'wrongAnswerIds': wrongAnswerIds});
+      });
+
+      // 로컬 상태 업데이트
+      setState(() {
+        _wrongAnswers.removeWhere((item) => _selectedIds.contains(item['w_id']));
+        _selectedIds.clear(); // 선택된 ID 초기화
+      });
+
+      print('선택된 문제들이 성공적으로 삭제되었습니다.');
+    } catch (e) {
+      print('오답 삭제 중 오류 발생: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -119,7 +186,19 @@ class _NotePageState extends State<NotePage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text('오답 노트')),
+      appBar: AppBar(
+        title: Text('오답 노트'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.delete),
+            onPressed: () {
+              if (_selectedIds.isNotEmpty) {
+                _removeSelectedAnswers();
+              }
+            },
+          ),
+        ],
+      ),
       body: ListView.builder(
         itemCount: _wrongAnswers.length,
         itemBuilder: (context, index) {
@@ -133,9 +212,17 @@ class _NotePageState extends State<NotePage> {
               ),
               subtitle: Text('정답: ${wrongAnswer['word']}',
                   style: TextStyle(fontSize: 14, color: Colors.teal)),
-              trailing: IconButton(
-                icon: Icon(Icons.delete, color: Colors.red),
-                onPressed: () => _removeWrongAnswer(wrongAnswer['w_id']),
+              trailing: Checkbox(
+                value: _selectedIds.contains(wrongAnswer['w_id']),
+                onChanged: (bool? value) {
+                  setState(() {
+                    if (value == true) {
+                      _selectedIds.add(wrongAnswer['w_id']);
+                    } else {
+                      _selectedIds.remove(wrongAnswer['w_id']);
+                    }
+                  });
+                },
               ),
             ),
           );
