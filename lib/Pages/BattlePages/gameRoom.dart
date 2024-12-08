@@ -49,6 +49,8 @@ class _GameRoomPageState extends State<GameRoomPage> {
 
   void _startHeartbeat() {
     heartbeatTimer = Timer.periodic(Duration(seconds: 10), (timer) async {
+      if (gameFunctions.opponentId == null) return; // opponentId가 null이면 종료
+
       final opponentSnapshot = await gameFunctions.roomsRef
           .child(widget.roomId)
           .child('players')
