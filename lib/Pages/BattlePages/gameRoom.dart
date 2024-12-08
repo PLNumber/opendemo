@@ -402,7 +402,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
               ElevatedButton(
                 onPressed: () async {
                   await _submitAnswer(); // 답변 제출
-                  if (gameFunctions.currentQuestionIndex >= 4) { // 5문제를 다 푼 경우 (인덱스가 0부터 시작하므로 4)
+                  if (gameFunctions.currentQuestionIndex > 4) { // 5문제를 다 푼 경우 (인덱스가 0부터 시작하므로 4)
                     await gameFunctions.endQuizAndUpdateScore(widget.roomId); // 점수 업데이트
                     _forceLeaveRoom(); // 방 강제 나가기
                   }
