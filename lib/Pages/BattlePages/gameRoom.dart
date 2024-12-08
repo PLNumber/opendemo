@@ -48,12 +48,15 @@ class _GameRoomPageState extends State<GameRoomPage> {
   }
 
   void _startHeartbeat() {
-    heartbeatTimer = Timer.periodic(Duration(seconds: 5), (timer) async {
+    heartbeatTimer = Timer.periodic(Duration(seconds: 10), (timer) async {
       final opponentSnapshot = await gameFunctions.roomsRef
           .child(widget.roomId)
           .child('players')
           .child(gameFunctions.opponentId!)
           .once();
+
+      // 자신의 마지막 활동 시간 업데이트
+      await gameFunctions.updateLastActive(widget.roomId, gameFunctions.myPlayerId!);
 
       if (opponentSnapshot.snapshot.exists) {
         final lastActive = (opponentSnapshot.snapshot.value as Map)['lastActive'] as int?;
@@ -67,8 +70,46 @@ class _GameRoomPageState extends State<GameRoomPage> {
         // 상대방이 존재하지 않으면 방을 나감
         _forceLeaveRoom();
       }
+
+      // 자신의 마지막 활동 시간 체크
+      final mySnapshot = await gameFunctions.roomsRef
+          .child(widget.roomId)
+          .child('players')
+          .child(gameFunctions.myPlayerId!)
+          .once();
+
+      if (mySnapshot.snapshot.exists) {
+        final myLastActive = (mySnapshot.snapshot.value as Map)['lastActive'] as int?;
+
+        if (myLastActive != null &&
+            DateTime.now().millisecondsSinceEpoch - myLastActive > 10000) {
+          // 자신이 10초 이상 활동하지 않으면 방을 나감
+          _showLeaveMessage(); // 메시지 표시
+          _forceLeaveRoom();
+        }
+      }
     });
   }
+
+// 방을 나가기 전에 메시지를 표시하는 메서드
+  void _showLeaveMessage() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("경고"),
+          content: const Text("10초 동안 활동하지 않아 자동으로 나갑니다."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("확인"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 
   @override
   void dispose() {
@@ -78,7 +119,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
 
   Future<void> loadQuestionsAndCheckReady() async {
     try {
-      await gameFunctions.loadSharedQuestions();
+      await gameFunctions.loadSharedQuestions(widget.roomId);
       await _checkIfReady();
     } catch (error) {
       print("Error loading questions: $error");
@@ -301,68 +342,101 @@ class _GameRoomPageState extends State<GameRoomPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("게임 방"),
-        leading: IconButton(
-          icon: const Icon(Icons.exit_to_app), // 나가기 아이콘으로 변경
-          onPressed: _leaveRoom, // 방 나가기 메서드 호출
+    return PopScope(
+      canPop: false, // 시스템 뒤로가기를 비활성화
+      onPopInvokedWithResult: (bool didPop, Object? result) async {
+        // 시스템이 이미 Pop을 처리한 경우 종료
+        if (didPop) return;
+        // 방 나가기 메서드 호출
+        await _leaveRoom();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("게임 방"),
+          leading: IconButton(
+            icon: const Icon(Icons.exit_to_app), // 나가기 아이콘
+            onPressed: _leaveRoom, // 방 나가기 메서드 호출
+          ),
         ),
+        body: gameFunctions.isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : isWaiting
+            ? Center(child: Text("상대방을 기다리는 중...", style: TextStyle(fontSize: 18, color: Colors.blueGrey)))
+            : (gameFunctions.questions.isEmpty
+            ? Center(child: Text("질문이 없습니다.", style: TextStyle(fontSize: 18, color: Colors.red)))
+            : Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 들어온 플레이어 메시지 표시
+              ...messages.map((msg) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Text(msg, style: TextStyle(color: Colors.blue)),
+              )),
+              const SizedBox(height: 20),
+              Text(
+                "문제 ${gameFunctions.currentQuestionIndex + 1} / ${gameFunctions.questions.length}",
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 8,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  gameFunctions.questions.isNotEmpty
+                      ? gameFunctions.questions[gameFunctions.currentQuestionIndex].def
+                      : '질문이 없습니다.',
+                  style: const TextStyle(fontSize: 18),
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                onChanged: (value) => gameFunctions.playerAnswer = value,
+                decoration: const InputDecoration(
+                  labelText: "답변을 입력하세요",
+                  border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _submitAnswer,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  backgroundColor: Colors.blueAccent, // primary를 backgroundColor로 변경
+                ),
+                child: const Text("제출", style: TextStyle(fontSize: 18)),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                gameFunctions.matchStatus,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: gameFunctions.matchStatus.contains("정답입니다!") ? Colors.green : Colors.red,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                "내 점수: ${gameFunctions.playerScore}  |  상대 점수: ${gameFunctions.opponentScore}",
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        )),
       ),
-      body: gameFunctions.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : isWaiting
-          ? Center(child: Text("상대방을 기다리는 중..."))
-          : (gameFunctions.questions.isEmpty
-          ? Center(child: Text("질문이 없습니다."))
-          : Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 들어온 플레이어 메시지 표시
-            ...messages.map((msg) => Text(msg, style: TextStyle(color: Colors.blue))),
-            const SizedBox(height: 20),
-            Text(
-              "문제 ${gameFunctions.currentQuestionIndex + 1} / ${gameFunctions.questions.length}",
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              gameFunctions.questions.isNotEmpty
-                  ? gameFunctions.questions[gameFunctions.currentQuestionIndex].def
-                  : '질문이 없습니다.',
-              style: const TextStyle(fontSize: 18),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              onChanged: (value) => gameFunctions.playerAnswer = value,
-              decoration: const InputDecoration(
-                labelText: "답변을 입력하세요",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _submitAnswer, // 제출 메서드 호출
-              child: const Text("제출"),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              gameFunctions.matchStatus,
-              style: TextStyle(
-                fontSize: 16,
-                color: gameFunctions.matchStatus.contains("정답입니다!") ? Colors.green : Colors.red,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              "내 점수: ${gameFunctions.playerScore}  |  상대 점수: ${gameFunctions.opponentScore}",
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-      )),
     );
   }
 }

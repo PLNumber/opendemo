@@ -171,14 +171,14 @@ class _NotePageState extends State<NotePage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: Text('오답 노트')),
+        appBar: AppBar(title: Text('오답 노트'), backgroundColor: Colors.teal), // 앱바 색상 변경
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_wrongAnswers.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: Text('오답 노트')),
+        appBar: AppBar(title: Text('오답 노트'), backgroundColor: Colors.teal), // 앱바 색상 변경
         body: Center(
           child: Text('저장된 오답이 없습니다.', style: TextStyle(fontSize: 18)),
         ),
@@ -188,6 +188,7 @@ class _NotePageState extends State<NotePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('오답 노트'),
+        backgroundColor: Colors.teal, // 앱바 색상 변경
         actions: [
           IconButton(
             icon: Icon(Icons.delete),

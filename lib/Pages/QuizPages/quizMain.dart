@@ -12,8 +12,8 @@ class QuizMainPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text("문제 메인창"),
         centerTitle: true,
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.black),
+        backgroundColor: Colors.teal, // 앱바 색상 변경
+        iconTheme: const IconThemeData(color: Colors.white), // 아이콘 색상 변경
       ),
       body: Center(
         child: SingleChildScrollView( // 스크롤 가능하게 설정

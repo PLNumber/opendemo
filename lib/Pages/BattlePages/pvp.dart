@@ -48,12 +48,12 @@ class _PVPPageState extends State<PVPPage> {
       "players": {
         playerName: {
           "name": playerName,
-          "status": "waiting", // 대기 상태로 설정
-          "lastActive": DateTime.now().millisecondsSinceEpoch, // 타임스탬프 추가
+          "status": "waiting",
+          "lastActive": DateTime.now().millisecondsSinceEpoch,
         },
       },
-      "questions": [], // 질문 데이터를 이곳에 추가할 수 있습니다.
-      "status": "waiting", // 방 상태를 대기 중으로 설정
+      "questions": [],
+      "status": "waiting",
     });
 
     setState(() {
@@ -88,19 +88,7 @@ class _PVPPageState extends State<PVPPage> {
       }
 
       // 입장 가능한 방이 없을 경우 경고 메시지
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text("경고"),
-          content: const Text("입장 가능한 방이 없습니다."),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("확인"),
-            ),
-          ],
-        ),
-      );
+      _showNoAvailableRoomDialog();
     } catch (e) {
       print("방을 찾는 중 오류 발생: $e");
     }
@@ -117,6 +105,22 @@ class _PVPPageState extends State<PVPPage> {
         ),
       );
     }
+  }
+
+  void _showNoAvailableRoomDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("경고"),
+        content: const Text("입장 가능한 방이 없습니다."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text("확인"),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

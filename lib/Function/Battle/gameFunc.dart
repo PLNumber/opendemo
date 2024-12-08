@@ -1,3 +1,7 @@
+import 'dart:math';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../../Function/class.dart';
 
@@ -22,11 +26,43 @@ class GameFunction {
   String? myPlayerId; // 내 플레이어 ID
   String? opponentId; // 상대방 플레이어 ID
   bool isGameFinished = false; // 게임 종료 여부
-
+  String? playerName; // 플레이어 이름 추가
+  String? profileImg; // 프로필 이미지 추가
   Function? onScoreUpdated;
 
   // 생성자
   GameFunction({this.onScoreUpdated});
+
+
+
+  // 사용자 데이터 로드 메서드
+  Future<void> loadUserData() async {
+    try {
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        throw Exception("로그인된 사용자가 없습니다.");
+      }
+
+      myPlayerId = currentUser.uid; // 사용자 ID 설정
+
+      DocumentSnapshot document = await FirebaseFirestore.instance
+          .collection('UserData')
+          .doc(myPlayerId) // UID로 Firestore에서 사용자 데이터 가져오기
+          .get();
+
+      if (document.exists) {
+        Map<String, dynamic> data = document.data() as Map<String, dynamic>;
+        playerName = data['name'] ?? "Player";
+        profileImg = data['profileImg'] ?? "https://via.placeholder.com/150";
+      } else {
+        throw Exception("사용자 데이터를 찾을 수 없습니다.");
+      }
+    } catch (e) {
+      print("사용자 데이터 로드 오류: $e");
+    }
+  }
+
+
 
   // 점수 업데이트 메서드
   void updateScore(bool isCorrect, bool isPlayer) {
@@ -58,14 +94,23 @@ class GameFunction {
     }
   }
 
-  Future<void> loadSharedQuestions() async {
+  Future<void> loadSharedQuestions(String roomId) async {
     try {
       final event = await _questionsRef.once();
       final data = event.snapshot.value;
 
       if (data is Map<Object?, Object?>) {
         final questionsData = Map<String, dynamic>.from(data);
-        questions = _getQuestionsFromSharedData(questionsData);
+        List<Question> allQuestions = _getQuestionsFromSharedData(questionsData);
+
+        // 5개만 가져오기
+        questions = allQuestions.length >= 5
+            ? allQuestions.sublist(0, 5) // 상위 5개 질문을 가져오기
+            : allQuestions; // 5개 미만이면 모두 사용
+
+        // 방에 질문 저장
+        await _roomsRef.child(roomId).child('questions').set(questions.map((q) => q.toMap()).toList());
+
         isLoading = false;
         matchStatus = questions.isEmpty ? "출제된 문제가 없습니다." : "문제를 풀어보세요!";
       } else {
@@ -75,6 +120,7 @@ class GameFunction {
       updateMatchStatus("문제를 불러오는 중 오류 발생: $e");
     }
   }
+
 
   List<Question> _getQuestionsFromSharedData(Map<String, dynamic> data) {
     return data.entries.map((entry) {
@@ -121,7 +167,12 @@ class GameFunction {
     }
 
     playerAnswer = null; // 답변 초기화
+
+    // 다음 문제로 이동
+    await moveToNextQuestion(roomId);
   }
+
+
 
   Future<void> handleOpponentAnswer(String roomId, String opponentId, String answer) async {
     final isCorrect = questions[currentQuestionIndex].word.trim().toLowerCase() == answer.trim().toLowerCase();
@@ -136,22 +187,18 @@ class GameFunction {
 
   bool isMovingToNextQuestion = false;
 
-  void moveToNextQuestion(String roomId) async {
-    if (isMovingToNextQuestion) return; // 이미 이동 중이면 무시
-    isMovingToNextQuestion = true;
-
-    final currentIndexSnapshot = await roomsRef.child(roomId).child('currentQuestionIndex').once();
-    int currentIndex = (currentIndexSnapshot.snapshot.value ?? 0) as int;
-
-    if (currentIndex < questions.length - 1) {
-      currentIndex++; // 인덱스 증가
-      await roomsRef.child(roomId).child('currentQuestionIndex').set(currentIndex);
-      notifyPlayersNewQuestion(roomId);
-    } else {
-      endQuiz(roomId); // 더 이상 질문이 없으면 퀴즈 종료
+  Future<void> moveToNextQuestion(String roomId) async {
+    if (currentQuestionIndex >= questions.length - 1) {
+      // 모든 문제를 풀었으면 퀴즈 종료
+      endQuiz(roomId);
+      return;
     }
 
-    isMovingToNextQuestion = false; // 이동 완료
+    currentQuestionIndex++; // 인덱스 증가
+
+    // 방의 현재 질문 인덱스 업데이트
+    await roomsRef.child(roomId).child('currentQuestionIndex').set(currentQuestionIndex);
+    notifyPlayersNewQuestion(roomId);
   }
 
   // 플레이어에게 새로운 문제 알리기
@@ -175,7 +222,7 @@ class GameFunction {
   }
 
   // 퀴즈 종료 처리
-  void endQuiz(String roomId) {
+  void endQuiz(String roomId) async {
     isGameFinished = true;
     roomsRef.child(roomId).child('gameStatus').set({
       'finished': true,
@@ -184,17 +231,44 @@ class GameFunction {
         'opponentScore': opponentScore,
       },
     });
+
+    // 퀴즈 종료 알림
+    notifyPlayersQuizFinished(roomId);
+
+    // 방을 나가는 로직 추가
+    await leaveRoom(roomId, myPlayerId!); // 현재 플레이어 ID로 방을 나감
+  }
+
+
+  // 퀴즈 종료 알림을 위한 메서드
+  void notifyPlayersQuizFinished(String roomId) {
+    roomsRef.child(roomId).child('quizFinished').set({
+      'message': '퀴즈가 종료되었습니다!',
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    });
   }
 
   Future<void> addPlayerToRoom(String roomId, String playerId) async {
     this.roomId = roomId; // 방 ID 설정
     myPlayerId = playerId; // 내 플레이어 ID 설정
+
+    // 방에 플레이어 추가
     await _roomsRef.child(roomId).child('players').child(playerId).set({
       "name": playerId,
       "status": "waiting",
       "score": 0,
-      "lastActive": DateTime.now().millisecondsSinceEpoch, // 타임스탬프 추가
+      "lastActive": DateTime.now().millisecondsSinceEpoch,
     });
+
+    // 방의 질문 로드
+    final questionsSnapshot = await _roomsRef.child(roomId).child('questions').once();
+    if (questionsSnapshot.snapshot.exists) {
+      final questionsList = questionsSnapshot.snapshot.value as List;
+      questions = questionsList.map((q) => Question.fromMap(Map<String, dynamic>.from(q))).toList();
+    } else {
+      // 질문이 없으면 새로 로드
+      await loadSharedQuestions(roomId);
+    }
 
     final playersSnapshot = await _roomsRef.child(roomId).child('players').once();
     if (playersSnapshot.snapshot.exists) {
@@ -205,6 +279,8 @@ class GameFunction {
       }
     }
   }
+
+
 
   void _setupScoreListener() {
     if (opponentId != null) {

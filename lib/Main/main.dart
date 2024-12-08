@@ -73,7 +73,6 @@ class MainPage extends StatefulWidget {
 class _MainPage extends State<MainPage> {
   late AudioPlayer player;
   BannerAd? _bannerAd;
-  String userName = ""; // DB에서 가져올 사용자 이름
   bool _isQuizButtonDisabled = false;
   Timer? _resetTimer;
 
@@ -82,10 +81,8 @@ class _MainPage extends State<MainPage> {
     super.initState();
     if (!kIsWeb) {
       // 앱(Android/iOS) 환경에서만 AudioPlayer 초기화
-      //player = AudioPlayer();
       _loadAd();
     }
-    _fetchUserName();
     _checkLastQuizAttempt();
     _scheduleResetAtMidnight();
   }
@@ -107,33 +104,6 @@ class _MainPage extends State<MainPage> {
         listener: AdMobService.bannerAdListener,
         request: const AdRequest(),
       )..load();
-    }
-  }
-
-  Future<void> _fetchUserName() async {
-    try {
-      User? currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
-        throw Exception("사용자가 로그인되지 않았습니다.");
-      }
-
-      String uid = currentUser.uid;
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('UserData')
-          .doc(uid)
-          .get();
-
-      if (userDoc.exists) {
-        setState(() {
-          userName = userDoc['name'] ?? '사용자';
-        });
-      } else {
-        setState(() {
-          userName = '사용자';
-        });
-      }
-    } catch (e) {
-      print("Error fetching user name: $e");
     }
   }
 
@@ -186,7 +156,6 @@ class _MainPage extends State<MainPage> {
   void dispose() {
     if (!kIsWeb) {
       _bannerAd?.dispose();
-      //player.dispose(); // AudioPlayer 리소스 해제
     }
     player.dispose();
     _resetTimer?.cancel();
@@ -209,27 +178,46 @@ class _MainPage extends State<MainPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 환영 메시지 및 사용자 정보
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
-                      blurRadius: 4,
-                      offset: Offset(0, 2)),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Center(
-                    child: Text("안녕하세요, $userName님!",
-                        style: TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.bold)),
+            StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('UserData')
+                  .doc(FirebaseAuth.instance.currentUser?.uid)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator();
+                }
+
+                if (!snapshot.hasData || !snapshot.data!.exists) {
+                  return Text("사용자 이름을 가져오는 중...");
+                }
+
+                final userName = snapshot.data!['name'] ?? '사용자';
+
+                return Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.2),
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                  child: Column(
+                    children: [
+                      Center(
+                        child: Text("안녕하세요, $userName님!",
+                            style: TextStyle(
+                                fontSize: 24, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
             SizedBox(height: 24),
 
@@ -246,7 +234,7 @@ class _MainPage extends State<MainPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded( // Expanded로 감싸서 공간을 적절히 사용하도록 함
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -275,8 +263,8 @@ class _MainPage extends State<MainPage> {
               crossAxisCount: 2,
               mainAxisSpacing: 16,
               crossAxisSpacing: 16,
-              shrinkWrap: true, // GridView의 크기를 부모에 맞춤
-              physics: NeverScrollableScrollPhysics(), // 스크롤 비활성화
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
               children: [
                 FeatureCard(
                   icon: Icons.sports_esports,
@@ -321,10 +309,9 @@ class _MainPage extends State<MainPage> {
           ],
         ),
       ),
-
       bottomNavigationBar: (!kIsWeb && adVisibilityProvider.isAdVisible)
           ? _bannerAd == null
-          ? null // 웹에서는 로딩창도 출력하지 않음
+          ? null
           : Container(
         height: 50,
         child: AdWidget(ad: _bannerAd!),
@@ -342,6 +329,7 @@ class _MainPage extends State<MainPage> {
     );
   }
 }
+
 
 class FeatureCard extends StatelessWidget {
   final IconData icon;

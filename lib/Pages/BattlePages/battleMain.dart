@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
+import '../../Function/Battle/gameFunc.dart';
+import '../../Function/Profile/secure.dart';
 import '../BattlePages/pve.dart';
-import '../BattlePages/pvp.dart';
+import 'gameRoom.dart';
 
 class BattlePage extends StatefulWidget {
   const BattlePage({Key? key}) : super(key: key);
@@ -17,11 +20,19 @@ class _BattlePageState extends State<BattlePage> {
   bool isLoading = true; // 데이터 로드 상태
   List<Map<String, dynamic>> topRanks = []; // 순위 데이터
 
+  bool isPvpSelected = false; // PVP 버튼 상태
+  final DatabaseReference _roomsRef = FirebaseDatabase.instance.ref("rooms");
+  String playerName = "Player";
+  String statusMessage = "상태 메시지를 입력하세요";
+  String? profileImage;
+  bool isCreatingRoom = false;
+
   @override
   void initState() {
     super.initState();
     fetchBattleData(); // 사용자 데이터 로드
     fetchRankingData(); // 순위표 데이터 로드
+    _loadPlayerProfile();
   }
 
   Future<void> fetchBattleData() async {
@@ -82,39 +93,108 @@ class _BattlePageState extends State<BattlePage> {
     }
   }
 
-  // 트로피 색깔을 금, 은, 동으로 변경하는 함수
-  Color getTrophyColor(int rank) {
-    if (rank == 1) {
-      return Colors.amber; // 금색
-    } else if (rank == 2) {
-      return Colors.grey; // 은색
-    } else if (rank == 3) {
-      return Colors.brown; // 동색
-    } else {
-      return Colors.black; // 기본 색
+  Future<void> _loadPlayerProfile() async {
+    String? savedName = await loadDataSecure('playerName');
+    String? savedStatus = await loadDataSecure('statusMessage');
+    String? savedImage = await loadProfileImage();
+
+    setState(() {
+      playerName = savedName ?? "Player";
+      statusMessage = savedStatus ?? "상태 메시지를 입력하세요";
+      profileImage = savedImage ?? 'assets/images/default.jpg';
+    });
+  }
+
+
+  Future<void> createRoom() async {
+    setState(() {
+      isCreatingRoom = true;
+    });
+
+    // GameFunction 인스턴스 생성
+    GameFunction gameFunctions = GameFunction();
+
+    // 사용자 데이터 로드
+    await gameFunctions.loadUserData();
+
+    String newRoomId = _roomsRef.push().key!;
+
+    await _roomsRef.child(newRoomId).set({
+      "players": {
+        gameFunctions.playerName: {
+          "name": gameFunctions.playerName,
+          "status": "waiting", // 대기 상태로 설정
+        },
+      },
+      "questions": [], // 질문 데이터를 이곳에 추가할 수 있습니다.
+      "status": "waiting", // 방 상태를 대기 중으로 설정
+    });
+
+    setState(() {
+      isCreatingRoom = false;
+    });
+
+    // 방 대기 화면으로 이동
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            GameRoomPage(roomId: newRoomId, playerId: gameFunctions.playerName!),
+      ),
+    );
+  }
+
+  Future<void> quickJoinRoom() async {
+    DatabaseEvent event = await _roomsRef.once();
+    final rooms = event.snapshot.value as Map<Object?, Object?>?;
+
+    if (rooms != null) {
+      for (var roomId in rooms.keys) {
+        final roomData = rooms[roomId] as Map<Object?, Object?>;
+        final players = roomData['players'] as Map<Object?, Object?>;
+
+        if (players.length < 2) {
+          await joinRoomById(roomId.toString());
+          return;
+        }
+      }
     }
-  }
 
-  void _navigateToPVPPage() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => PVPPage()),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("경고"),
+        content: const Text("입장 가능한 방이 없습니다."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text("확인"),
+          ),
+        ],
+      ),
     );
   }
 
-  void _navigateToQuizBattlePage() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => QuizBattlePage()),
-    );
+  Future<void> joinRoomById(String enteredRoomId) async {
+    DatabaseEvent event = await _roomsRef.child(enteredRoomId).once();
+    if (event.snapshot.exists) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              GameRoomPage(roomId: enteredRoomId, playerId: playerName),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Battle Page"),
+        title: const Text("대전"),
         centerTitle: true,
+        backgroundColor: Colors.teal,
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -124,7 +204,6 @@ class _BattlePageState extends State<BattlePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // 통합 카드: 리더보드 + 프로필 + 랭킹 점수
               Card(
                 elevation: 5,
                 shape: RoundedRectangleBorder(
@@ -135,48 +214,51 @@ class _BattlePageState extends State<BattlePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // 순위표
                       Text(
                         "랭킹 순위표",
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 24, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 20),
-                      // 순위 데이터를 카드 안에 배치
-                      ...topRanks.asMap().map((index, rank) {
-                        // index로 순위를 확인
-                        int rankIndex = index + 1; // 순위는 1부터 시작
+                      ...topRanks
+                          .asMap()
+                          .map((index, rank) {
+                        int rankIndex = index + 1;
                         return MapEntry(
                           index,
                           ListTile(
                             leading: Icon(
                               Icons.emoji_events,
-                              color: getTrophyColor(rankIndex),
+                              color: rankIndex == 1
+                                  ? Colors.amber
+                                  : rankIndex == 2
+                                  ? Colors.grey
+                                  : rankIndex == 3
+                                  ? Colors.brown
+                                  : Colors.black,
                             ),
                             title: Text(
                               rank['name'],
-                              style: TextStyle(fontSize: 18),
+                              style: const TextStyle(fontSize: 18),
                             ),
                             trailing: Text(
                               "${rank['rankPt']} 점",
-                              style: TextStyle(
+                              style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold),
                             ),
                           ),
                         );
-                      }).values.toList(),
+                      })
+                          .values
+                          .toList(),
                       const SizedBox(height: 20),
-
-                      // 프로필 이미지 (중앙 정렬)
                       CircleAvatar(
                         radius: 60,
                         backgroundImage: NetworkImage(profileImg),
                         backgroundColor: Colors.grey[300],
                       ),
                       const SizedBox(height: 20),
-
-                      // 내 랭킹 점수 (중앙 정렬)
                       Text(
                         "내 랭킹 점수: $rankPt",
                         style: const TextStyle(
@@ -187,63 +269,167 @@ class _BattlePageState extends State<BattlePage> {
                   ),
                 ),
               ),
-
-              // 버튼을 GridView로 배치
               const SizedBox(height: 20),
-
-              GridView.count(
-                shrinkWrap: true,
-                crossAxisCount: 2,
-                crossAxisSpacing: 20,
-                mainAxisSpacing: 20,
-                childAspectRatio: 1,
-                children: [
-                  // PVP 버튼
-                  ElevatedButton(
-                    onPressed: _navigateToPVPPage,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.people, size: 40, color: Colors.blue),
-                        const SizedBox(height: 10),
-                        Text(
-                          "PVP 배틀",
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
+              Expanded(
+                child: Stack(
+                  children: [
+                    GridView.count(
+                      shrinkWrap: true,
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 20,
+                      mainAxisSpacing: 20,
+                      childAspectRatio: 1,
+                      children: isPvpSelected
+                          ? [
+                        ElevatedButton(
+                          onPressed:
+                          isCreatingRoom ? null : createRoom,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                              BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment:
+                            MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.door_front_door_sharp,
+                                  size: 40, color: Colors.teal),
+                              const SizedBox(height: 10),
+                              const Text(
+                                "방 만들기",
+                                style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: quickJoinRoom,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                              BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment:
+                            MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.meeting_room,
+                                  size: 40, color: Colors.teal),
+                              const SizedBox(height: 10),
+                              const Text(
+                                "빠른 입장",
+                                style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ]
+                          : [
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              isPvpSelected = true;
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                              BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment:
+                            MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.people,
+                                  size: 40, color: Colors.teal),
+                              const SizedBox(height: 10),
+                              const Text(
+                                "PVP 대전",
+                                style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    QuizBattlePage(),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                              BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment:
+                            MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.computer,
+                                  size: 40, color: Colors.teal),
+                              const SizedBox(height: 10),
+                              const Text(
+                                "PVE 대전",
+                                style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                  ),
-
-                  // 퀴즈 배틀 버튼
-                  ElevatedButton(
-                    onPressed: _navigateToQuizBattlePage,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                    if (isPvpSelected)
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.end, // 세로 정렬을 끝으로
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center, // 가로 중앙 정렬
+                            children: [
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white, // 배경색
+                                  foregroundColor: Colors.teal, // 텍스트 및 아이콘 색상
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10), // 둥근 모서리
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20, vertical: 10),
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    isPvpSelected = false;
+                                  });
+                                },
+                                child: const Icon(Icons.arrow_back, size: 24),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20), // 버튼 간격 추가
+                        ],
                       ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.quiz, size: 40, color: Colors.green),
-                        const SizedBox(height: 10),
-                        Text(
-                          "퀴즈 배틀",
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+
+                  ],
+                ),
               ),
             ],
           ),
