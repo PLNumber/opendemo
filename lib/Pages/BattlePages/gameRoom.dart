@@ -119,7 +119,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
 
   Future<void> loadQuestionsAndCheckReady() async {
     try {
-      await gameFunctions.loadSharedQuestions(widget.roomId);
+      await gameFunctions.loadSharedQuestions();
       await _checkIfReady();
     } catch (error) {
       print("Error loading questions: $error");
