@@ -55,7 +55,7 @@ class MyApp extends StatelessWidget {
       builder: (context, themeProvider, child) {
         return MaterialApp(
           title: '문해북',
-          theme: Provider.of<ThemeProvider>(context).currentTheme,
+          theme: themeProvider.currentTheme,
           home: SplashScreen(),
         );
       },
@@ -73,6 +73,7 @@ class MainPage extends StatefulWidget {
 class _MainPage extends State<MainPage> {
   late AudioPlayer player;
   BannerAd? _bannerAd;
+  String userName = ""; // DB에서 가져올 사용자 이름
   bool _isQuizButtonDisabled = false;
   Timer? _resetTimer;
 
@@ -83,6 +84,7 @@ class _MainPage extends State<MainPage> {
       // 앱(Android/iOS) 환경에서만 AudioPlayer 초기화
       _loadAd();
     }
+    _fetchUserName();
     _checkLastQuizAttempt();
     _scheduleResetAtMidnight();
   }
@@ -104,6 +106,33 @@ class _MainPage extends State<MainPage> {
         listener: AdMobService.bannerAdListener,
         request: const AdRequest(),
       )..load();
+    }
+  }
+
+  Future<void> _fetchUserName() async {
+    try {
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        throw Exception("사용자가 로그인되지 않았습니다.");
+      }
+
+      String uid = currentUser.uid;
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('UserData')
+          .doc(uid)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userName = userDoc['name'] ?? '사용자';
+        });
+      } else {
+        setState(() {
+          userName = '사용자';
+        });
+      }
+    } catch (e) {
+      print("Error fetching user name: $e");
     }
   }
 
@@ -165,159 +194,175 @@ class _MainPage extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     final adVisibilityProvider = Provider.of<AdVisibilityProvider>(context);
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark; // 다크 모드 여부 확인
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('문해북'),
-        centerTitle: true,
-        backgroundColor: Colors.teal,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 환영 메시지 및 사용자 정보
-            StreamBuilder<DocumentSnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('UserData')
-                  .doc(FirebaseAuth.instance.currentUser?.uid)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return CircularProgressIndicator();
-                }
-
-                if (!snapshot.hasData || !snapshot.data!.exists) {
-                  return Text("사용자 이름을 가져오는 중...");
-                }
-
-                final userName = snapshot.data!['name'] ?? '사용자';
-
-                return Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.2),
-                        blurRadius: 4,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      Center(
-                        child: Text("안녕하세요, $userName님!",
-                            style: TextStyle(
-                                fontSize: 24, fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-            SizedBox(height: 24),
-
-            // 학습 섹션
-            Text("더 학습하기",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            SizedBox(height: 8),
-            Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.teal[100],
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("일일 픽업 퀴즈",
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold)),
-                        SizedBox(height: 5),
-                        Text("하루에 한 번! 다량의 포인트 획득 기회", style: TextStyle(fontSize: 14)),
-                      ],
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: _isQuizButtonDisabled ? null : _onStartQuiz,
-                    child: Text("시작하기"),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 24),
-
-            // 계속 공부하기 섹션
-            Text("계속 공부하기",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            SizedBox(height: 16),
-            GridView.count(
-              crossAxisCount: 2,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
+        appBar: AppBar(
+          title: Text(
+            '문해북',
+            style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
+          ),
+          centerTitle: true,
+          backgroundColor: Colors.teal,
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                FeatureCard(
-                  icon: Icons.sports_esports,
-                  title: "대전",
-                  onTap: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => BattlePage()));
-                  },
+          // 환영 메시지 및 사용자 정보
+          Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: isDarkMode ? Colors.black : Colors.white, // 배경색 변경
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.2),
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Center(
+                child: Text(
+                  "안녕하세요, $userName님!",
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode ? Colors.white : Colors.black, // 다크 모드에 따라 색상 변경
+                  ),
                 ),
-                FeatureCard(
-                  icon: Icons.quiz,
-                  title: "문해력 문제",
-                  onTap: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => QuizMainPage()));
-                  },
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: 24),
+
+        // 학습 섹션
+        Text(
+          "더 학습하기",
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: isDarkMode ? Colors.white : Colors.black, // 다크 모드에 따라 색상 변경
+          ),
+        ),
+        SizedBox(height: 8),
+        Container(
+        padding: EdgeInsets.all(16),
+    decoration: BoxDecoration(
+    color: isDarkMode ? Colors.black54 : Colors.teal[100], // 배경색 변경
+    borderRadius: BorderRadius.circular(16),
+    ),
+    child: Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+    Expanded(
+    child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+    Text(
+    "일일 픽업 퀴즈",
+    style: TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.bold,
+    color: isDarkMode ? Colors.white : Colors.black, // 다크 모드에 따라 색상 변경
+    ),
+    ),
+    SizedBox(height: 5),
+    Text(
+    "하루에 한 번! 다량의 포인트 획득 기회",
+    style: TextStyle(
+    fontSize: 14,
+    color: isDarkMode ? Colors.white
+        : Colors.black54, // 다크 모드에 따라 색상 변경
+    ),
+    ),
+    ],
+    ),
+    ),
+      ElevatedButton(
+        onPressed: _isQuizButtonDisabled ? null : _onStartQuiz,
+        child: Text("시작하기"),
+      ),
+    ],
+    ),
+        ),
+                SizedBox(height: 24),
+
+                // 계속 공부하기 섹션
+                Text(
+                  "계속 공부하기",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode ? Colors.white : Colors.black, // 다크 모드에 따라 색상 변경
+                  ),
                 ),
-                FeatureCard(
-                  icon: Icons.book,
-                  title: "단어 사전",
-                  onTap: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => DictPage()));
-                  },
-                ),
-                FeatureCard(
-                  icon: Icons.person,
-                  title: "프로필 수정",
-                  onTap: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => ProfilePage()));
-                  },
+                SizedBox(height: 16),
+                GridView.count(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                  shrinkWrap: true, // GridView의 크기를 부모에 맞춤
+                  physics: NeverScrollableScrollPhysics(), // 스크롤 비활성화
+                  children: [
+                    FeatureCard(
+                      icon: Icons.sports_esports,
+                      title: "대전",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => BattlePage()),
+                        );
+                      },
+                    ),
+                    FeatureCard(
+                      icon: Icons.quiz,
+                      title: "문해력 문제",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => QuizMainPage()),
+                        );
+                      },
+                    ),
+                    FeatureCard(
+                      icon: Icons.book,
+                      title: "단어 사전",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => DictPage()),
+                        );
+                      },
+                    ),
+                    FeatureCard(
+                      icon: Icons.person,
+                      title: "프로필 수정",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => ProfilePage()),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ],
+          ),
         ),
-      ),
       bottomNavigationBar: (!kIsWeb && adVisibilityProvider.isAdVisible)
           ? _bannerAd == null
-          ? null
+          ? null // 웹에서는 로딩창도 출력하지 않음
           : Container(
         height: 50,
         child: AdWidget(ad: _bannerAd!),
       )
           : null,
-
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(context,
@@ -330,15 +375,17 @@ class _MainPage extends State<MainPage> {
   }
 }
 
-
 class FeatureCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final VoidCallback onTap;
 
-  const FeatureCard(
-      {Key? key, required this.icon, required this.title, required this.onTap})
-      : super(key: key);
+  const FeatureCard({
+    Key? key,
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -354,7 +401,11 @@ class FeatureCard extends StatelessWidget {
             SizedBox(height: 8),
             Text(
               title,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black, // 다크 모드에 따라 색상 변경
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -363,4 +414,3 @@ class FeatureCard extends StatelessWidget {
     );
   }
 }
-

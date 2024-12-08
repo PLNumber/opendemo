@@ -137,7 +137,10 @@ class _DictPageState extends State<DictPage> {
                 ),
                 textStyle: const TextStyle(fontSize: 18.0),
               ),
-              child: const Text('정의 찾기', style: TextStyle(color: Colors.black)), // 버튼 텍스트 색상 변경
+              child: Text(
+                '정의 찾기',
+                style: TextStyle(color: isDarkMode ? Colors.white : Colors.black), // 다크 모드에서 흰색으로 변경
+              ),
             ),
             const SizedBox(height: 20.0),
             if (_recentWords.isNotEmpty)

@@ -19,16 +19,28 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  //text edit controller
+  // Text editing controllers
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
 
-  //회원가입
+  // Error messages for each field
+  String emailError = "";
+  String passwordError = "";
+  String confirmPasswordError = "";
+
+  // 회원가입
   void signUserUp() async {
+    setState(() {
+      emailError = "";
+      passwordError = "";
+      confirmPasswordError = "";
+    });
 
     if (passwordController.text != confirmPasswordController.text) {
-      ErrorMessage("비밀번호가 일치하지 않습니다."); // 비밀번호 불일치 경고
+      setState(() {
+        confirmPasswordError = "비밀번호가 일치하지 않습니다.";
+      });
       return;
     }
 
@@ -43,118 +55,68 @@ class _RegisterPageState extends State<RegisterPage> {
     );
 
     try {
-      // 비밀번호 일치 확인
-      if (passwordController.text == confirmPasswordController.text) {
-        // Firebase Authentication에 계정 생성
-        UserCredential userCredential = await FirebaseAuth.instance
-            .createUserWithEmailAndPassword(
-          email: emailController.text,
-          password: passwordController.text,
-        );
+      // Firebase Authentication에 계정 생성
+      UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+        email: emailController.text,
+        password: passwordController.text,
+      );
 
-        // Firestore에 UID를 이름으로 하는 문서 생성
-        await FirebaseFirestore.instance
-            .collection('UserData') // 컬렉션 이름
-            .doc(userCredential.user!.uid) // UID를 문서 ID로 사용
-            .set({
-          'email': emailController.text,
-          'createdAt': DateTime.now(), // 계정 생성 시간,
-          'currentMSG' : '',
-          'profileImg' : 'https://ifh.cc/g/8AckGM.jpg',
-          'purchased' : [true, false, false, false, false, false],
-          'removeAD' : false,
-          'win' : 0,
-          'loss' : 0,
-          'shopPt' : 0,
-          'rankPt' : 0,
-          'name' : 'Player'
-        });
-
-        print("Firestore에 사용자 문서가 생성되었습니다.");
-      } else {
-        // 비밀번호 불일치 에러 처리
-        ErrorMessage("비밀번호가 일치하지 않습니다.");
-      }
+      // Firestore에 UID를 이름으로 하는 문서 생성
+      await FirebaseFirestore.instance
+          .collection('UserData')
+          .doc(userCredential.user!.uid)
+          .set({
+        'email': emailController.text,
+        'createdAt': DateTime.now(),
+        'currentMSG': '',
+        'profileImg': 'https://ifh.cc/g/8AckGM.jpg',
+        'purchased': [true, false, false, false, false, false],
+        'removeAD': false,
+        'win': 0,
+        'loss': 0,
+        'shopPt': 0,
+        'rankPt': 0,
+        'name': 'Player'
+      });
 
       Navigator.pop(context); // 로딩 화면 닫기
+      // 성공적으로 회원가입 완료 메시지를 표시하거나 다른 페이지로 이동
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context); // 로딩 화면 닫기
-
-      String errorMessage;
-      if (e.code == 'email-already-in-use') {
-        errorMessage = "이미 사용 중인 이메일입니다.";
-      } else if (e.code == 'invalid-email') {
-        errorMessage = "유효하지 않은 이메일 형식입니다.";
-      } else if (e.code == 'weak-password') {
-        errorMessage = "비밀번호가 너무 약합니다. 최소 6자 이상이어야 합니다.";
-      } else if (e.code == 'operation-not-allowed') {
-        errorMessage = "현재 이메일/비밀번호 회원가입이 비활성화되어 있습니다.";
-      } else if (e.code == 'network-request-failed') {
-        errorMessage = "네트워크 연결에 문제가 발생했습니다.";
-      } else if (e.code == 'channel-error'){
-        errorMessage = "이메일과 비밀번호를 입력해주세요.";
-      }  else if(e.code == 'unknown') {
-        errorMessage = "비밀번호에는 대소문자, 특수문자, 숫자가 반드시 포함되어야 합니다.";
-      } else {
-        errorMessage = "알 수 없는 오류가 발생했습니다. (${e.code})";
-      }
-
-      ErrorMessage(errorMessage); // 에러 메시지 출력
+      setState(() {
+        if (e.code == 'email-already-in-use') {
+          emailError = "이미 사용 중인 이메일입니다.";
+        } else if (e.code == 'invalid-email') {
+          emailError = "유효하지 않은 이메일 형식입니다.";
+        } else if (e.code == 'weak-password') {
+          passwordError = "비밀번호가 너무 약합니다. 최소 6자 이상이어야 합니다.";
+        } else if (e.code == 'operation-not-allowed') {
+          emailError = "현재 이메일/비밀번호 회원가입이 비활성화되어 있습니다.";
+        } else if (e.code == 'network-request-failed') {
+          emailError = "네트워크 연결에 문제가 발생했습니다.";
+        } else if (e.code == 'unknown') {
+          passwordError = "비밀번호에는 대소문자, 특수문자, 숫자가 반드시 포함되어야 합니다.";
+        } else if(e.code == 'channel-error'){
+          emailError = "이메일을 입력해주세요";
+          passwordError = "비밀번호를 입력해주세요";
+        }else {
+          emailError = "알 수 없는 오류가 발생했습니다. (${e.code})";
+        }
+      });
     } catch (e) {
       Navigator.pop(context); // 로딩 화면 닫기
-      ErrorMessage("알 수 없는 오류가 발생했습니다."); // 일반적인 오류 처리
-      print(e);
+      setState(() {
+        emailError = "알 수 없는 오류가 발생했습니다.";
+      });
     }
   }
 
-
-  //에러 메시지 출력 함수
-  void ErrorMessage(String message) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          backgroundColor: Colors.white,
-          title: Center(
-            child: Text(
-              message,
-              style: const TextStyle(color: Colors.black),
-            ),
-          ),
-          actions: [
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); //창 닫기
-                },
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text(
-                  '확인',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            )
-          ],
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[300],
-      //상단 상태창 침범하지 않는 용도
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -162,14 +124,8 @@ class _RegisterPageState extends State<RegisterPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(height: 25),
-                //로고
-                const Icon(
-                  Icons.auto_stories,
-                  size: 100,
-                ),
-
+                const Icon(Icons.auto_stories, size: 100),
                 const SizedBox(height: 25),
-
                 Text(
                   '회원가입을 진행하세요.',
                   style: TextStyle(
@@ -177,7 +133,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     fontSize: 16,
                   ),
                 ),
-
                 const SizedBox(height: 25),
 
                 // 이메일 입력칸
@@ -186,28 +141,61 @@ class _RegisterPageState extends State<RegisterPage> {
                   hintText: 'Email',
                   obscureText: false,
                 ),
+                if (emailError.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        emailError,
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    ),
+                  ),
 
                 const SizedBox(height: 10),
 
-                //비밀번호 입력칸
+                // 비밀번호 입력칸
                 MyTextField(
                   controller: passwordController,
                   hintText: 'Password',
                   obscureText: true,
                 ),
+                if (passwordError.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        passwordError,
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    ),
+                  ),
 
                 const SizedBox(height: 10),
 
-                //비밀번호 확인칸
+                // 비밀번호 확인칸
                 MyTextField(
                   controller: confirmPasswordController,
                   hintText: 'Confirm Password',
                   obscureText: true,
                 ),
+                if (confirmPasswordError.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        confirmPasswordError,
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    ),
+                  ),
 
                 const SizedBox(height: 25),
 
-                //회원가입 버튼
+                // 회원가입 버튼
                 MyButton(
                   text: '회원 가입',
                   onTap: signUserUp,
@@ -247,26 +235,18 @@ class _RegisterPageState extends State<RegisterPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    //구글로 로그인 버튼
                     SquareTitle(
                         onTap: () => AuthService().signInWithGoogle(),
                         imagePath: 'assets/images/google.png'),
-
-                    // SizedBox(width: 25),
-
-                    //그외
-                    //SquareTitle(imagePath: 'lib/images/google.png'),
                   ],
                 ),
 
                 const SizedBox(height: 50),
 
-                //회원가입
-
                 Row(
                   children: [
                     Text(
-                      '  계정이 이미 있나요?',
+                      '계정이 이미 있나요?',
                       style: TextStyle(color: Colors.grey[700]),
                     ),
                     const SizedBox(width: 4),
@@ -275,11 +255,13 @@ class _RegisterPageState extends State<RegisterPage> {
                       child: const Text(
                         '지금 로그인 하세요',
                         style: TextStyle(
-                            color: Colors.blue, fontWeight: FontWeight.bold),
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
-                )
+                ),
               ],
             ),
           ),

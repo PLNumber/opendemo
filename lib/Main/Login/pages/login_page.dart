@@ -20,19 +20,37 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  //text edit controller
+  // Text editing controllers
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  //로그인 함수
-// 로그인 함수
+  // Error messages for fields
+  String emailError = "";
+  String passwordError = "";
+
+  // 로그인 함수
   void signUserIn() async {
+    setState(() {
+      emailError = "";
+      passwordError = "";
+    });
+
+    if (emailController.text.isEmpty) {
+      setState(() {
+        emailError = '이메일을 입력해주세요.';
+      });
+    }
+    if (passwordController.text.isEmpty) {
+      setState(() {
+        passwordError = '비밀번호를 입력해주세요.';
+      });
+    }
 
     if (emailController.text.isEmpty || passwordController.text.isEmpty) {
-      ErrorMessage('이메일과 비밀번호를 입력해주세요.');
       return;
     }
-    //로딩 화면
+
+    // 로딩 화면
     showDialog(
       context: context,
       builder: (context) {
@@ -41,7 +59,7 @@ class _LoginPageState extends State<LoginPage> {
         );
       },
     );
-    //로그인 정보 전달
+
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text,
@@ -51,85 +69,38 @@ class _LoginPageState extends State<LoginPage> {
       // 로그인 성공 후 로딩 다이얼로그 닫기
       Navigator.pop(context);
 
-      // 로그인 성공 후 메인 페이지로 이동 (여기서 적절한 페이지로 이동)
-      // 예를 들어, `Navigator.pushReplacement`를 사용할 수 있습니다.
+      // 로그인 성공 후 메인 페이지로 이동
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => MainPage()), // MainPage()는 메인 페이지로 변경
+        MaterialPageRoute(builder: (context) => MainPage()),
       );
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context); // 로그인 실패 시 로딩 다이얼로그 닫기
 
-      // 에러 코드에 따라 문구를 분기 처리
-      String errorMessage;
-      if (e.code == 'invalid-email') {
-        errorMessage = '유효하지 않은 이메일 형식입니다.';
-      } else if (e.code == 'user-not-found') {
-        errorMessage = '등록되지 않은 이메일입니다.';
-      } else if (e.code == 'wrong-password') {
-        errorMessage = '비밀번호가 잘못되었습니다.';
-      } else if (e.code == 'user-disabled') {
-        errorMessage = '사용이 중지된 계정입니다.';
-      } else if (e.code == 'network-request-failed') {
-        errorMessage = '네트워크 연결에 문제가 발생했습니다.';
-      } else if (e.code == 'too-many-requests') {
-        errorMessage = '요청이 너무 많습니다. 잠시 후 다시 시도하세요.';
-      } else {
-        errorMessage = '알 수 없는 오류가 발생했습니다. (${e.code})';
-      }
-
-      ErrorMessage(errorMessage); // 에러 메시지 출력 함수
+      setState(() {
+        if (e.code == 'invalid-email') {
+          emailError = '유효하지 않은 이메일 형식입니다.';
+        } else if (e.code == 'user-not-found') {
+          emailError = '등록되지 않은 이메일입니다.';
+        } else if (e.code == 'wrong-password') {
+          passwordError = '비밀번호가 잘못되었습니다.';
+        } else if (e.code == 'user-disabled') {
+          emailError = '사용이 중지된 계정입니다.';
+        } else if (e.code == 'network-request-failed') {
+          emailError = '네트워크 연결에 문제가 발생했습니다.';
+        } else if (e.code == 'too-many-requests') {
+          emailError = '요청이 너무 많습니다. 잠시 후 다시 시도하세요.';
+        } else {
+          emailError = '알 수 없는 오류가 발생했습니다. (${e.code})';
+        }
+      });
     }
-  }
-
-
-  //에러 메시지 출력 함수
-  void ErrorMessage(String message) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          backgroundColor: Colors.white,
-          title: Center(
-            child: Text(
-              message,
-              style: const TextStyle(color: Colors.black),
-            ),
-          ),
-          actions: [
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); //창 닫기
-                },
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text(
-                  '확인',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            )
-          ],
-        );
-      },
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[300],
-      //상단 상태창 침범하지 않는 용도
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -137,7 +108,6 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(height: 50),
-                //로고
                 const Icon(
                   Icons.auto_stories,
                   size: 100,
@@ -161,15 +131,37 @@ class _LoginPageState extends State<LoginPage> {
                   hintText: 'Email',
                   obscureText: false,
                 ),
+                if (emailError.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        emailError,
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    ),
+                  ),
 
                 const SizedBox(height: 10),
 
-                //비밀번호 입력칸
+                // 비밀번호 입력칸
                 MyTextField(
                   controller: passwordController,
                   hintText: 'Password',
                   obscureText: true,
                 ),
+                if (passwordError.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        passwordError,
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    ),
+                  ),
 
                 const SizedBox(height: 10),
 
@@ -179,7 +171,9 @@ class _LoginPageState extends State<LoginPage> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       GestureDetector(
-                        onTap: () { ResetPasswordDialog.showResetPasswordDialog(context);},
+                        onTap: () {
+                          ResetPasswordDialog.showResetPasswordDialog(context);
+                        },
                         child: Text(
                           '비밀번호를 잊어버렸나요?',
                           style: TextStyle(
@@ -194,7 +188,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 25),
 
-                //로그인 버튼
+                // 로그인 버튼
                 MyButton(
                   text: "로그인",
                   onTap: signUserIn,
@@ -234,28 +228,22 @@ class _LoginPageState extends State<LoginPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    //구글로 로그인 버튼
                     SquareTitle(
-                        onTap: () async {
-                          final userCredential = await AuthService().signInWithGoogle();
-                          if (userCredential != null) {
-                            print('로그인 성공: ${userCredential.user!.email}');
-                          } else {
-                            print('로그인 실패');
-                          }
-                        },
-                        imagePath: 'assets/images/google.png'),
-
-                    //SizedBox(width: 25),
-
-                    //그외
-                    //SquareTitle(imagePath: 'lib/images/google.png'),
+                      onTap: () async {
+                        final userCredential =
+                        await AuthService().signInWithGoogle();
+                        if (userCredential != null) {
+                          print('로그인 성공: ${userCredential.user!.email}');
+                        } else {
+                          print('로그인 실패');
+                        }
+                      },
+                      imagePath: 'assets/images/google.png',
+                    ),
                   ],
                 ),
 
                 const SizedBox(height: 50),
-
-                //회원가입
 
                 Row(
                   children: [
@@ -269,11 +257,13 @@ class _LoginPageState extends State<LoginPage> {
                       child: const Text(
                         '지금 회원가입 하세요',
                         style: TextStyle(
-                            color: Colors.blue, fontWeight: FontWeight.bold),
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
-                )
+                ),
               ],
             ),
           ),
