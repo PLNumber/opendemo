@@ -69,14 +69,14 @@ class _ChoiceQuizPageState extends State<ChoiceQuizPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: Text('객관식 퀴즈')),
+        appBar: AppBar(title: Text('객관식 퀴즈'), backgroundColor: Colors.teal),
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_questions.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: Text('객관식 퀴즈')),
+        appBar: AppBar(title: Text('객관식 퀴즈'), backgroundColor: Colors.teal),
         body: Center(child: Text('퀴즈 데이터가 없습니다.')),
       );
     }
@@ -84,7 +84,7 @@ class _ChoiceQuizPageState extends State<ChoiceQuizPage> {
     final currentQuestion = _questions[_currentQuestionIndex];
 
     return Scaffold(
-      appBar: AppBar(title: Text('객관식 퀴즈')),
+      appBar: AppBar(title: Text('객관식 퀴즈'), backgroundColor: Colors.teal),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -94,13 +94,21 @@ class _ChoiceQuizPageState extends State<ChoiceQuizPage> {
             Container(
               padding: const EdgeInsets.all(20.0),
               decoration: BoxDecoration(
-                color: Colors.teal.shade50,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.black // 다크 모드일 때 배경색 검은색
+                    : Colors.teal.shade50, // 라이트 모드일 때 배경색
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.teal, width: 2),
               ),
               child: Text(
                 "문제: ${currentQuestion.def}",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : Colors.black, // 다크 모드에 따라 텍스트 색상 변경
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -123,7 +131,12 @@ class _ChoiceQuizPageState extends State<ChoiceQuizPage> {
                         padding: const EdgeInsets.all(16.0),
                         child: Text(
                           option,
-                          style: TextStyle(fontSize: 18),
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black, // 다크 모드에 따라 텍스트 색상 변경
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -196,6 +209,11 @@ class _ChoiceQuizPageState extends State<ChoiceQuizPage> {
             isCorrect
                 ? '잘했습니다! 다음 문제로 넘어갑니다.'
                 : '정답은 "${_questions[_currentQuestionIndex].word}"입니다.',
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black, // 다크 모드에 따라 텍스트 색상 변경
+            ),
           ),
           actions: [
             TextButton(
@@ -227,7 +245,14 @@ class _ChoiceQuizPageState extends State<ChoiceQuizPage> {
       builder: (context) {
         return AlertDialog(
           title: Text('퀴즈 완료'),
-          content: Text('모든 문제를 푸셨습니다!'),
+          content: Text(
+            '모든 문제를 푸셨습니다!',
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black, // 다크 모드에 따라 텍스트 색상 변경
+            ),
+          ),
           actions: [
             TextButton(
               onPressed: () {

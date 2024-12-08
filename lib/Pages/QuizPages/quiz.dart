@@ -53,14 +53,14 @@ class _QuizPageState extends State<QuizPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: Text('퀴즈 풀기')),
+        appBar: AppBar(title: Text('퀴즈 풀기'), backgroundColor: Colors.teal),
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_questions.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: Text('퀴즈 풀기')),
+        appBar: AppBar(title: Text('퀴즈 풀기'), backgroundColor: Colors.teal),
         body: Center(child: Text('퀴즈 데이터가 없습니다.')),
       );
     }
@@ -68,17 +68,32 @@ class _QuizPageState extends State<QuizPage> {
     final currentQuestion = _questions[_currentQuestionIndex];
 
     return Scaffold(
-      appBar: AppBar(title: Text('퀴즈 풀기')),
+      appBar: AppBar(title: Text('퀴즈 풀기'), backgroundColor: Colors.teal),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 질문 표시
-            Text(
-              "문제: ${currentQuestion.def}",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
+            // 질문 카드
+            Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  "문제: ${currentQuestion.def}",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white // 다크 모드일 때 흰색
+                        : Colors.black, // 라이트 모드일 때 검은색
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ),
             SizedBox(height: 20),
             // 답 입력 필드
@@ -87,41 +102,62 @@ class _QuizPageState extends State<QuizPage> {
               decoration: InputDecoration(
                 labelText: '정답을 입력하세요',
                 border: OutlineInputBorder(),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.teal),
+                ),
               ),
             ),
             SizedBox(height: 20),
             // 제출 및 힌트 버튼
             Row(
-              mainAxisAlignment: MainAxisAlignment.center, // 버튼들을 중앙 정렬
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // 힌트 버튼
                 ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white, // 흰색 배경
+                    elevation: 5,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
                   onPressed: _isHintUsed
                       ? null
                       : () {
                     setState(() {
                       _isHintUsed = true;
                     });
+                    _showHint(currentQuestion); // 힌트 표시
                   },
-                  child: Text(_isHintUsed ? currentQuestion.hint : '힌트 보기'),
+                  child: Text(
+                    _isHintUsed ? currentQuestion.hint : '힌트 보기',
+                    style: TextStyle(color: Colors.black), // 검은색 글씨
+                  ),
                 ),
-                SizedBox(width: 16), // 버튼 사이 간격 조절
+                SizedBox(width: 16),
                 // 제출 버튼
                 ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white, // 흰색 배경
+                    elevation: 5,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
                   onPressed: () => _checkAnswer(currentQuestion),
-                  child: Text('제출'),
+                  child: Text(
+                    '제출',
+                    style: TextStyle(color: Colors.black), // 검은색 글씨
+                  ),
                 ),
               ],
-            )
-
+            ),
           ],
         ),
       ),
     );
   }
 
-
-  // 정답 체크 및 오답 처리
   void _checkAnswer(Question question) {
     String userAnswer = _answerController.text.trim();
 
@@ -175,15 +211,13 @@ class _QuizPageState extends State<QuizPage> {
     }
   }
 
-  // 힌트 보기 기능
   void _showHint(Question question) {
     setState(() {
-      _currentHint = question.hint; // `hint` 필드 사용
+      _currentHint = question.hint;
       _isHintUsed = true;
     });
   }
 
-  // 힌트 초기화
   void _resetHint() {
     setState(() {
       _currentHint = null;
@@ -191,13 +225,12 @@ class _QuizPageState extends State<QuizPage> {
     });
   }
 
-  // 결과 다이얼로그
   void _showResultDialog(bool isCorrect) {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text(isCorrect ? '정답입니다!' : '오답입니다.'),
+          title: Text(isCorrect ? '정답입니다!' : '오답입니다.', style: TextStyle(color: Colors.teal)),
           content: Text(
             isCorrect
                 ? '잘했습니다! 다음 문제로 넘어갑니다.'
@@ -209,7 +242,7 @@ class _QuizPageState extends State<QuizPage> {
                 Navigator.pop(context);
                 _moveToNextQuestion();
               },
-              child: Text('다음'),
+              child: Text('다음', style: TextStyle(color: Colors.teal)),
             ),
           ],
         );
@@ -217,7 +250,6 @@ class _QuizPageState extends State<QuizPage> {
     );
   }
 
-  // 다음 문제로 넘어가기
   void _moveToNextQuestion() {
     setState(() {
       if (_currentQuestionIndex < _questions.length - 1) {
@@ -228,13 +260,12 @@ class _QuizPageState extends State<QuizPage> {
     });
   }
 
-  // 퀴즈 완료 다이얼로그
   void _showCompletionDialog() {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('퀴즈 완료'),
+          title: Text('퀴즈 완료', style: TextStyle(color: Colors.teal)),
           content: Text('모든 문제를 푸셨습니다!'),
           actions: [
             TextButton(
@@ -242,7 +273,7 @@ class _QuizPageState extends State<QuizPage> {
                 Navigator.pop(context);
                 Navigator.pop(context);
               },
-              child: Text('메인으로'),
+              child: Text('메인으로', style: TextStyle(color: Colors.teal)),
             ),
           ],
         );

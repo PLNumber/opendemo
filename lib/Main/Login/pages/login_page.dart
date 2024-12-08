@@ -27,6 +27,11 @@ class _LoginPageState extends State<LoginPage> {
   //로그인 함수
 // 로그인 함수
   void signUserIn() async {
+
+    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+      ErrorMessage('이메일과 비밀번호를 입력해주세요.');
+      return;
+    }
     //로딩 화면
     showDialog(
       context: context,
@@ -55,7 +60,25 @@ class _LoginPageState extends State<LoginPage> {
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context); // 로그인 실패 시 로딩 다이얼로그 닫기
 
-      ErrorMessage(e.code); // 에러 메시지 출력 함수
+      // 에러 코드에 따라 문구를 분기 처리
+      String errorMessage;
+      if (e.code == 'invalid-email') {
+        errorMessage = '유효하지 않은 이메일 형식입니다.';
+      } else if (e.code == 'user-not-found') {
+        errorMessage = '등록되지 않은 이메일입니다.';
+      } else if (e.code == 'wrong-password') {
+        errorMessage = '비밀번호가 잘못되었습니다.';
+      } else if (e.code == 'user-disabled') {
+        errorMessage = '사용이 중지된 계정입니다.';
+      } else if (e.code == 'network-request-failed') {
+        errorMessage = '네트워크 연결에 문제가 발생했습니다.';
+      } else if (e.code == 'too-many-requests') {
+        errorMessage = '요청이 너무 많습니다. 잠시 후 다시 시도하세요.';
+      } else {
+        errorMessage = '알 수 없는 오류가 발생했습니다. (${e.code})';
+      }
+
+      ErrorMessage(errorMessage); // 에러 메시지 출력 함수
     }
   }
 
@@ -237,7 +260,7 @@ class _LoginPageState extends State<LoginPage> {
                 Row(
                   children: [
                     Text(
-                      '회원가입한 적이 없나요?',
+                      '  회원가입한 적이 없나요?',
                       style: TextStyle(color: Colors.grey[700]),
                     ),
                     const SizedBox(width: 4),

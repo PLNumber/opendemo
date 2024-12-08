@@ -291,32 +291,19 @@ class _GameRoomPageState extends State<GameRoomPage> {
   }
 
   // 방을 강제로 나가는 메서드
+// 방을 강제로 나가는 메서드
   void _forceLeaveRoom() async {
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("상대방이 나갔습니다"),
-          content: const Text("방을 나갑니다."),
-          actions: [
-            TextButton(
-              onPressed: () async {
-                _notifyOpponentPlayerLeft(widget.roomId, widget.playerId);
+    // 상대방에게 나갔다는 메시지 전송
+    _notifyOpponentPlayerLeft(widget.roomId, widget.playerId);
 
-                // 방의 모든 기록 삭제
-                await _roomsRef.child(widget.roomId).remove();
-                print("방의 모든 기록이 삭제되었습니다: ${widget.roomId}");
+    // 방의 모든 기록 삭제
+    await _roomsRef.child(widget.roomId).remove();
+    print("방의 모든 기록이 삭제되었습니다: ${widget.roomId}");
 
-                Navigator.pop(context); // 이전 화면으로 돌아가기
-                Navigator.pop(context); // 방 나가기
-              },
-              child: const Text("확인"),
-            ),
-          ],
-        );
-      },
-    );
+    // 이전 화면으로 돌아가기
+    Navigator.pop(context); // 방 나가기
   }
+
 
   // 답변 제출 처리
   void _submitAnswer() async {

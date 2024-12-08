@@ -145,48 +145,70 @@ class _BattlePageState extends State<BattlePage> {
   }
 
   Future<void> quickJoinRoom() async {
-    DatabaseEvent event = await _roomsRef.once();
-    final rooms = event.snapshot.value as Map<Object?, Object?>?;
+    try {
+      DatabaseEvent event = await _roomsRef.once();
+      final rooms = event.snapshot.value as Map<Object?, Object?>?;
 
-    if (rooms != null) {
-      for (var roomId in rooms.keys) {
-        final roomData = rooms[roomId] as Map<Object?, Object?>;
-        final players = roomData['players'] as Map<Object?, Object?>;
-
-        if (players.length < 2) {
-          await joinRoomById(roomId.toString());
-          return;
+      if (rooms != null) {
+        for (var roomId in rooms.keys) {
+          final roomData = rooms[roomId] as Map<Object?, Object?>?;
+          if (roomData != null) {
+            final players = roomData['players'] as Map<Object?, Object?>?;
+            if (players != null && players.length < 2) {
+              await joinRoomById(roomId.toString());
+              return;
+            }
+          } else {
+            print("방 데이터가 null입니다: $roomId");
+          }
         }
+      } else {
+        print("방 목록이 null입니다.");
       }
-    }
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("경고"),
-        content: const Text("입장 가능한 방이 없습니다."),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text("확인"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> joinRoomById(String enteredRoomId) async {
-    DatabaseEvent event = await _roomsRef.child(enteredRoomId).once();
-    if (event.snapshot.exists) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              GameRoomPage(roomId: enteredRoomId, playerId: playerName),
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("경고"),
+          content: const Text("입장 가능한 방이 없습니다."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("확인"),
+            ),
+          ],
         ),
       );
+    } catch (e) {
+      print("방 목록을 가져오는 중 오류 발생: $e");
     }
   }
+
+
+  Future<void> joinRoomById(String enteredRoomId) async {
+    try {
+      DatabaseEvent event = await _roomsRef.child(enteredRoomId).once();
+      if (event.snapshot.exists) {
+        final roomData = event.snapshot.value as Map<Object?, Object?>?;
+        if (roomData != null) {
+          // 방 데이터가 정상적으로 존재하는 경우
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => GameRoomPage(roomId: enteredRoomId, playerId: playerName),
+            ),
+          );
+        } else {
+          print("방 데이터가 null입니다.");
+        }
+      } else {
+        print("방이 존재하지 않습니다: $enteredRoomId");
+      }
+    } catch (e) {
+      print("방에 참여하는 중 오류 발생: $e");
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {

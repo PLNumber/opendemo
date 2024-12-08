@@ -26,6 +26,12 @@ class _RegisterPageState extends State<RegisterPage> {
 
   //회원가입
   void signUserUp() async {
+
+    if (passwordController.text != confirmPasswordController.text) {
+      ErrorMessage("비밀번호가 일치하지 않습니다."); // 비밀번호 불일치 경고
+      return;
+    }
+
     // 로딩 화면
     showDialog(
       context: context,
@@ -73,13 +79,34 @@ class _RegisterPageState extends State<RegisterPage> {
       Navigator.pop(context); // 로딩 화면 닫기
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context); // 로딩 화면 닫기
-      ErrorMessage(e.code); // 에러 메시지 출력
+
+      String errorMessage;
+      if (e.code == 'email-already-in-use') {
+        errorMessage = "이미 사용 중인 이메일입니다.";
+      } else if (e.code == 'invalid-email') {
+        errorMessage = "유효하지 않은 이메일 형식입니다.";
+      } else if (e.code == 'weak-password') {
+        errorMessage = "비밀번호가 너무 약합니다. 최소 6자 이상이어야 합니다.";
+      } else if (e.code == 'operation-not-allowed') {
+        errorMessage = "현재 이메일/비밀번호 회원가입이 비활성화되어 있습니다.";
+      } else if (e.code == 'network-request-failed') {
+        errorMessage = "네트워크 연결에 문제가 발생했습니다.";
+      } else if (e.code == 'channel-error'){
+        errorMessage = "이메일과 비밀번호를 입력해주세요.";
+      }  else if(e.code == 'unknown') {
+        errorMessage = "비밀번호에는 대소문자, 특수문자, 숫자가 반드시 포함되어야 합니다.";
+      } else {
+        errorMessage = "알 수 없는 오류가 발생했습니다. (${e.code})";
+      }
+
+      ErrorMessage(errorMessage); // 에러 메시지 출력
     } catch (e) {
       Navigator.pop(context); // 로딩 화면 닫기
       ErrorMessage("알 수 없는 오류가 발생했습니다."); // 일반적인 오류 처리
       print(e);
     }
   }
+
 
   //에러 메시지 출력 함수
   void ErrorMessage(String message) {
@@ -239,7 +266,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 Row(
                   children: [
                     Text(
-                      '계정이 이미 있나요?',
+                      '  계정이 이미 있나요?',
                       style: TextStyle(color: Colors.grey[700]),
                     ),
                     const SizedBox(width: 4),
