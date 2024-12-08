@@ -88,14 +88,11 @@ class _MainPage extends State<MainPage> {
     _fetchUserName();
     _checkLastQuizAttempt();
     _scheduleResetAtMidnight();
-
   }
-
 
   void _loadAd() {
     if (!kIsWeb) {
-      final adVisibilityProvider =
-      Provider.of<AdVisibilityProvider>(context, listen: false);
+      final adVisibilityProvider = Provider.of<AdVisibilityProvider>(context, listen: false);
       if (adVisibilityProvider.isAdVisible) {
         _createBannerAd();
       }
@@ -170,8 +167,7 @@ class _MainPage extends State<MainPage> {
 
   Future<void> _onStartQuiz() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-        'lastQuizAttemptTime', DateTime.now().toIso8601String());
+    await prefs.setString('lastQuizAttemptTime', DateTime.now().toIso8601String());
     setState(() {
       _isQuizButtonDisabled = true; // 퀴즈 시작 시 버튼 비활성화
     });
@@ -250,15 +246,17 @@ class _MainPage extends State<MainPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("일일 픽업 퀴즈",
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold)),
-                      SizedBox(height: 5),
-                      Text("하루에 한 번! 다량의 포인트 획득 기회", style: TextStyle(fontSize: 14)),
-                    ],
+                  Expanded( // Expanded로 감싸서 공간을 적절히 사용하도록 함
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("일일 픽업 퀴즈",
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold)),
+                        SizedBox(height: 5),
+                        Text("하루에 한 번! 다량의 포인트 획득 기회", style: TextStyle(fontSize: 14)),
+                      ],
+                    ),
                   ),
                   ElevatedButton(
                     onPressed: _isQuizButtonDisabled ? null : _onStartQuiz,
@@ -377,3 +375,4 @@ class FeatureCard extends StatelessWidget {
     );
   }
 }
+

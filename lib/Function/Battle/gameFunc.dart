@@ -1,7 +1,7 @@
 import 'package:firebase_database/firebase_database.dart';
 import '../../Function/class.dart';
 
-//gameFunc.dart
+// gameFunc.dart
 class GameFunction {
   String? roomId;
 
@@ -37,8 +37,7 @@ class GameFunction {
         opponentScore += 10; // 상대방이 정답인 경우
       }
     }
-    print("내 점수33: ${playerScore}, 상대 점수33: ${opponentScore}");
-
+    print("내 점수: $playerScore, 상대 점수: $opponentScore");
   }
 
   Future<void> updateScoreInDatabase(String roomId, String playerId, int scoreChange) async {
@@ -194,6 +193,7 @@ class GameFunction {
       "name": playerId,
       "status": "waiting",
       "score": 0,
+      "lastActive": DateTime.now().millisecondsSinceEpoch, // 타임스탬프 추가
     });
 
     final playersSnapshot = await _roomsRef.child(roomId).child('players').once();
@@ -218,48 +218,43 @@ class GameFunction {
     }
   }
 
-
-
   Future<void> updatePlayerStatus(String roomId, String playerId, String status) async {
     await _roomsRef.child(roomId).child('players').child(playerId).update({
       "status": status,
     });
   }
 
-  // 상대방이 나간 후 방 삭제 처리 (leaveRoom 메서드 수정)
+  // 플레이어의 마지막 활동 시간 업데이트 메서드
+  Future<void> updateLastActive(String roomId, String playerId) async {
+    await _roomsRef.child(roomId).child('players').child(playerId).update({
+      'lastActive': DateTime.now().millisecondsSinceEpoch, // 현재 시간을 타임스탬프로 업데이트
+    });
+  }
+
   Future<void> leaveRoom(String roomId, String playerId) async {
     try {
       final roomRef = roomsRef.child(roomId);
       final roomSnapshot = await roomRef.get();
 
       if (roomSnapshot.exists) {
-        final roomData = roomSnapshot.value as Map;
-        final players = roomData['players'] ?? {};
-
-        // 해당 플레이어를 방에서 제거
-        players.remove(playerId);
+        // 플레이어를 방에서 제거
+        await roomRef.child('players').child(playerId).remove();
 
         // 메시지 삭제
-        await roomRef.child('messages').once().then((snapshot) {
-          if (snapshot.snapshot.exists) {
-            final messages = snapshot.snapshot.value as Map;
-            messages.forEach((key, value) {
-              roomRef.child('messages').child(key).remove(); // 모든 메시지 삭제
-            });
-          }
-        });
+        await roomRef.child('messages').remove();
 
-        // 방 삭제
-        await roomRef.remove();
-        print("플레이어가 나갔으므로 방과 메시지가 삭제되었습니다.");
+        // 방이 비어있으면 방 삭제
+        final playersSnapshot = await roomRef.child('players').once();
+        if (playersSnapshot.snapshot.value == null ||
+            (playersSnapshot.snapshot.value as Map).isEmpty) {
+          await roomRef.remove();
+          print("방이 비어있어 삭제되었습니다.");
+        } else {
+          print("플레이어가 남아있어 방은 유지됩니다.");
+        }
       }
     } catch (e) {
       print("방을 떠나는 중 오류 발생: $e");
     }
   }
-
-
-
-
-
 }

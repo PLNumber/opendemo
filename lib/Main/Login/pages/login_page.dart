@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:opendemo/Main/Login/services/reset_password.dart';
 import '../../main.dart';
 import '../component/button.dart';
 import '../component/squaretitle.dart';
@@ -154,9 +155,15 @@ class _LoginPageState extends State<LoginPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Text(
-                        '비밀번호를 잊어버렸나요?',
-                        style: TextStyle(color: Colors.grey[600]),
+                      GestureDetector(
+                        onTap: () { ResetPasswordDialog.showResetPasswordDialog(context);},
+                        child: Text(
+                          '비밀번호를 잊어버렸나요?',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
                       ),
                     ],
                   ),
