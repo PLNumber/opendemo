@@ -84,11 +84,12 @@ class _DictPageState extends State<DictPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           '단어 정의 검색',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.teal,
       ),
@@ -101,27 +102,28 @@ class _DictPageState extends State<DictPage> {
               controller: _searchController,
               decoration: InputDecoration(
                 labelText: '단어를 입력',
-                labelStyle: const TextStyle(color: Colors.teal),
+                labelStyle: TextStyle(color: Colors.teal),
                 prefixIcon: const Icon(Icons.search, color: Colors.teal),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.teal),
-                        onPressed: () {
-                          setState(() {
-                            _searchController.clear();
-                            _definitions.clear();
-                          });
-                        },
-                      )
+                  icon: const Icon(Icons.clear, color: Colors.teal),
+                  onPressed: () {
+                    setState(() {
+                      _searchController.clear();
+                      _definitions.clear();
+                    });
+                  },
+                )
                     : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10.0),
                   borderSide: const BorderSide(color: Colors.teal),
                 ),
                 filled: true,
-                fillColor: Colors.teal[50],
+                fillColor: isDarkMode ? Colors.black : Colors.teal[50], // 다크 모드에서 검은색 배경
                 hintStyle: TextStyle(color: Colors.teal[300]),
               ),
+              style: TextStyle(color: isDarkMode ? Colors.white : Colors.black), // 입력 텍스트 색상
               onSubmitted: (_) => _searchWord(),
             ),
             const SizedBox(height: 20.0),
@@ -135,7 +137,7 @@ class _DictPageState extends State<DictPage> {
                 ),
                 textStyle: const TextStyle(fontSize: 18.0),
               ),
-              child: const Text('정의 찾기'),
+              child: const Text('정의 찾기', style: TextStyle(color: Colors.black)), // 버튼 텍스트 색상 변경
             ),
             const SizedBox(height: 20.0),
             if (_recentWords.isNotEmpty)
@@ -145,7 +147,10 @@ class _DictPageState extends State<DictPage> {
                   return GestureDetector(
                     onTap: () => _searchFromChip(word),
                     child: Chip(
-                      label: Text(word),
+                      label: Text(
+                        word,
+                        style: TextStyle(color: isDarkMode ? Colors.white : Colors.black), // 검은색 텍스트
+                      ),
                       onDeleted: () {
                         setState(() {
                           _recentWords.remove(word);
@@ -178,9 +183,15 @@ class _DictPageState extends State<DictPage> {
                       child: ListTile(
                         title: Text(
                           item['word'] ?? '단어 없음',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: isDarkMode ? Colors.white : Colors.black, // 검은색 텍스트
+                          ),
                         ),
-                        subtitle: Text(item['definition'] ?? '정의 없음'),
+                        subtitle: Text(
+                          item['definition'] ?? '정의 없음',
+                          style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54), // 검은색 텍스트
+                        ),
                       ),
                     );
                   },

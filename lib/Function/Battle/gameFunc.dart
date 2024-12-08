@@ -20,7 +20,7 @@ class GameFunction {
   String? playerAnswer;
   String matchStatus = "문제를 불러오는 중입니다...";
   bool isLoading = true;
-
+  bool isMovingToNextQuestion = false;
   String? myPlayerId; // 내 플레이어 ID
   String? opponentId; // 상대방 플레이어 ID
   bool isGameFinished = false; // 게임 종료 여부
@@ -168,7 +168,7 @@ class GameFunction {
     }
   }
 
-  bool isMovingToNextQuestion = false;
+
 
   void moveToNextQuestion(String roomId) async {
     if (isMovingToNextQuestion) return; // 이미 이동 중이면 무시
@@ -182,11 +182,48 @@ class GameFunction {
       await roomsRef.child(roomId).child('currentQuestionIndex').set(currentIndex);
       notifyPlayersNewQuestion(roomId);
     } else {
-      endQuiz(roomId); // 더 이상 질문이 없으면 퀴즈 종료
+      // 모든 질문을 다 푼 경우
+      await endQuizAndUpdateScore(roomId);
     }
 
     isMovingToNextQuestion = false; // 이동 완료
   }
+
+
+
+  Future<void> endQuizAndUpdateScore(String roomId) async {
+    isGameFinished = true;
+
+    // 랭크 포인트에 최종 점수 추가
+    await updateRankPoints(myPlayerId!, playerScore);
+    await updateRankPoints(opponentId!, opponentScore);
+
+    // 방 상태 업데이트
+    await roomsRef.child(roomId).child('gameStatus').set({
+      'finished': true,
+      'finalScores': {
+        'playerScore': playerScore,
+        'opponentScore': opponentScore,
+      },
+    });
+  }
+
+
+  Future<void> updateRankPoints(String playerId, int finalScore) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final userDoc = FirebaseFirestore.instance.collection('UserData').doc(user.uid);
+        await userDoc.update({'rankPt': FieldValue.increment(finalScore)});
+        print('User points updated by $finalScore.');
+      }
+    } catch (e) {
+      print('Error updating user points: $e');
+    }
+  }
+
+
+
 
   // 플레이어에게 새로운 문제 알리기
   void notifyPlayersNewQuestion(String roomId) {

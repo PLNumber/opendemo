@@ -306,7 +306,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
 
 
   // 답변 제출 처리
-  void _submitAnswer() async {
+  Future<void> _submitAnswer() async {
     if (gameFunctions.playerAnswer == null || gameFunctions.playerAnswer!.isEmpty) {
       return; // 답변이 비어있으면 아무것도 하지 않음
     }
@@ -398,8 +398,16 @@ class _GameRoomPageState extends State<GameRoomPage> {
                 ),
               ),
               const SizedBox(height: 20),
+
               ElevatedButton(
-                onPressed: _submitAnswer,
+                onPressed: () async {
+                  await _submitAnswer(); // 답변 제출
+                  if (gameFunctions.currentQuestionIndex >= 4) { // 5문제를 다 푼 경우 (인덱스가 0부터 시작하므로 4)
+                    await gameFunctions.endQuizAndUpdateScore(widget.roomId); // 점수 업데이트
+                    _forceLeaveRoom(); // 방 강제 나가기
+                  }
+                },
+
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
