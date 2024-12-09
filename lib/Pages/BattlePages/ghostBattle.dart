@@ -277,7 +277,9 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
             GestureDetector(
               onTap: _startGame,
               child: Container(
-                color: Colors.white,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.black
+                    : Colors.white, // 배경색 설정
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -293,19 +295,27 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black, // 글씨 색상 설정
                         ),
                       ),
                       SizedBox(height: 8),
                       Text(
                         '터치하면 시작합니다.',
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey[300] // 다크 모드일 때 글씨 색상
+                              : Colors.grey, // 일반 모드일 때 글씨 색상
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
             ),
+
         ],
       ),
     );
