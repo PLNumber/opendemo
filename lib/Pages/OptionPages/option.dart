@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:opendemo/Pages/OptionPages/battleMain_beta.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../Function/Ads/ads_provider.dart';
@@ -108,11 +109,14 @@ class _OptionPageState extends State<OptionPage> {
 
               // 업데이트 히스토리 버튼 추가
               _buildOptionItem(
-                icon: Icons.update,
-                label: "업데이트 히스토리",
-                onPressed: () async {
-                  await launchURL(
-                      'https://www.notion.so/12ab86c285be806d9db9c133beecc318');
+                icon: Icons.science, // 아이콘을 science로 변경
+                label: "실험실", // 텍스트
+                onPressed: () {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const BattleBetaPage()),
+                        (Route<dynamic> route) => false,
+                  );
                 },
               ),
 

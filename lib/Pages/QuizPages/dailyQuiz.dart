@@ -29,8 +29,6 @@ class _SingleQuizPageState extends State<SingleQuizPage> {
         setState(() {
           _question = Question.fromMap(randomDoc.first.data());
           _isLoading = false;
-          _isHintUsed = false; // 새로운 문제에 대해 힌트 초기화
-          _currentHint = null;
         });
       } else {
         setState(() {
@@ -94,11 +92,10 @@ class _SingleQuizPageState extends State<SingleQuizPage> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // 결과 다이얼로그 닫기
-                _fetchRandomQuestion(); // 다음 문제로 이동
-                _answerController.clear(); // 입력 필드 초기화
+                Navigator.pop(context);
+                Navigator.pop(context); // 메인 화면으로 이동
               },
-              child: Text('다음 문제'),
+              child: Text('메인으로'),
             ),
           ],
         );
@@ -125,29 +122,20 @@ class _SingleQuizPageState extends State<SingleQuizPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text('일일 픽업 퀴즈'),
-          centerTitle: true, // 제목 중앙 정렬
-        ),
+        appBar: AppBar(title: Text('퀴즈 풀기')),
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_question == null) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text('퀴즈 풀기'),
-          centerTitle: true, // 제목 중앙 정렬
-        ),
+        appBar: AppBar(title: Text('퀴즈 풀기')),
         body: Center(child: Text('퀴즈 데이터가 없습니다.')),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('퀴즈 풀기'),
-        centerTitle: true, // 제목 중앙 정렬
-      ),
+      appBar: AppBar(title: Text('퀴즈 풀기')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

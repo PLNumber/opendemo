@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import '../../Function/Battle/gameFunc.dart';
+import '../../Function/Option/gameFunc.dart';
 
 // gameRoom.dart
 class GameRoomPage extends StatefulWidget {
+
+
   final String roomId;
   final String playerId;
 
@@ -25,6 +27,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
   @override
   void initState() {
     super.initState();
+
 
     gameFunctions = GameFunction(onScoreUpdated: () {
       if (mounted) {
@@ -111,6 +114,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
         setState(() {
           //messages.add("$playerId가 들어왔습니다."); // 메시지 추가
           gameFunctions.opponentId = playerId; // 상대방 ID 설정
+          print('상대 id 테스트 $playerId');
           _checkIfReady(); // 대기 상태를 체크하여 UI 업데이트
           _setupScoreListener(); // 상대방 ID가 설정된 후 점수 리스너 설정
         });
@@ -281,9 +285,14 @@ class _GameRoomPageState extends State<GameRoomPage> {
 
     if (confirmExit == true) {
       try {
-        await gameFunctions.leaveRoom(widget.roomId, widget.playerId);
         // 상대방에게 나갔다는 메시지 전송
         _notifyOpponentPlayerLeft(widget.roomId, widget.playerId);
+
+        // 방에서 플레이어 데이터 삭제
+        await gameFunctions.roomsRef.child(widget.roomId).child('players').child(widget.playerId).remove();
+
+
+        await gameFunctions.leaveRoom(widget.roomId, widget.playerId);
         Navigator.pop(context); // 이전 화면으로 돌아가기
       } catch (e) {
         ScaffoldMessenger.of(context)
@@ -337,11 +346,11 @@ class _GameRoomPageState extends State<GameRoomPage> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false, // 시스템 뒤로가기를 비활성화
-      onPopInvokedWithResult: (bool didPop, Object? result) async {
+      onPopInvokedWithResult: (bool didPop, Object? result)  {
         // 시스템이 이미 Pop을 처리한 경우 종료
         if (didPop) return;
         // 방 나가기 메서드 호출
-        await _leaveRoom();
+        _leaveRoom();
       },
       child: Scaffold(
         appBar: AppBar(
@@ -408,8 +417,10 @@ class _GameRoomPageState extends State<GameRoomPage> {
               ElevatedButton(
                 onPressed: () async {
                   await _submitAnswer(); // 답변 제출
-                  if (gameFunctions.currentQuestionIndex > 4) { // 5문제를 다 푼 경우 (인덱스가 0부터 시작하므로 4)
+                  if (gameFunctions.currentQuestionIndex <= 4) { // 5문제를 다 푼 경우 (인덱스가 0부터 시작하므로 4)
                     await gameFunctions.endQuizAndUpdateScore(widget.roomId); // 점수 업데이트
+                  }
+                  else {
                     _forceLeaveRoom(); // 방 강제 나가기
                   }
                 },

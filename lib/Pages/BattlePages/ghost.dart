@@ -3,18 +3,19 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../Function/class.dart';
 
-class QuizPage extends StatefulWidget {
+class GhostPage extends StatefulWidget {
   @override
-  _QuizPageState createState() => _QuizPageState();
+  _GhostPageState createState() => _GhostPageState();
 }
 
-class _QuizPageState extends State<QuizPage> {
+class _GhostPageState extends State<GhostPage> {
   List<Question> _questions = [];
   int _currentQuestionIndex = 0;
+  int _correctAnswers = 0;
   final TextEditingController _answerController = TextEditingController();
   bool _isLoading = true;
-  String? _currentHint;
-  bool _isHintUsed = false;
+  final List<int> _timeRecords = [];
+  late int _startTime;
 
   @override
   void initState() {
@@ -31,6 +32,7 @@ class _QuizPageState extends State<QuizPage> {
       setState(() {
         _questions = questions;
         _isLoading = false;
+        _startTime = DateTime.now().millisecondsSinceEpoch;
       });
     } catch (e) {
       print('Error fetching questions: $e');
@@ -53,22 +55,14 @@ class _QuizPageState extends State<QuizPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text('단답식 퀴즈'), // 앱바 텍스트 수정
-          centerTitle: true,
-          backgroundColor: Colors.teal,
-        ),
+        appBar: AppBar(title: Text('퀴즈 풀기'), backgroundColor: Colors.teal),
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_questions.isEmpty) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text('단답식 퀴즈'), // 앱바 텍스트 수정
-          centerTitle: true,
-          backgroundColor: Colors.teal,
-        ),
+        appBar: AppBar(title: Text('퀴즈 풀기'), backgroundColor: Colors.teal),
         body: Center(child: Text('퀴즈 데이터가 없습니다.')),
       );
     }
@@ -76,36 +70,37 @@ class _QuizPageState extends State<QuizPage> {
     final currentQuestion = _questions[_currentQuestionIndex];
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('단답식 퀴즈'), // 앱바 텍스트 수정
-        centerTitle: true,
-        backgroundColor: Colors.teal,
-      ),
+      appBar: AppBar(title: Text('퀴즈 풀기'), backgroundColor: Colors.teal),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 질문 카드 디자인 수정
-            Container(
-              padding: const EdgeInsets.all(20.0),
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.black
-                    : Colors.teal.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.teal, width: 2),
+            // 문제 현황 표시
+            Text(
+              '문제 진행 상황: $_correctAnswers/10',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 20),
+            // 질문 카드
+            Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: Text(
-                "문제: ${currentQuestion.def}",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white
-                      : Colors.black,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  "문제: ${currentQuestion.def}",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
             ),
             SizedBox(height: 20),
@@ -121,47 +116,34 @@ class _QuizPageState extends State<QuizPage> {
               ),
             ),
             SizedBox(height: 20),
-            // 제출 및 힌트 버튼
+            // 버튼들
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // 힌트 버튼
+                // 문제 넘기기 버튼
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white, // 흰색 배경
+                    backgroundColor: Colors.white,
                     elevation: 5,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  onPressed: _isHintUsed
-                      ? null
-                      : () {
-                    setState(() {
-                      _isHintUsed = true;
-                    });
-                    _showHint(currentQuestion); // 힌트 표시
-                  },
-                  child: Text(
-                    _isHintUsed ? _currentHint! : '힌트 보기',
-                    style: TextStyle(color: Colors.black), // 검은색 글씨
-                  ),
+                  onPressed: _skipQuestion,
+                  child: Text('문제 넘기기', style: TextStyle(color: Colors.black)),
                 ),
                 SizedBox(width: 16),
                 // 제출 버튼
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white, // 흰색 배경
+                    backgroundColor: Colors.white,
                     elevation: 5,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   onPressed: () => _checkAnswer(currentQuestion),
-                  child: Text(
-                    '제출',
-                    style: TextStyle(color: Colors.black), // 검은색 글씨
-                  ),
+                  child: Text('제출', style: TextStyle(color: Colors.black)),
                 ),
               ],
             ),
@@ -173,27 +155,44 @@ class _QuizPageState extends State<QuizPage> {
 
   void _checkAnswer(Question question) {
     String userAnswer = _answerController.text.trim();
+    int endTime = DateTime.now().millisecondsSinceEpoch;
+    int timeTaken = (endTime - _startTime) ~/ 1000;
 
     setState(() {
+      _timeRecords.add(timeTaken);
+
       if (userAnswer.toLowerCase() == question.word.toLowerCase()) {
-        _showResultDialog(true);
+        _correctAnswers++;
+        if (_correctAnswers >= 10) {
+          _showCompletionDialog();
+          return;
+        }
+
+        _moveToNextQuestion(); // 정답일 때만 다음 문제로 이동
       } else {
-        question.isCorrect = false;
         _saveWrongAnswer(question);
-        _showResultDialog(false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('오답입니다. 다시 시도해주세요.')),
+        );
       }
 
       _answerController.clear();
-      _resetHint();
+    });
+
+    _startTime = DateTime.now().millisecondsSinceEpoch;
+  }
+
+  void _skipQuestion() {
+    setState(() {
+      _moveToNextQuestion();
+      _startTime = DateTime.now().millisecondsSinceEpoch;
     });
   }
 
   void _saveWrongAnswer(Question question) async {
     try {
       final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        throw Exception("사용자가 로그인되어 있지 않습니다.");
-      }
+      if (user == null) throw Exception("사용자가 로그인되어 있지 않습니다.");
       final uid = user.uid;
 
       final userDoc = FirebaseFirestore.instance.collection('UserData').doc(uid);
@@ -202,65 +201,20 @@ class _QuizPageState extends State<QuizPage> {
         final snapshot = await transaction.get(userDoc);
 
         if (!snapshot.exists) {
-          transaction.set(userDoc, {
-            'wrongAnswerIds': [question.wId],
-          });
+          transaction.set(userDoc, {'wrongAnswerIds': [question.wId]});
         } else {
           final data = snapshot.data() as Map<String, dynamic>;
           final wrongAnswerIds = List<int>.from(data['wrongAnswerIds'] ?? []);
 
           if (!wrongAnswerIds.contains(question.wId)) {
             wrongAnswerIds.add(question.wId);
-            transaction.update(userDoc, {
-              'wrongAnswerIds': wrongAnswerIds,
-            });
+            transaction.update(userDoc, {'wrongAnswerIds': wrongAnswerIds});
           }
         }
       });
-
-      print('틀린 문제 ID가 성공적으로 저장되었습니다: ${question.wId}');
     } catch (e) {
       print('오답 저장 중 오류 발생: $e');
     }
-  }
-
-  void _showHint(Question question) {
-    setState(() {
-      _currentHint = question.hint; // Firestore에서 힌트를 가져오도록 수정
-      _isHintUsed = true;
-    });
-  }
-
-  void _resetHint() {
-    setState(() {
-      _currentHint = null;
-      _isHintUsed = false;
-    });
-  }
-
-  void _showResultDialog(bool isCorrect) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(isCorrect ? '정답입니다!' : '오답입니다.', style: TextStyle(color: Colors.teal)),
-          content: Text(
-            isCorrect
-                ? '잘했습니다! 다음 문제로 넘어갑니다.'
-                : '정답은 "${_questions[_currentQuestionIndex].word}"입니다.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _moveToNextQuestion();
-              },
-              child: Text('다음', style: TextStyle(color: Colors.teal)),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   void _moveToNextQuestion() {
@@ -273,13 +227,58 @@ class _QuizPageState extends State<QuizPage> {
     });
   }
 
-  void _showCompletionDialog() {
+  void _showCompletionDialog() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) throw Exception("사용자가 로그인되어 있지 않습니다.");
+
+      String uid = user.uid;
+
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('UserData')
+          .doc(uid)
+          .get();
+
+      String userName = userDoc.get('name') ?? 'Unknown';
+      String profileImage = userDoc.get('profileImg') ?? 'https://via.placeholder.com/150';
+
+      await FirebaseFirestore.instance.collection('pvpGhost').add({
+        'userId': uid,
+        'userName': userName,
+        'profileImage': profileImage,
+        'timeRecords': _timeRecords,
+        'completedAt': DateTime.now(),
+      });
+
+      print('기록이 성공적으로 저장되었습니다!');
+    } catch (e) {
+      print('기록 저장 중 오류 발생: $e');
+    }
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) throw Exception("사용자가 로그인되어 있지 않습니다.");
+      final uid = user.uid;
+
+      final userDoc =
+      FirebaseFirestore.instance.collection('UserData').doc(uid);
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final snapshot = await transaction.get(userDoc);
+        if (snapshot.exists) {
+          final data = snapshot.data() as Map<String, dynamic>;
+          int shopPt = data['shopPt'] ?? 0;
+          transaction.update(userDoc, {'shopPt': shopPt + 100});
+        }
+      });
+    } catch (e) {
+      print('점수 업데이트 중 오류 발생: $e');
+    }
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: Text('퀴즈 완료', style: TextStyle(color: Colors.teal)),
-          content: Text('모든 문제를 푸셨습니다!'),
+          content: Text(
+              '모든 문제를 완료했습니다!\n걸린 시간: ${_timeRecords.join(", ")}초\n100 상점 포인트 획득!'),
           actions: [
             TextButton(
               onPressed: () {

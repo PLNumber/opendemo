@@ -151,16 +151,10 @@ class _QuizBattlePageState extends State<QuizBattlePage>
   }
 
   void _updateHealthBar(AnimationController controller, int health, double totalFrames) {
-    // 목표 프레임을 체력 비율에 맞게 계산
     double targetFrame = totalFrames * (health / 100);
-
-    // 애니메이션을 목표 위치로 이동 (역방향일 경우 낮은 프레임으로 이동)
     controller.animateTo(targetFrame / totalFrames);
-
-    // 현재 프레임 값을 출력하여 디버깅 확인
     controller.addListener(() {
       double currentFrame = totalFrames * controller.value;
-      print("Current Frame: ${currentFrame.toStringAsFixed(2)}");
       print("Current Frame: ${currentFrame.toStringAsFixed(2)}");
     });
   }
@@ -205,13 +199,11 @@ class _QuizBattlePageState extends State<QuizBattlePage>
       }
     });
 
-    // Change AI character animation to angry before rotation
     if (isOpponent) {
       setState(() {
         _opponentAnimationPath = 'assets/animation/angry.json';
       });
     } else {
-      // Change AI character animation to laugh when user is attacked
       setState(() {
         _opponentAnimationPath = 'assets/animation/laugh.json';
       });
@@ -334,7 +326,6 @@ class _QuizBattlePageState extends State<QuizBattlePage>
           onLoaded: (composition) {
             _aiHealthController.duration = composition.duration;
             _aiHealthTotalFrames = composition.duration.inSeconds * composition.frameRate;
-            // 프레임 수 출력
             print("AI Health Animation Total Frames: $_aiHealthTotalFrames");
 
             _aiHealthController.addListener(() {
@@ -389,6 +380,7 @@ class _QuizBattlePageState extends State<QuizBattlePage>
       },
     );
   }
+
   Widget _buildOpponentCharacter() {
     return AnimatedBuilder(
       animation: _rotationController,
@@ -409,6 +401,7 @@ class _QuizBattlePageState extends State<QuizBattlePage>
       },
     );
   }
+
   Widget _buildUserHealthBar() {
     return Column(
       children: [
@@ -423,7 +416,6 @@ class _QuizBattlePageState extends State<QuizBattlePage>
           onLoaded: (composition) {
             _userHealthController.duration = composition.duration;
             _userHealthTotalFrames = composition.duration.inSeconds * composition.frameRate;
-            // 프레임 수 출력
             print("User Health Animation Total Frames: $_userHealthTotalFrames");
             _userHealthController.addListener(() {
               double currentFrame = _userHealthTotalFrames * _userHealthController.value;
@@ -440,14 +432,22 @@ class _QuizBattlePageState extends State<QuizBattlePage>
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: Text('퀴즈 대결')),
+        appBar: AppBar(
+          title: Text('퀴즈 대결'),
+          centerTitle: true, // centerTitle 속성을 true로 설정
+          backgroundColor: Colors.teal, // 앱바 색깔을 틸로 변경
+        ),
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_questions.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: Text('퀴즈 대결')),
+        appBar: AppBar(
+          title: Text('퀴즈 대결'),
+          centerTitle: true,
+          backgroundColor: Colors.teal,
+        ),
         body: Center(child: Text('퀴즈 데이터가 없습니다.')),
       );
     }
@@ -455,7 +455,11 @@ class _QuizBattlePageState extends State<QuizBattlePage>
     final currentQuestion = _questions[_currentQuestionIndex];
 
     return Scaffold(
-      appBar: AppBar(title: Text("퀴즈 대결")),
+      appBar: AppBar(
+        title: Text("퀴즈 대결"),
+        centerTitle: true, // centerTitle 속성 추가
+        backgroundColor: Colors.teal, // 앱바 색깔 설정
+      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -498,3 +502,4 @@ class _QuizBattlePageState extends State<QuizBattlePage>
     );
   }
 }
+

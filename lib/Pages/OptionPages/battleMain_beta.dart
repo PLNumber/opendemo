@@ -2,19 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import '../../Function/Option/gameFunc.dart';
 import '../../Function/Profile/secure.dart';
 import '../BattlePages/pve.dart';
-import 'ghost.dart';
-import 'ghostBattle.dart';
+import 'gameRoom.dart';
 
-class BattlePage extends StatefulWidget {
-  const BattlePage({Key? key}) : super(key: key);
+//battleMain_beta.dart
+class BattleBetaPage extends StatefulWidget {
+  const BattleBetaPage({Key? key}) : super(key: key);
 
   @override
-  State<BattlePage> createState() => _BattlePageState();
+  State<BattleBetaPage> createState() => _BattleBetaPageState();
 }
 
-class _BattlePageState extends State<BattlePage> {
+class _BattleBetaPageState extends State<BattleBetaPage> {
+  // GameFunction 인스턴스 생성
+  late GameFunction gameFunctions = GameFunction();
   String profileImg = "https://via.placeholder.com/150"; // 기본 이미지
   int rankPt = 0; // 기본 점수
   bool isLoading = true; // 데이터 로드 상태
@@ -105,11 +108,117 @@ class _BattlePageState extends State<BattlePage> {
     });
   }
 
+
+  Future<void> createRoom() async {
+    setState(() {
+      isCreatingRoom = true;
+    });
+
+
+    // 사용자 데이터 로드
+    await gameFunctions.loadUserData();
+
+    String newRoomId = _roomsRef.push().key!;
+
+    await _roomsRef.child(newRoomId).set({
+      "players": {
+        gameFunctions.playerName: {
+          "name": gameFunctions.playerName,
+          "status": "waiting", // 대기 상태로 설정
+        },
+      },
+      "questions": [], // 질문 데이터를 이곳에 추가할 수 있습니다.
+      "status": "waiting", // 방 상태를 대기 중으로 설정
+    });
+
+    setState(() {
+      isCreatingRoom = false;
+    });
+    // 방 대기 화면으로 이동
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            GameRoomPage(roomId: newRoomId, playerId: gameFunctions.playerName!),
+      ),
+    );
+  }
+
+  Future<void> quickJoinRoom() async {
+    try {
+      DatabaseEvent event = await _roomsRef.once();
+      final rooms = event.snapshot.value as Map<Object?, Object?>?;
+
+      if (rooms != null) {
+        for (var roomId in rooms.keys) {
+          final roomData = rooms[roomId] as Map<Object?, Object?>?;
+          if (roomData != null) {
+            final players = roomData['players'] as Map<Object?, Object?>?;
+            if (players != null && players.length < 2) {
+              await joinRoomById(roomId.toString());
+              return;
+            }
+          } else {
+            print("방 데이터가 null입니다: $roomId");
+          }
+        }
+      } else {
+        print("방 목록이 null입니다.");
+      }
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("경고"),
+          content: const Text("입장 가능한 방이 없습니다."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("확인"),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      print("방 목록을 가져오는 중 오류 발생: $e");
+    }
+  }
+
+
+  Future<void> joinRoomById(String enteredRoomId) async {
+    try {
+      DatabaseEvent event = await _roomsRef.child(enteredRoomId).once();
+      if (event.snapshot.exists) {
+        final roomData = event.snapshot.value as Map<Object?, Object?>?;
+        if (roomData != null) {
+          // 방 데이터가 정상적으로 존재하는 경우
+          await gameFunctions.loadUserData();
+
+          playerName = gameFunctions.playerName ?? 'players';
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => GameRoomPage(roomId: enteredRoomId, playerId: playerName),
+            ),
+          );
+        } else {
+          print("방 데이터가 null입니다.");
+        }
+      } else {
+        print("방이 존재하지 않습니다: $enteredRoomId");
+      }
+    } catch (e) {
+      print("방에 참여하는 중 오류 발생: $e");
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("대전"),
+        title: const Text("대전(베타버전)"),
         centerTitle: true,
         backgroundColor: Colors.teal,
       ),
@@ -170,43 +279,18 @@ class _BattlePageState extends State<BattlePage> {
                           .values
                           .toList(),
                       const SizedBox(height: 20),
-                      StreamBuilder<DocumentSnapshot>(
-                        stream: FirebaseFirestore.instance
-                            .collection('UserData')
-                            .doc(FirebaseAuth.instance.currentUser?.uid)
-                            .snapshots(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
-                          }
-
-                          if (!snapshot.hasData || !snapshot.data!.exists) {
-                            return const Text('사용자 데이터를 불러올 수 없습니다.');
-                          }
-
-                          final userData = snapshot.data!.data() as Map<String, dynamic>;
-                          final int updatedRankPt = userData['rankPt'] ?? 0;
-                          final String updatedProfileImg = userData['profileImg'] ?? "https://via.placeholder.com/150";
-
-                          return Column(
-                            children: [
-                              CircleAvatar(
-                                radius: 60,
-                                backgroundImage: NetworkImage(updatedProfileImg),
-                                backgroundColor: Colors.grey[300],
-                              ),
-                              const SizedBox(height: 20),
-                              Text(
-                                "내 랭킹 점수: $updatedRankPt",
-                                style: const TextStyle(
-                                    fontSize: 20, fontWeight: FontWeight.bold),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          );
-                        },
-                      )
-
+                      CircleAvatar(
+                        radius: 60,
+                        backgroundImage: NetworkImage(profileImg),
+                        backgroundColor: Colors.grey[300],
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        "내 랭킹 점수: $rankPt",
+                        style: const TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
                     ],
                   ),
                 ),
@@ -224,15 +308,8 @@ class _BattlePageState extends State<BattlePage> {
                       children: isPvpSelected
                           ? [
                         ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    PvpGhostPage(),
-                              ),
-                            );
-                          },
+                          onPressed:
+                          isCreatingRoom ? null : createRoom,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
@@ -244,11 +321,11 @@ class _BattlePageState extends State<BattlePage> {
                             mainAxisAlignment:
                             MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.handshake_rounded,
+                              Icon(Icons.door_front_door_sharp,
                                   size: 40, color: Colors.teal),
                               const SizedBox(height: 10),
                               const Text(
-                                "대전하기",
+                                "방 만들기",
                                 style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold),
@@ -257,15 +334,7 @@ class _BattlePageState extends State<BattlePage> {
                           ),
                         ),
                         ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    GhostPage(),
-                              ),
-                            );
-                          },
+                          onPressed: quickJoinRoom,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
@@ -277,11 +346,11 @@ class _BattlePageState extends State<BattlePage> {
                             mainAxisAlignment:
                             MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.text_snippet,
+                              Icon(Icons.meeting_room,
                                   size: 40, color: Colors.teal),
                               const SizedBox(height: 10),
                               const Text(
-                                "고스트 생성",
+                                "빠른 입장",
                                 style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold),

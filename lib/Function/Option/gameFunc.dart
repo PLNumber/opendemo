@@ -1,7 +1,9 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
-import '../../Function/class.dart';
+import '../class.dart';
 
 // gameFunc.dart
 class GameFunction {
@@ -121,18 +123,32 @@ class GameFunction {
   }
 
   List<Question> _getQuestionsFromSharedData(Map<String, dynamic> data) {
-    return data.entries.map((entry) {
+    // 모든 질문을 리스트로 변환
+    List<Question> allQuestions = data.entries.map((entry) {
       if (entry.value is Map<Object?, Object?>) {
         return Question.fromMap(Map<String, dynamic>.from(entry.value));
       } else {
         throw Exception("질문 데이터 형식이 잘못되었습니다: ${entry.value}");
       }
     }).toList();
+
+    // 질문이 5개 이상일 경우 랜덤하게 5개 선택
+    if (allQuestions.length > 5) {
+      final random = Random();
+      allQuestions.shuffle(random); // 리스트를 랜덤하게 섞음
+      return allQuestions.take(5).toList(); // 처음 5개를 선택
+    }
+
+    return allQuestions; // 질문이 5개 미만이면 모든 질문 반환
   }
 
   Future<void> addPlayerToRoom(String roomId, String playerId) async {
+    print("Adding player to room. Room ID: $roomId, Player ID: $playerId");
+
     this.roomId = roomId; // 방 ID 설정
     myPlayerId = playerId; // 내 플레이어 ID 설정
+
+    // 방에 플레이어 추가
     await _roomsRef.child(roomId).child('players').child(playerId).set({
       "name": playerId,
       "status": "waiting",
@@ -140,15 +156,32 @@ class GameFunction {
       "lastActive": DateTime.now().millisecondsSinceEpoch, // 타임스탬프 추가
     });
 
+    // 현재 방에 있는 플레이어 데이터 가져오기
     final playersSnapshot = await _roomsRef.child(roomId).child('players').once();
+
     if (playersSnapshot.snapshot.exists) {
-      final players = playersSnapshot.snapshot.value as Map;
+      final players = playersSnapshot.snapshot.value as Map<Object?, Object?>;
+      print("Players in room: $players");
+
+      // 상대방 ID 확인 및 설정
       if (players.length > 1) {
-        opponentId = players.keys.firstWhere((id) => id != playerId);
-        _setupScoreListener(); // 리스너 설정
+        opponentId = players.keys.firstWhere(
+              (id) => id != playerId,
+          orElse: () => null,
+        ) as String?;
+
+        if (opponentId != null) {
+          print("Opponent ID set: $opponentId");
+          _setupScoreListener(); // 상대방 리스너 설정
+        } else {
+          print("No opponent found in the room yet.");
+        }
+      } else {
+        print("Only one player in the room.");
       }
     }
   }
+
 
 
   /*문제 풀시*/
@@ -289,21 +322,11 @@ class GameFunction {
       final roomSnapshot = await roomRef.get();
 
       if (roomSnapshot.exists) {
-        // 플레이어를 방에서 제거
-        await roomRef.child('players').child(playerId).update({
-          'status' : 'player_left',
-          'lastActive' : DateTime.now().millisecondsSinceEpoch, // 현재 시간을 타임스탬프로 추가 (선택 사항)
-        });
 
         // 방이 비어있으면 방 삭제
         final playersSnapshot = await roomRef.child('players').once();
-        if (playersSnapshot.snapshot.value == null ||
-            (playersSnapshot.snapshot.value as Map).isEmpty) {
-          await roomRef.remove();
-          print("방이 비어있어 삭제되었습니다.");
-        } else {
-          print("플레이어가 남아있어 방은 유지됩니다.");
-        }
+        // await _roomsRef.child(roomId).remove();
+        await roomRef.remove();
       }
     } catch (e) {
       print("방을 떠나는 중 오류 발생: $e");

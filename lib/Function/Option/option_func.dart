@@ -130,6 +130,7 @@ class SoundProvider with ChangeNotifier {
   // 오디오 재생 함수
   Future<void> _playSound() async {
     if (!_isPlaying) { // 이미 재생 중이 아닐 때만 재생
+      await _audioPlayer.setReleaseMode(ReleaseMode.loop); // 무한 반복 설정
       await _audioPlayer.play(AssetSource('audio/cozy_main.mp3'));
       _isPlaying = true;
     }
