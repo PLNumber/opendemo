@@ -204,24 +204,29 @@ class _MainPage extends State<MainPage> {
 
     return PopScope(
       canPop: false, // 시스템 뒤로가기를 비활성화
-      onPopInvokedWithResult: (bool didPop, Object? result)  {
-        // 시스템이 이미 Pop을 처리한 경우 종료
+      onPopInvokedWithResult: (bool didPop, Object? result) {
         if (didPop) return;
-        // 방 나가기 메서드 호출
 
-        AlertDialog(
-          title: const Text("종료"),
-          content: const Text("정말 앱을 종료하시겠습니까?"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false), // 취소
-              child: const Text("취소"),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true), // 확인
-              child: const Text("확인"),
-            ),
-          ],
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("종료"),
+            content: const Text("정말 앱을 종료하시겠습니까?"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false), // 취소
+                child: const Text("취소"),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(true); // 확인
+                  // 앱 종료
+                  SystemNavigator.pop();
+                },
+                child: const Text("확인"),
+              ),
+            ],
+          ),
         );
       },
       child: Scaffold(

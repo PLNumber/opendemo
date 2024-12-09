@@ -112,10 +112,9 @@ class _OptionPageState extends State<OptionPage> {
                 icon: Icons.science, // 아이콘을 science로 변경
                 label: "실험실", // 텍스트
                 onPressed: () {
-                  Navigator.pushAndRemoveUntil(
+                  Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const BattleBetaPage()),
-                        (Route<dynamic> route) => false,
+                    MaterialPageRoute(builder: (context) => BattleBetaPage()),
                   );
                 },
               ),
