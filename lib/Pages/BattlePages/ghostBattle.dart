@@ -37,7 +37,7 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
       final uid = user.uid;
 
       final userDoc =
-          FirebaseFirestore.instance.collection('UserData').doc(uid);
+      FirebaseFirestore.instance.collection('UserData').doc(uid);
       await FirebaseFirestore.instance.runTransaction((transaction) async {
         final snapshot = await transaction.get(userDoc);
         if (snapshot.exists) {
@@ -59,7 +59,7 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
     try {
       // 퀴즈 데이터 가져오기
       final questionsSnapshot =
-          await FirebaseFirestore.instance.collection('WQ').get();
+      await FirebaseFirestore.instance.collection('WQ').get();
       final questions = questionsSnapshot.docs
           .map((doc) => Question.fromMap(doc.data()))
           .toList();
@@ -82,7 +82,7 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
       final opponentData = opponentDocs.first.data(); // 랜덤 상대 선택
 
       final opponentTimeRecords =
-          List<int>.from(opponentData['timeRecords'] ?? []);
+      List<int>.from(opponentData['timeRecords'] ?? []);
       _opponentName = opponentData['userName'];
       _opponentProfileImg = opponentData['profileImage'];
 
@@ -138,6 +138,8 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark; // 다크 모드 확인
+
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
@@ -201,6 +203,7 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
+                        color: isDarkMode ? Colors.black54 : Colors.white, // 카드 배경색
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
                           child: Text(
@@ -208,10 +211,7 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.white
-                                  : Colors.black,
+                              color: isDarkMode ? Colors.white : Colors.black, // 글씨 색상
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -227,7 +227,11 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
                           focusedBorder: OutlineInputBorder(
                             borderSide: BorderSide(color: Colors.teal),
                           ),
+                          labelStyle: TextStyle(
+                            color: isDarkMode ? Colors.white : Colors.black, // 레이블 색상
+                          ),
                         ),
+                        style: TextStyle(color: isDarkMode ? Colors.white : Colors.black), // 입력 텍스트 색상
                       ),
                       SizedBox(height: 20),
                       // 버튼들
@@ -387,7 +391,7 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
         final uid = user.uid;
 
         final userDoc =
-            FirebaseFirestore.instance.collection('UserData').doc(uid);
+        FirebaseFirestore.instance.collection('UserData').doc(uid);
         await FirebaseFirestore.instance.runTransaction((transaction) async {
           final snapshot = await transaction.get(userDoc);
           if (snapshot.exists) {

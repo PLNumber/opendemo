@@ -78,7 +78,7 @@ class _GhostPageState extends State<GhostPage> {
     return Scaffold(
       appBar: AppBar(
           centerTitle: true,
-          title: Text('퀴즈 풀기'),
+          title: Text('고스트 생성'),
           backgroundColor: Colors.teal),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

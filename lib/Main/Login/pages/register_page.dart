@@ -37,22 +37,13 @@ class _RegisterPageState extends State<RegisterPage> {
       confirmPasswordError = "";
     });
 
+    // 비밀번호 확인
     if (passwordController.text != confirmPasswordController.text) {
       setState(() {
         confirmPasswordError = "비밀번호가 일치하지 않습니다.";
       });
       return;
     }
-
-    // 로딩 화면
-    showDialog(
-      context: context,
-      builder: (context) {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
-      },
-    );
 
     try {
       // Firebase Authentication에 계정 생성
@@ -80,10 +71,12 @@ class _RegisterPageState extends State<RegisterPage> {
         'name': 'Player'
       });
 
-      Navigator.pop(context); // 로딩 화면 닫기
-      // 성공적으로 회원가입 완료 메시지를 표시하거나 다른 페이지로 이동
+      // 회원가입 완료 후 메시지를 표시하거나 이동
+      setState(() {
+        emailError = "회원가입이 성공적으로 완료되었습니다!";
+      });
     } on FirebaseAuthException catch (e) {
-      Navigator.pop(context); // 로딩 화면 닫기
+      // 회원가입 실패 시 에러 처리
       setState(() {
         if (e.code == 'email-already-in-use') {
           emailError = "이미 사용 중인 이메일입니다.";
@@ -97,20 +90,17 @@ class _RegisterPageState extends State<RegisterPage> {
           emailError = "네트워크 연결에 문제가 발생했습니다.";
         } else if (e.code == 'unknown') {
           passwordError = "비밀번호에는 대소문자, 특수문자, 숫자가 반드시 포함되어야 합니다.";
-        } else if(e.code == 'channel-error'){
-          emailError = "이메일을 입력해주세요";
-          passwordError = "비밀번호를 입력해주세요";
-        }else {
+        } else {
           emailError = "알 수 없는 오류가 발생했습니다. (${e.code})";
         }
       });
     } catch (e) {
-      Navigator.pop(context); // 로딩 화면 닫기
       setState(() {
         emailError = "알 수 없는 오류가 발생했습니다.";
       });
     }
   }
+
 
 
   @override

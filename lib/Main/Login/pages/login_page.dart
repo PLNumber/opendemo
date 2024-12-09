@@ -35,6 +35,7 @@ class _LoginPageState extends State<LoginPage> {
       passwordError = "";
     });
 
+    // 필수 입력 검증
     if (emailController.text.isEmpty) {
       setState(() {
         emailError = '이메일을 입력해주세요.';
@@ -50,33 +51,21 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    // 로딩 화면
-    showDialog(
-      context: context,
-      builder: (context) {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
-      },
-    );
-
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text,
         password: passwordController.text,
       );
 
-      // 로그인 성공 후 로딩 다이얼로그 닫기
-      Navigator.pop(context);
-
       // 로그인 성공 후 메인 페이지로 이동
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MainPage()),
-      );
+      if (context.mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => MainPage()),
+        );
+      }
     } on FirebaseAuthException catch (e) {
-      Navigator.pop(context); // 로그인 실패 시 로딩 다이얼로그 닫기
-
+      // 로그인 실패 시 에러 처리
       setState(() {
         if (e.code == 'invalid-email') {
           emailError = '유효하지 않은 이메일 형식입니다.';
@@ -96,6 +85,7 @@ class _LoginPageState extends State<LoginPage> {
       });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -184,13 +174,15 @@ class _LoginPageState extends State<LoginPage> {
                         child: Container(
                           decoration: const BoxDecoration(
                             border: Border(
-                              bottom: BorderSide(color: Colors.black, width: 0.5)
+                              bottom: BorderSide(color: Colors.blue, width: 0.5)
                             ),
                           ),
-                          child: Text(
+                          child: const Text(
                             '비밀번호를 잊어버렸나요?',
                             style: TextStyle(
-                              color: Colors.grey[600],
+                              color: Colors.blue,//grey[600]
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
                             ),
                           )
                         )

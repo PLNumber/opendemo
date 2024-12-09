@@ -107,6 +107,9 @@ class _BattlePageState extends State<BattlePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode =
+        Theme.of(context).brightness == Brightness.dark; // 다크 모드 확인
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("대전"),
@@ -132,7 +135,7 @@ class _BattlePageState extends State<BattlePage> {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
-                              "랭킹 순위표",
+                              "리더보드",
                               style: const TextStyle(
                                   fontSize: 24, fontWeight: FontWeight.bold),
                             ),
@@ -231,8 +234,11 @@ class _BattlePageState extends State<BattlePage> {
                             childAspectRatio: 1,
                             children: isPvpSelected
                                 ? [
-                                    ElevatedButton(
-                                      onPressed: () {
+                                    _buildElevatedButton(
+                                      context,
+                                      Icons.connect_without_contact,
+                                      "대전하기",
+                                      () {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
@@ -241,31 +247,13 @@ class _BattlePageState extends State<BattlePage> {
                                           ),
                                         );
                                       },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.handshake_rounded,
-                                              size: 40, color: Colors.teal),
-                                          const SizedBox(height: 10),
-                                          const Text(
-                                            "대전하기",
-                                            style: TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        ],
-                                      ),
+                                      isDarkMode,
                                     ),
-                                    ElevatedButton(
-                                      onPressed: () {
+                                    _buildElevatedButton(
+                                      context,
+                                      Icons.person_add,
+                                      "고스트 생성",
+                                      () {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
@@ -273,62 +261,26 @@ class _BattlePageState extends State<BattlePage> {
                                           ),
                                         );
                                       },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.text_snippet,
-                                              size: 40, color: Colors.teal),
-                                          const SizedBox(height: 10),
-                                          const Text(
-                                            "고스트 생성",
-                                            style: TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        ],
-                                      ),
+                                      isDarkMode,
                                     ),
                                   ]
                                 : [
-                                    ElevatedButton(
-                                      onPressed: () {
+                                    _buildElevatedButton(
+                                      context,
+                                      Icons.people,
+                                      "PVP 대전",
+                                      () {
                                         setState(() {
                                           isPvpSelected = true;
                                         });
                                       },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.people,
-                                              size: 40, color: Colors.teal),
-                                          const SizedBox(height: 10),
-                                          const Text(
-                                            "PVP 대전",
-                                            style: TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        ],
-                                      ),
+                                      isDarkMode,
                                     ),
-                                    ElevatedButton(
-                                      onPressed: () {
+                                    _buildElevatedButton(
+                                      context,
+                                      Icons.computer,
+                                      "PVE 대전",
+                                      () {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
@@ -337,28 +289,7 @@ class _BattlePageState extends State<BattlePage> {
                                           ),
                                         );
                                       },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.computer,
-                                              size: 40, color: Colors.teal),
-                                          const SizedBox(height: 10),
-                                          const Text(
-                                            "PVE 대전",
-                                            style: TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        ],
-                                      ),
+                                      isDarkMode,
                                     ),
                                   ],
                           ),
@@ -403,6 +334,39 @@ class _BattlePageState extends State<BattlePage> {
                 ),
               ),
             ),
+    );
+  }
+
+  // 버튼을 생성하는 메서드
+  Widget _buildElevatedButton(BuildContext context, IconData icon, String title,
+      VoidCallback onPressed, bool isDarkMode) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isDarkMode ? Colors.black : Colors.white,
+        // 다크 모드일 때 배경색
+        foregroundColor: isDarkMode ? Colors.white : Colors.teal,
+        // 다크 모드일 때 텍스트 색상
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10), // 둥근 모서리
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 40, color: isDarkMode ? Colors.white : Colors.teal),
+          // 아이콘 색상 설정
+          const SizedBox(height: 10),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isDarkMode ? Colors.white : Colors.black, // 다크 모드일 때 글씨 색상
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

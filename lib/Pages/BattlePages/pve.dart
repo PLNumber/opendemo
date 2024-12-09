@@ -448,7 +448,7 @@ class _QuizBattlePageState extends State<QuizBattlePage>
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('퀴즈 대결'),
+          title: Text('PVE 대전'),
           centerTitle: true, // centerTitle 속성을 true로 설정
           backgroundColor: Colors.teal, // 앱바 색깔을 틸로 변경
         ),
@@ -459,7 +459,7 @@ class _QuizBattlePageState extends State<QuizBattlePage>
     if (_questions.isEmpty) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('퀴즈 대결'),
+          title: Text('PVE 대전'),
           centerTitle: true,
           backgroundColor: Colors.teal,
         ),
@@ -471,7 +471,7 @@ class _QuizBattlePageState extends State<QuizBattlePage>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("퀴즈 대결"),
+        title: Text("PVE 대전"),
         centerTitle: true, // centerTitle 속성 추가
         backgroundColor: Colors.teal, // 앱바 색깔 설정
       ),

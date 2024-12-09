@@ -89,7 +89,7 @@ class _DictPageState extends State<DictPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          '단어 정의 검색',
+          '단어 사전',
         ),
         backgroundColor: Colors.teal,
         centerTitle: true, // 텍스트 가운데 정렬

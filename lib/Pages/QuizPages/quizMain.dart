@@ -8,9 +8,12 @@ class QuizMainPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 현재 테마의 밝기를 확인
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("문제 메인창"),
+        title: const Text("문해력 퀴즈"),
         centerTitle: true,
         backgroundColor: Colors.teal, // 앱바 색상 변경
         iconTheme: const IconThemeData(color: Colors.white), // 아이콘 색상 변경
@@ -33,6 +36,7 @@ class QuizMainPage extends StatelessWidget {
                       MaterialPageRoute(builder: (context) => QuizPage()),
                     );
                   },
+                  isDarkMode, // 다크 모드 상태 전달
                 ),
                 const SizedBox(height: 30), // 간격 줄이기
                 // 객관식 퀴즈 풀기 버튼 카드
@@ -46,6 +50,7 @@ class QuizMainPage extends StatelessWidget {
                       MaterialPageRoute(builder: (context) => ChoiceQuizPage()),
                     );
                   },
+                  isDarkMode, // 다크 모드 상태 전달
                 ),
                 const SizedBox(height: 30), // 간격 줄이기
                 // 오답 노트 버튼 카드
@@ -59,6 +64,7 @@ class QuizMainPage extends StatelessWidget {
                       MaterialPageRoute(builder: (context) => NotePage()),
                     );
                   },
+                  isDarkMode, // 다크 모드 상태 전달
                 ),
               ],
             ),
@@ -70,13 +76,13 @@ class QuizMainPage extends StatelessWidget {
 
   // 버튼 카드 위젯 생성
   Widget _buildFeatureCard(
-      BuildContext context, IconData icon, String title, VoidCallback onTap) {
+      BuildContext context, IconData icon, String title, VoidCallback onTap, bool isDarkMode) {
     return GestureDetector(
       onTap: onTap,
       child: Card(
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        color: Colors.white,
+        color: isDarkMode ? Colors.black : Colors.white, // 다크 모드일 때 배경색 변경
         child: Container(
           width: 180, // 카드의 너비를 줄임
           height: 180, // 카드의 높이를 줄임
@@ -88,10 +94,10 @@ class QuizMainPage extends StatelessWidget {
               const SizedBox(height: 12), // 간격 줄이기
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20, // 텍스트 크기 줄이기
                   fontWeight: FontWeight.w600,
-                  color: Colors.black,
+                  color: isDarkMode ? Colors.white : Colors.black, // 다크 모드일 때 글씨 색상 변경
                 ),
                 textAlign: TextAlign.center,
               ),

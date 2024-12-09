@@ -364,7 +364,7 @@ class _MainPage extends State<MainPage> {
                   ),
                   FeatureCard(
                     icon: Icons.quiz,
-                    title: "문해력 문제",
+                    title: "문해력 퀴즈",
                     onTap: () {
                       Navigator.push(
                         context,
