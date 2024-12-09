@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:opendemo/Main/Login/services/reset_password.dart';
-import '../../main.dart';
+import '../../../main.dart';
 import '../component/button.dart';
 import '../component/squaretitle.dart';
 import '../component/textfield.dart';
