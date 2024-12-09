@@ -27,7 +27,7 @@ class _GhostPageState extends State<GhostPage> {
     try {
       final snapshot = await FirebaseFirestore.instance.collection('WQ').get();
       final questions =
-      snapshot.docs.map((doc) => Question.fromMap(doc.data())).toList();
+          snapshot.docs.map((doc) => Question.fromMap(doc.data())).toList();
       questions.shuffle();
       setState(() {
         _questions = questions;
@@ -55,14 +55,20 @@ class _GhostPageState extends State<GhostPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: Text('퀴즈 풀기'), backgroundColor: Colors.teal),
+        appBar: AppBar(
+            centerTitle: true,
+            title: Text('퀴즈 풀기'),
+            backgroundColor: Colors.teal),
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_questions.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: Text('퀴즈 풀기'), backgroundColor: Colors.teal),
+        appBar: AppBar(
+            centerTitle: true,
+            title: Text('퀴즈 풀기'),
+            backgroundColor: Colors.teal),
         body: Center(child: Text('퀴즈 데이터가 없습니다.')),
       );
     }
@@ -70,7 +76,10 @@ class _GhostPageState extends State<GhostPage> {
     final currentQuestion = _questions[_currentQuestionIndex];
 
     return Scaffold(
-      appBar: AppBar(title: Text('퀴즈 풀기'), backgroundColor: Colors.teal),
+      appBar: AppBar(
+          centerTitle: true,
+          title: Text('퀴즈 풀기'),
+          backgroundColor: Colors.teal),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -195,13 +204,16 @@ class _GhostPageState extends State<GhostPage> {
       if (user == null) throw Exception("사용자가 로그인되어 있지 않습니다.");
       final uid = user.uid;
 
-      final userDoc = FirebaseFirestore.instance.collection('UserData').doc(uid);
+      final userDoc =
+          FirebaseFirestore.instance.collection('UserData').doc(uid);
 
       await FirebaseFirestore.instance.runTransaction((transaction) async {
         final snapshot = await transaction.get(userDoc);
 
         if (!snapshot.exists) {
-          transaction.set(userDoc, {'wrongAnswerIds': [question.wId]});
+          transaction.set(userDoc, {
+            'wrongAnswerIds': [question.wId]
+          });
         } else {
           final data = snapshot.data() as Map<String, dynamic>;
           final wrongAnswerIds = List<int>.from(data['wrongAnswerIds'] ?? []);
@@ -240,7 +252,8 @@ class _GhostPageState extends State<GhostPage> {
           .get();
 
       String userName = userDoc.get('name') ?? 'Unknown';
-      String profileImage = userDoc.get('profileImg') ?? 'https://via.placeholder.com/150';
+      String profileImage =
+          userDoc.get('profileImg') ?? 'https://via.placeholder.com/150';
 
       await FirebaseFirestore.instance.collection('pvpGhost').add({
         'userId': uid,
@@ -260,7 +273,7 @@ class _GhostPageState extends State<GhostPage> {
       final uid = user.uid;
 
       final userDoc =
-      FirebaseFirestore.instance.collection('UserData').doc(uid);
+          FirebaseFirestore.instance.collection('UserData').doc(uid);
       await FirebaseFirestore.instance.runTransaction((transaction) async {
         final snapshot = await transaction.get(userDoc);
         if (snapshot.exists) {

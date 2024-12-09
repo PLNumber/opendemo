@@ -107,7 +107,7 @@ class _QuizBattlePageState extends State<QuizBattlePage>
     try {
       final snapshot = await FirebaseFirestore.instance.collection('WQ').get();
       final questions =
-      snapshot.docs.map((doc) => Question.fromMap(doc.data())).toList();
+          snapshot.docs.map((doc) => Question.fromMap(doc.data())).toList();
       questions.shuffle();
       setState(() {
         _questions = questions;
@@ -150,7 +150,8 @@ class _QuizBattlePageState extends State<QuizBattlePage>
     });
   }
 
-  void _updateHealthBar(AnimationController controller, int health, double totalFrames) {
+  void _updateHealthBar(
+      AnimationController controller, int health, double totalFrames) {
     double targetFrame = totalFrames * (health / 100);
     controller.animateTo(targetFrame / totalFrames);
     controller.addListener(() {
@@ -172,7 +173,8 @@ class _QuizBattlePageState extends State<QuizBattlePage>
         if (userAnswer.toLowerCase() == correctAnswer) {
           _aiHealth = max(0, _aiHealth - 10);
           _resultMessage = '정답입니다!';
-          _updateHealthBar(_aiHealthController, _aiHealth, _aiHealthTotalFrames);
+          _updateHealthBar(
+              _aiHealthController, _aiHealth, _aiHealthTotalFrames);
           _triggerRotation(isOpponent: true);
         } else {
           _resultMessage = '오답입니다!';
@@ -180,7 +182,8 @@ class _QuizBattlePageState extends State<QuizBattlePage>
         }
       } else if (!isUser && correctAnswer == question.word.toLowerCase()) {
         _userHealth = max(0, _userHealth - 10);
-        _updateHealthBar(_userHealthController, _userHealth, _userHealthTotalFrames);
+        _updateHealthBar(
+            _userHealthController, _userHealth, _userHealthTotalFrames);
         _triggerRotation(isOpponent: false);
       }
 
@@ -325,15 +328,19 @@ class _QuizBattlePageState extends State<QuizBattlePage>
           controller: _aiHealthController,
           onLoaded: (composition) {
             _aiHealthController.duration = composition.duration;
-            _aiHealthTotalFrames = composition.duration.inSeconds * composition.frameRate;
+            _aiHealthTotalFrames =
+                composition.duration.inSeconds * composition.frameRate;
             print("AI Health Animation Total Frames: $_aiHealthTotalFrames");
 
             _aiHealthController.addListener(() {
-              double currentFrame = _aiHealthTotalFrames * _aiHealthController.value;
-              print("AI Health Animation Current Frame: ${currentFrame.toStringAsFixed(2)}");
+              double currentFrame =
+                  _aiHealthTotalFrames * _aiHealthController.value;
+              print(
+                  "AI Health Animation Current Frame: ${currentFrame.toStringAsFixed(2)}");
             });
 
-            _updateHealthBar(_aiHealthController, _aiHealth, _aiHealthTotalFrames);
+            _updateHealthBar(
+                _aiHealthController, _aiHealth, _aiHealthTotalFrames);
           },
         ),
       ],
@@ -350,7 +357,8 @@ class _QuizBattlePageState extends State<QuizBattlePage>
     return AnimatedBuilder(
       animation: _rotationController,
       builder: (context, child) {
-        double rotationValue = _rotateUser ? _rotationController.value * pi * 4 : 0;
+        double rotationValue =
+            _rotateUser ? _rotationController.value * pi * 4 : 0;
         return Transform(
           transform: Matrix4.rotationY(rotationValue),
           alignment: Alignment.center,
@@ -361,19 +369,20 @@ class _QuizBattlePageState extends State<QuizBattlePage>
               shape: BoxShape.circle,
               image: profileImg.isNotEmpty
                   ? DecorationImage(
-                image: NetworkImage(profileImg),
-                fit: BoxFit.cover,
-              )
+                      image: NetworkImage(profileImg),
+                      fit: BoxFit.cover,
+                    )
                   : null,
               color: profileImg.isEmpty ? Colors.green : null,
             ),
             child: profileImg.isEmpty
                 ? Center(
-              child: Text(
-                'USER',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            )
+                    child: Text(
+                      'USER',
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  )
                 : null,
           ),
         );
@@ -385,7 +394,8 @@ class _QuizBattlePageState extends State<QuizBattlePage>
     return AnimatedBuilder(
       animation: _rotationController,
       builder: (context, child) {
-        double rotationValue = _rotateOpponent ? _rotationController.value * pi * 4 : 0;
+        double rotationValue =
+            _rotateOpponent ? _rotationController.value * pi * 4 : 0;
         return Transform(
           transform: Matrix4.rotationY(rotationValue),
           alignment: Alignment.center,
@@ -415,13 +425,18 @@ class _QuizBattlePageState extends State<QuizBattlePage>
           controller: _userHealthController,
           onLoaded: (composition) {
             _userHealthController.duration = composition.duration;
-            _userHealthTotalFrames = composition.duration.inSeconds * composition.frameRate;
-            print("User Health Animation Total Frames: $_userHealthTotalFrames");
+            _userHealthTotalFrames =
+                composition.duration.inSeconds * composition.frameRate;
+            print(
+                "User Health Animation Total Frames: $_userHealthTotalFrames");
             _userHealthController.addListener(() {
-              double currentFrame = _userHealthTotalFrames * _userHealthController.value;
-              print("User Health Animation Current Frame: ${currentFrame.toStringAsFixed(2)}");
+              double currentFrame =
+                  _userHealthTotalFrames * _userHealthController.value;
+              print(
+                  "User Health Animation Current Frame: ${currentFrame.toStringAsFixed(2)}");
             });
-            _updateHealthBar(_userHealthController, _userHealth, _userHealthTotalFrames);
+            _updateHealthBar(
+                _userHealthController, _userHealth, _userHealthTotalFrames);
           },
         ),
       ],
@@ -502,4 +517,3 @@ class _QuizBattlePageState extends State<QuizBattlePage>
     );
   }
 }
-

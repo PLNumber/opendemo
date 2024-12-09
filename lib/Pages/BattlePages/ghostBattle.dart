@@ -36,7 +36,8 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
       if (user == null) throw Exception("사용자가 로그인되어 있지 않습니다.");
       final uid = user.uid;
 
-      final userDoc = FirebaseFirestore.instance.collection('UserData').doc(uid);
+      final userDoc =
+          FirebaseFirestore.instance.collection('UserData').doc(uid);
       await FirebaseFirestore.instance.runTransaction((transaction) async {
         final snapshot = await transaction.get(userDoc);
         if (snapshot.exists) {
@@ -58,7 +59,7 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
     try {
       // 퀴즈 데이터 가져오기
       final questionsSnapshot =
-      await FirebaseFirestore.instance.collection('WQ').get();
+          await FirebaseFirestore.instance.collection('WQ').get();
       final questions = questionsSnapshot.docs
           .map((doc) => Question.fromMap(doc.data()))
           .toList();
@@ -81,7 +82,7 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
       final opponentData = opponentDocs.first.data(); // 랜덤 상대 선택
 
       final opponentTimeRecords =
-      List<int>.from(opponentData['timeRecords'] ?? []);
+          List<int>.from(opponentData['timeRecords'] ?? []);
       _opponentName = opponentData['userName'];
       _opponentProfileImg = opponentData['profileImage'];
 
@@ -139,13 +140,19 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: Text('PvP 대결'), backgroundColor: Colors.teal),
+        appBar: AppBar(
+            centerTitle: true,
+            title: Text('PvP 대결'),
+            backgroundColor: Colors.teal),
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text('PvP 대결'), backgroundColor: Colors.teal),
+      appBar: AppBar(
+          centerTitle: true,
+          title: Text('PvP 대결'),
+          backgroundColor: Colors.teal),
       body: Stack(
         children: [
           Column(
@@ -201,7 +208,8 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Theme.of(context).brightness == Brightness.dark
+                              color: Theme.of(context).brightness ==
+                                      Brightness.dark
                                   ? Colors.white
                                   : Colors.black,
                             ),
@@ -236,8 +244,8 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
                               ),
                             ),
                             onPressed: _skipQuestion,
-                            child:
-                            Text('문제 넘기기', style: TextStyle(color: Colors.black)),
+                            child: Text('문제 넘기기',
+                                style: TextStyle(color: Colors.black)),
                           ),
                           SizedBox(width: 24), // 간격 추가
                           // 제출 버튼
@@ -250,7 +258,8 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
                               ),
                             ),
                             onPressed: _checkAnswer,
-                            child: Text('제출', style: TextStyle(color: Colors.black)),
+                            child: Text('제출',
+                                style: TextStyle(color: Colors.black)),
                           ),
                         ],
                       ),
@@ -346,8 +355,6 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
           _finishGame(true);
         } else {
           _moveToNextQuestion();
-
-
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -357,6 +364,7 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
       _answerController.clear();
     });
   }
+
   void _skipQuestion() {
     _moveToNextQuestion();
   }
@@ -379,7 +387,7 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
         final uid = user.uid;
 
         final userDoc =
-        FirebaseFirestore.instance.collection('UserData').doc(uid);
+            FirebaseFirestore.instance.collection('UserData').doc(uid);
         await FirebaseFirestore.instance.runTransaction((transaction) async {
           final snapshot = await transaction.get(userDoc);
           if (snapshot.exists) {
