@@ -7,6 +7,9 @@ import '../../Function/class.dart';
 class GameFunction {
   String? roomId;
 
+  String? myPlayerId; // 내 플레이어 ID
+  String? opponentId; // 상대방 플레이어 ID
+
   int playerScore = 0;
   int opponentScore = 0;
   final DatabaseReference _questionsRef = FirebaseDatabase.instance.ref("shared/questions");
@@ -21,8 +24,7 @@ class GameFunction {
   String matchStatus = "문제를 불러오는 중입니다...";
   bool isLoading = true;
   bool isMovingToNextQuestion = false;
-  String? myPlayerId; // 내 플레이어 ID
-  String? opponentId; // 상대방 플레이어 ID
+
   bool isGameFinished = false; // 게임 종료 여부
   String? playerName; // 플레이어 이름 추가
   String? profileImg; // 프로필 이미지 추가
@@ -58,20 +60,6 @@ class GameFunction {
     } catch (e) {
       print("사용자 데이터 로드 오류: $e");
     }
-  }
-
-
-
-  // 점수 업데이트 메서드
-  void updateScore(bool isCorrect, bool isPlayer) {
-    if (isCorrect) {
-      if (isPlayer) {
-        playerScore += 10; // 플레이어가 정답인 경우
-      } else {
-        opponentScore += 10; // 상대방이 정답인 경우
-      }
-    }
-    print("내 점수: $playerScore, 상대 점수: $opponentScore");
   }
 
   Future<void> updateScoreInDatabase(String roomId, String playerId, int scoreChange) async {
@@ -168,8 +156,6 @@ class GameFunction {
     }
   }
 
-
-
   void moveToNextQuestion(String roomId) async {
     if (isMovingToNextQuestion) return; // 이미 이동 중이면 무시
     isMovingToNextQuestion = true;
@@ -245,17 +231,6 @@ class GameFunction {
     moveToNextQuestion(roomId); // 다음 문제로 이동
   }
 
-  // 퀴즈 종료 처리
-  void endQuiz(String roomId) {
-    isGameFinished = true;
-    roomsRef.child(roomId).child('gameStatus').set({
-      'finished': true,
-      'finalScores': {
-        'playerScore': playerScore,
-        'opponentScore': opponentScore,
-      },
-    });
-  }
 
   Future<void> addPlayerToRoom(String roomId, String playerId) async {
     this.roomId = roomId; // 방 ID 설정
@@ -309,10 +284,9 @@ class GameFunction {
 
       if (roomSnapshot.exists) {
         // 플레이어를 방에서 제거
-        await roomRef.child('players').child(playerId).remove();
-
-        // 메시지 삭제
-        await roomRef.child('messages').remove();
+        await roomRef.child('players').child(playerId).update({
+          'status' : 'player_left'
+        });
 
         // 방이 비어있으면 방 삭제
         final playersSnapshot = await roomRef.child('players').once();

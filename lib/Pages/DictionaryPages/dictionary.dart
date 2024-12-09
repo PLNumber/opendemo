@@ -92,6 +92,7 @@ class _DictPageState extends State<DictPage> {
           '단어 정의 검색',
         ),
         backgroundColor: Colors.teal,
+        centerTitle: true, // 텍스트 가운데 정렬
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -187,7 +188,6 @@ class _DictPageState extends State<DictPage> {
                         title: Text(
                           item['word'] ?? '단어 없음',
                           style: TextStyle(
-                            fontWeight: FontWeight.bold,
                             color: isDarkMode ? Colors.white : Colors.black, // 검은색 텍스트
                           ),
                         ),

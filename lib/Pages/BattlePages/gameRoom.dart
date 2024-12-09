@@ -262,27 +262,27 @@ class _GameRoomPageState extends State<GameRoomPage> {
   }
 
   // 상대방에게 플레이어 나갔다는 알림 전송
-  void _notifyOpponentPlayerLeft(String roomId, String playerId) {
-    gameFunctions.roomsRef.child(roomId).child('messages').push().set({
-      'type': 'player_left',
-      'playerId': playerId,
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
+  void _notifyOpponentPlayerLeft(String roomId, String playerId) async {
+    await gameFunctions.roomsRef.child(roomId).child('players').child(playerId).update({
+      'status': 'player_left',
     });
   }
 
-  // 상대방의 메시지를 수신하여 UI 업데이트
+// 상대방의 플레이어 상태를 수신하여 UI 업데이트
   void _setupPlayerLeftListener() {
     gameFunctions.roomsRef
         .child(widget.roomId)
-        .child('messages')
-        .onChildAdded
+        .child('players')
+        .onChildChanged
         .listen((event) {
-      final messageData = event.snapshot.value as Map;
-      if (messageData['type'] == 'player_left') {
+      final playerId = event.snapshot.key; // 변경된 플레이어 ID
+      final playerData = event.snapshot.value as Map;
+
+      if (playerData['status'] == 'player_left') {
         if (mounted) {
           setState(() {
-            messages.add("${messageData['playerId']}가 방을 나갔습니다.");
-            if (messageData['playerId'] != widget.playerId) {
+            messages.add("$playerId가 방을 나갔습니다.");
+            if (playerId != widget.playerId) {
               messages.add("상대가 나갔습니다.");
               _forceLeaveRoom();
             }
@@ -293,7 +293,6 @@ class _GameRoomPageState extends State<GameRoomPage> {
   }
 
   // 방을 강제로 나가는 메서드
-// 방을 강제로 나가는 메서드
   void _forceLeaveRoom() async {
     // 상대방에게 나갔다는 메시지 전송
     _notifyOpponentPlayerLeft(widget.roomId, widget.playerId);

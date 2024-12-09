@@ -69,14 +69,22 @@ class _ChoiceQuizPageState extends State<ChoiceQuizPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: Text('객관식 퀴즈'), backgroundColor: Colors.teal),
+        appBar: AppBar(
+          title: Text('객관식 퀴즈'),
+          centerTitle: true, // 제목을 가운데 정렬
+          backgroundColor: Colors.teal,
+        ),
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_questions.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: Text('객관식 퀴즈'), backgroundColor: Colors.teal),
+        appBar: AppBar(
+          title: Text('객관식 퀴즈'),
+          centerTitle: true, // 제목을 가운데 정렬
+          backgroundColor: Colors.teal,
+        ),
         body: Center(child: Text('퀴즈 데이터가 없습니다.')),
       );
     }
@@ -84,10 +92,15 @@ class _ChoiceQuizPageState extends State<ChoiceQuizPage> {
     final currentQuestion = _questions[_currentQuestionIndex];
 
     return Scaffold(
-      appBar: AppBar(title: Text('객관식 퀴즈'), backgroundColor: Colors.teal),
+      appBar: AppBar(
+        title: Text('객관식 퀴즈'),
+        centerTitle: true, // 제목을 가운데 정렬
+        backgroundColor: Colors.teal,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center, // 중앙 정렬 추가
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // 질문 카드
@@ -114,36 +127,36 @@ class _ChoiceQuizPageState extends State<ChoiceQuizPage> {
             ),
             const SizedBox(height: 20),
             // 선택지 카드
-            Expanded(
-              child: ListView.builder(
-                itemCount: currentQuestion.options.length,
-                itemBuilder: (context, index) {
-                  final option = currentQuestion.options[index];
-                  return GestureDetector(
-                    onTap: () => _checkAnswer(currentQuestion, option),
-                    child: Card(
-                      elevation: 4,
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Text(
-                          option,
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white
-                                : Colors.black, // 다크 모드에 따라 텍스트 색상 변경
-                          ),
-                          textAlign: TextAlign.center,
+            ListView.builder(
+              shrinkWrap: true, // 크기 제한
+              physics: NeverScrollableScrollPhysics(), // 내부 스크롤 비활성화
+              itemCount: currentQuestion.options.length,
+              itemBuilder: (context, index) {
+                final option = currentQuestion.options[index];
+                return GestureDetector(
+                  onTap: () => _checkAnswer(currentQuestion, option),
+                  child: Card(
+                    elevation: 4,
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        option,
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black, // 다크 모드에 따라 텍스트 색상 변경
                         ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
           ],
         ),

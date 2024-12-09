@@ -6,8 +6,6 @@ class ResetPasswordDialog {
   static void showResetPasswordDialog(BuildContext context) {
     final emailController = TextEditingController();
 
-
-
     // 오류 메시지 다이얼로그
     void showErrorMessage(BuildContext context, String message) {
       showDialog(
@@ -48,6 +46,7 @@ class ResetPasswordDialog {
         },
       );
     }
+
     void resetPassword() async {
       final email = emailController.text.trim();
 
@@ -68,32 +67,65 @@ class ResetPasswordDialog {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text("비밀번호 재설정"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text("비밀번호를 재설정할 이메일을 입력하세요."),
-              const SizedBox(height: 16),
-              TextField(
-                controller: emailController,
-                decoration: const InputDecoration(
-                  labelText: "이메일",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context), // 다이얼로그 닫기
-              child: const Text("취소"),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Center(
+                  child: Text(
+                    "비밀번호 재설정",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text("비밀번호를 재설정할 이메일을 입력하세요."),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: emailController,
+                  decoration: const InputDecoration(
+                    labelText: "이메일",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.blue,
+                        ),
+                        child: const Text("취소"),
+                      ),
+                      const SizedBox(width: 8), // Space between buttons
+                      ElevatedButton(
+                        onPressed: resetPassword,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text("확인",selectionColor: Colors.white,),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            ElevatedButton(
-              onPressed: resetPassword,
-              child: const Text("확인"),
-            ),
-          ],
+          ),
         );
       },
     );

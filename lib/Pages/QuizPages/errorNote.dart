@@ -167,18 +167,48 @@ class _NotePageState extends State<NotePage> {
     }
   }
 
+  Future<void> _removeAllWrongAnswers() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception("사용자가 로그인되어 있지 않습니다.");
+      }
+
+      final uid = user.uid;
+      final userDocRef = FirebaseFirestore.instance.collection('UserData').doc(uid);
+
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final snapshot = await transaction.get(userDocRef);
+        if (!snapshot.exists) {
+          throw Exception("사용자 데이터가 존재하지 않습니다.");
+        }
+
+        transaction.update(userDocRef, {'wrongAnswerIds': []}); // 모든 오답 삭제
+      });
+
+      // 로컬 상태 업데이트
+      setState(() {
+        _wrongAnswers.clear(); // 로컬 리스트 비우기
+      });
+
+      print('모든 오답이 성공적으로 삭제되었습니다.');
+    } catch (e) {
+      print('모든 오답 삭제 중 오류 발생: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: Text('오답 노트'), backgroundColor: Colors.teal), // 앱바 색상 변경
+        appBar: AppBar(title: Text('오답 노트'), backgroundColor: Colors.teal, centerTitle: true), // 앱바 색상 변경 및 텍스트 가운데 정렬
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_wrongAnswers.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: Text('오답 노트'), backgroundColor: Colors.teal), // 앱바 색상 변경
+        appBar: AppBar(title: Text('오답 노트'), backgroundColor: Colors.teal, centerTitle: true), // 앱바 색상 변경 및 텍스트 가운데 정렬
         body: Center(
           child: Text('저장된 오답이 없습니다.', style: TextStyle(fontSize: 18)),
         ),
@@ -189,7 +219,14 @@ class _NotePageState extends State<NotePage> {
       appBar: AppBar(
         title: Text('오답 노트'),
         backgroundColor: Colors.teal, // 앱바 색상 변경
+        centerTitle: true, // 텍스트 가운데 정렬
         actions: [
+          IconButton(
+            icon: Icon(Icons.delete_sweep), // 전체 삭제 아이콘
+            onPressed: () {
+              _removeAllWrongAnswers();
+            },
+          ),
           IconButton(
             icon: Icon(Icons.delete),
             onPressed: () {

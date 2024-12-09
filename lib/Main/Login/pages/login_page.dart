@@ -174,13 +174,26 @@ class _LoginPageState extends State<LoginPage> {
                         onTap: () {
                           ResetPasswordDialog.showResetPasswordDialog(context);
                         },
-                        child: Text(
-                          '비밀번호를 잊어버렸나요?',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            decoration: TextDecoration.underline,
+                        // child: Text(
+                        //   '비밀번호를 잊어버렸나요?',
+                        //   style: TextStyle(
+                        //     color: Colors.grey[600],
+                        //     decoration: TextDecoration.underline,
+                        //   ),
+                        // ),
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(color: Colors.black, width: 0.5)
+                            ),
                           ),
-                        ),
+                          child: Text(
+                            '비밀번호를 잊어버렸나요?',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                            ),
+                          )
+                        )
                       ),
                     ],
                   ),

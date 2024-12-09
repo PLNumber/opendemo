@@ -12,6 +12,8 @@ class _SingleQuizPageState extends State<SingleQuizPage> {
   Question? _question;
   final TextEditingController _answerController = TextEditingController();
   bool _isLoading = true;
+  String? _currentHint;
+  bool _isHintUsed = false;
 
   @override
   void initState() {
@@ -27,6 +29,8 @@ class _SingleQuizPageState extends State<SingleQuizPage> {
         setState(() {
           _question = Question.fromMap(randomDoc.first.data());
           _isLoading = false;
+          _isHintUsed = false; // 새로운 문제에 대해 힌트 초기화
+          _currentHint = null;
         });
       } else {
         setState(() {
@@ -90,15 +94,25 @@ class _SingleQuizPageState extends State<SingleQuizPage> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
-                Navigator.pop(context); // 메인 화면으로 이동
+                Navigator.pop(context); // 결과 다이얼로그 닫기
+                _fetchRandomQuestion(); // 다음 문제로 이동
+                _answerController.clear(); // 입력 필드 초기화
               },
-              child: Text('메인으로'),
+              child: Text('다음 문제'),
             ),
           ],
         );
       },
     );
+  }
+
+  void _showHint() {
+    if (_question != null && !_isHintUsed) {
+      setState(() {
+        _currentHint = _question!.hint; // Firestore에서 힌트를 가져오도록 수정
+        _isHintUsed = true;
+      });
+    }
   }
 
   @override
@@ -111,31 +125,50 @@ class _SingleQuizPageState extends State<SingleQuizPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: Text('퀴즈 풀기')),
+        appBar: AppBar(
+          title: Text('일일 픽업 퀴즈'),
+          centerTitle: true, // 제목 중앙 정렬
+        ),
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_question == null) {
       return Scaffold(
-        appBar: AppBar(title: Text('퀴즈 풀기')),
+        appBar: AppBar(
+          title: Text('퀴즈 풀기'),
+          centerTitle: true, // 제목 중앙 정렬
+        ),
         body: Center(child: Text('퀴즈 데이터가 없습니다.')),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text('퀴즈 풀기')),
+      appBar: AppBar(
+        title: Text('퀴즈 풀기'),
+        centerTitle: true, // 제목 중앙 정렬
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              "문제: ${_question!.def}",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
+            // 질문 표시
+            Container(
+              padding: const EdgeInsets.all(20.0),
+              decoration: BoxDecoration(
+                color: Colors.teal.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.teal, width: 2),
+              ),
+              child: Text(
+                "문제: ${_question!.def}",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
             ),
             SizedBox(height: 20),
+            // 정답 입력 필드
             TextField(
               controller: _answerController,
               decoration: InputDecoration(
@@ -144,9 +177,20 @@ class _SingleQuizPageState extends State<SingleQuizPage> {
               ),
             ),
             SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _checkAnswer,
-              child: Text('제출'),
+            // 힌트 및 제출 버튼
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: _showHint,
+                  child: Text(_isHintUsed ? _currentHint! : '힌트 보기'),
+                ),
+                SizedBox(width: 16),
+                ElevatedButton(
+                  onPressed: _checkAnswer,
+                  child: Text('제출'),
+                ),
+              ],
             ),
           ],
         ),

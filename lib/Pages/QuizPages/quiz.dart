@@ -53,14 +53,22 @@ class _QuizPageState extends State<QuizPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: Text('퀴즈 풀기'), backgroundColor: Colors.teal),
+        appBar: AppBar(
+          title: Text('퀴즈 풀기'), // 기본 텍스트 설정
+          centerTitle: true, // 가운데 정렬
+          backgroundColor: Colors.teal,
+        ),
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_questions.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: Text('퀴즈 풀기'), backgroundColor: Colors.teal),
+        appBar: AppBar(
+          title: Text('퀴즈 풀기'), // 기본 텍스트 설정
+          centerTitle: true, // 가운데 정렬
+          backgroundColor: Colors.teal,
+        ),
         body: Center(child: Text('퀴즈 데이터가 없습니다.')),
       );
     }
@@ -68,31 +76,36 @@ class _QuizPageState extends State<QuizPage> {
     final currentQuestion = _questions[_currentQuestionIndex];
 
     return Scaffold(
-      appBar: AppBar(title: Text('퀴즈 풀기'), backgroundColor: Colors.teal),
+      appBar: AppBar(
+        title: Text('퀴즈 풀기'), // 기본 텍스트 설정
+        centerTitle: true, // 가운데 정렬
+        backgroundColor: Colors.teal,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 질문 카드
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+            // 질문 카드 디자인 수정
+            Container(
+              padding: const EdgeInsets.all(20.0),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.black
+                    : Colors.teal.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.teal, width: 2),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  "문제: ${currentQuestion.def}",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white // 다크 모드일 때 흰색
-                        : Colors.black, // 라이트 모드일 때 검은색
-                  ),
-                  textAlign: TextAlign.center,
+              child: Text(
+                "문제: ${currentQuestion.def}",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : Colors.black,
                 ),
+                textAlign: TextAlign.center,
               ),
             ),
             SizedBox(height: 20),
@@ -130,7 +143,7 @@ class _QuizPageState extends State<QuizPage> {
                     _showHint(currentQuestion); // 힌트 표시
                   },
                   child: Text(
-                    _isHintUsed ? currentQuestion.hint : '힌트 보기',
+                    _isHintUsed ? _currentHint! : '힌트 보기',
                     style: TextStyle(color: Colors.black), // 검은색 글씨
                   ),
                 ),
@@ -213,7 +226,7 @@ class _QuizPageState extends State<QuizPage> {
 
   void _showHint(Question question) {
     setState(() {
-      _currentHint = question.hint;
+      _currentHint = question.hint; // Firestore에서 힌트를 가져오도록 수정
       _isHintUsed = true;
     });
   }
