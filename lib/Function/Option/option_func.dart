@@ -40,44 +40,88 @@ class ThemeProvider with ChangeNotifier {
 
 // 제작자 정보 다이얼로그를 보여주는 함수
 void showCreatorInfoDialog(BuildContext context) {
+  final isDarkMode = Theme.of(context).brightness == Brightness.dark; // 다크 모드 확인
+
   showDialog(
     context: context,
     builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text(
-          "제작자 정보",
-          textAlign: TextAlign.center,
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.0), // 모서리를 둥글게 설정
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "안재모\n허재민\n백승태\n위지웅",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 30.0),
-            ),
-            SizedBox(
-              height: 20.0,
-            ),
-            Text(
-              "이 앱은 Flutter로 개발되었습니다",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 10.0, color: Colors.blue),
-            ),
-          ],
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(); // 다이얼로그 닫기
-            },
-            child: const Text("닫기"),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 타이틀
+              Text(
+                "제작자 정보",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20.0,
+                  fontWeight: FontWeight.bold,
+                  color: isDarkMode ? Colors.white : Colors.black87, // 다크 모드 글씨 색상
+                ),
+              ),
+              const SizedBox(height: 15.0),
+
+              // 제작자 명단
+              Text(
+                "안재모\n허재민\n백승태\n위지웅",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.w500,
+                  color: isDarkMode ? Colors.white70 : Colors.black54, // 다크 모드 글씨 색상
+                ),
+              ),
+              const SizedBox(height: 20.0),
+
+              // 추가 설명
+              Text(
+                "이 앱은 Flutter로 개발되었습니다.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14.0,
+                  fontWeight: FontWeight.w400,
+                  color: isDarkMode ? Colors.blueAccent : Colors.blueAccent, // 버튼 색상은 그대로 유지
+                ),
+              ),
+              const SizedBox(height: 20.0),
+
+              // 닫기 버튼
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // 다이얼로그 닫기
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal, // 버튼 색상
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 30.0,
+                    vertical: 10.0,
+                  ),
+                ),
+                child: const Text(
+                  "닫기",
+                  style: TextStyle(
+                    fontSize: 14.0,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       );
     },
   );
 }
+
 
 // URL을 여는 함수
 Future<void> launchURL(String url) async {
@@ -138,7 +182,7 @@ class SoundProvider with ChangeNotifier {
 
   // 오디오 정지 함수
   Future<void> _stopSound() async {
-    if (_isPlaying) { // 현재 재생 중일 때만 정지
+    if (_isPlaying) { // 현재 재생 중일 때만 정지ㅍ
       await _audioPlayer.stop();
       _isPlaying = false;
     }
