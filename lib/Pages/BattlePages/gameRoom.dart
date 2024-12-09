@@ -47,6 +47,13 @@ class _GameRoomPageState extends State<GameRoomPage> {
     });
   }
 
+  @override
+  void dispose() {
+    heartbeatTimer?.cancel(); // 타이머 해제
+    super.dispose();
+  }
+
+  /*리스너 및 확인*/
   void _startHeartbeat() {
     heartbeatTimer = Timer.periodic(Duration(seconds: 10), (timer) async {
       if (gameFunctions.opponentId == null) return; // opponentId가 null이면 종료
@@ -93,70 +100,6 @@ class _GameRoomPageState extends State<GameRoomPage> {
     });
   }
 
-// 방을 나가기 전에 메시지를 표시하는 메서드
-  void _showLeaveMessage() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("경고"),
-          content: const Text("10초 동안 활동하지 않아 자동으로 나갑니다."),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("확인"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-
-  @override
-  void dispose() {
-    heartbeatTimer?.cancel(); // 타이머 해제
-    super.dispose();
-  }
-
-  Future<void> loadQuestionsAndCheckReady() async {
-    try {
-      await gameFunctions.loadSharedQuestions();
-      await _checkIfReady();
-    } catch (error) {
-      print("Error loading questions: $error");
-      setState(() {
-        gameFunctions.isLoading = false; // 로딩 상태 해제
-      });
-    }
-  }
-
-  Future<void> _checkIfReady() async {
-    try {
-      final roomData = await gameFunctions.getRoomData(widget.roomId);
-
-      if (roomData['players'] != null) {
-        int playerCount = roomData['players'].length;
-
-        if (playerCount > 1) {
-          setState(() {
-            isWaiting = false; // 대기 상태 해제
-          });
-
-          // 각 플레이어의 상태를 active로 변경
-          for (var playerId in roomData['players'].keys) {
-            await gameFunctions.updatePlayerStatus(widget.roomId, playerId, "active");
-          }
-        }
-      }
-    } catch (error) {
-      print("Error checking if ready: $error");
-      setState(() {
-        gameFunctions.isLoading = false; // 오류 발생 시 로딩 상태 해제
-      });
-    }
-  }
-
   void _setupPlayerListener() {
     gameFunctions.roomsRef
         .child(widget.roomId)
@@ -166,7 +109,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
       final playerId = event.snapshot.key;
       if (playerId != widget.playerId) {
         setState(() {
-          messages.add("$playerId가 들어왔습니다."); // 메시지 추가
+          //messages.add("$playerId가 들어왔습니다."); // 메시지 추가
           gameFunctions.opponentId = playerId; // 상대방 ID 설정
           _checkIfReady(); // 대기 상태를 체크하여 UI 업데이트
           _setupScoreListener(); // 상대방 ID가 설정된 후 점수 리스너 설정
@@ -225,6 +168,94 @@ class _GameRoomPageState extends State<GameRoomPage> {
     }
   }
 
+  // 상대방의 플레이어 상태를 수신하여 UI 업데이트
+  void _setupPlayerLeftListener() {
+    gameFunctions.roomsRef
+        .child(widget.roomId)
+        .child('players')
+        .onChildChanged
+        .listen((event) {
+      final playerId = event.snapshot.key; // 변경된 플레이어 ID
+      final playerData = event.snapshot.value as Map;
+
+      if (playerData['status'] == 'player_left') {
+        if (mounted) {
+          setState(() {
+            messages.add("$playerId가 방을 나갔습니다.");
+            if (playerId != widget.playerId) {
+              messages.add("상대가 나갔습니다.");
+              _forceLeaveRoom();
+            }
+          });
+        }
+      }
+    });
+  }
+
+  /*시작 및 답변 제출 관련*/
+
+  Future<void> _checkIfReady() async {
+    try {
+      final roomData = await gameFunctions.getRoomData(widget.roomId);
+
+      if (roomData['players'] != null) {
+        int playerCount = roomData['players'].length;
+
+        if (playerCount > 1) {
+          setState(() {
+            isWaiting = false; // 대기 상태 해제
+          });
+
+          // 각 플레이어의 상태를 active로 변경
+          for (var playerId in roomData['players'].keys) {
+            await gameFunctions.updatePlayerStatus(widget.roomId, playerId, "active");
+          }
+        }
+      }
+    } catch (error) {
+      print("Error checking if ready: $error");
+      setState(() {
+        gameFunctions.isLoading = false; // 오류 발생 시 로딩 상태 해제
+      });
+    }
+  }
+
+  Future<void> loadQuestionsAndCheckReady() async {
+    try {
+      await gameFunctions.loadSharedQuestions();
+      await _checkIfReady();
+    } catch (error) {
+      print("Error loading questions: $error");
+      setState(() {
+        gameFunctions.isLoading = false; // 로딩 상태 해제
+      });
+    }
+  }
+
+  // 답변 제출 처리
+  Future<void> _submitAnswer() async {
+    if (gameFunctions.playerAnswer == null || gameFunctions.playerAnswer!.isEmpty) {
+      return; // 답변이 비어있으면 아무것도 하지 않음
+    }
+
+    try {
+      // 플레이어의 답변 제출
+      await gameFunctions.submitAnswer(widget.roomId, widget.playerId, gameFunctions.playerAnswer!);
+
+      // 타임스탬프 업데이트
+      await gameFunctions.updateLastActive(widget.roomId, widget.playerId);
+
+      // UI 업데이트
+      setState(() {
+        gameFunctions.playerAnswer = null; // 답변 초기화
+      });
+    } catch (e) {
+      print("답변 제출 중 오류 발생: $e"); // 오류 핸들링
+    }
+  }
+
+  /*나가는 것 관련*/
+
   // 방 나가기 메서드
   Future<void> _leaveRoom() async {
     // 나가기 전에 경고 메시지 표시
@@ -265,30 +296,7 @@ class _GameRoomPageState extends State<GameRoomPage> {
   void _notifyOpponentPlayerLeft(String roomId, String playerId) async {
     await gameFunctions.roomsRef.child(roomId).child('players').child(playerId).update({
       'status': 'player_left',
-    });
-  }
-
-// 상대방의 플레이어 상태를 수신하여 UI 업데이트
-  void _setupPlayerLeftListener() {
-    gameFunctions.roomsRef
-        .child(widget.roomId)
-        .child('players')
-        .onChildChanged
-        .listen((event) {
-      final playerId = event.snapshot.key; // 변경된 플레이어 ID
-      final playerData = event.snapshot.value as Map;
-
-      if (playerData['status'] == 'player_left') {
-        if (mounted) {
-          setState(() {
-            messages.add("$playerId가 방을 나갔습니다.");
-            if (playerId != widget.playerId) {
-              messages.add("상대가 나갔습니다.");
-              _forceLeaveRoom();
-            }
-          });
-        }
-      }
+      'lastActive': DateTime.now().millisecondsSinceEpoch, // 현재 시간을 타임스탬프로 추가
     });
   }
 
@@ -305,28 +313,25 @@ class _GameRoomPageState extends State<GameRoomPage> {
     Navigator.pop(context); // 방 나가기
   }
 
-
-  // 답변 제출 처리
-  Future<void> _submitAnswer() async {
-    if (gameFunctions.playerAnswer == null || gameFunctions.playerAnswer!.isEmpty) {
-      return; // 답변이 비어있으면 아무것도 하지 않음
-    }
-
-    try {
-      // 플레이어의 답변 제출
-      await gameFunctions.submitAnswer(widget.roomId, widget.playerId, gameFunctions.playerAnswer!);
-
-      // 타임스탬프 업데이트
-      await gameFunctions.updateLastActive(widget.roomId, widget.playerId);
-
-      // UI 업데이트
-      setState(() {
-        gameFunctions.playerAnswer = null; // 답변 초기화
-      });
-    } catch (e) {
-      print("답변 제출 중 오류 발생: $e"); // 오류 핸들링
-    }
+  // 방을 나가기 전에 메시지를 표시하는 메서드
+  void _showLeaveMessage() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("경고"),
+          content: const Text("10초 동안 활동하지 않아 자동으로 나갑니다."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("확인"),
+            ),
+          ],
+        );
+      },
+    );
   }
+
 
   @override
   Widget build(BuildContext context) {

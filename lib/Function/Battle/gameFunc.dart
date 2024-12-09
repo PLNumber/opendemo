@@ -33,7 +33,26 @@ class GameFunction {
   // 생성자
   GameFunction({this.onScoreUpdated});
 
+  void _setupScoreListener() {
+    if (opponentId != null) {
+      roomsRef.child(roomId!).child('players').child(opponentId!).onValue.listen((event) {
+        if (event.snapshot.exists) {
+          final data = event.snapshot.value as Map<Object?, Object?>;
+          opponentScore = (data['score'] ?? 0) as int;
+          print("상대 점수 업데이트: $opponentScore");
+        }
+      });
+    }
+  }
 
+
+
+  /*방 시작 시*/
+  Future<void> updatePlayerStatus(String roomId, String playerId, String status) async {
+    await _roomsRef.child(roomId).child('players').child(playerId).update({
+      "status": status,
+    });
+  }
 
   // 사용자 데이터 로드 메서드
   Future<void> loadUserData() async {
@@ -62,24 +81,6 @@ class GameFunction {
     }
   }
 
-  Future<void> updateScoreInDatabase(String roomId, String playerId, int scoreChange) async {
-    final playerRef = _roomsRef.child(roomId).child('players').child(playerId);
-
-    final snapshot = await playerRef.once();
-    if (snapshot.snapshot.exists) {
-      final currentScoreMap = snapshot.snapshot.value as Map<Object?, Object?>;
-      final currentScore = (currentScoreMap['score'] ?? 0) as int;
-      final newScore = currentScore + scoreChange;
-
-      await playerRef.update({'score': newScore});
-
-      // 콜백 호출하여 UI 업데이트
-      if (onScoreUpdated != null) {
-        onScoreUpdated!();
-      }
-    }
-  }
-
   Future<void> loadSharedQuestions() async {
     try {
       final event = await _questionsRef.once();
@@ -98,21 +99,6 @@ class GameFunction {
     }
   }
 
-  List<Question> _getQuestionsFromSharedData(Map<String, dynamic> data) {
-    return data.entries.map((entry) {
-      if (entry.value is Map<Object?, Object?>) {
-        return Question.fromMap(Map<String, dynamic>.from(entry.value));
-      } else {
-        throw Exception("질문 데이터 형식이 잘못되었습니다: ${entry.value}");
-      }
-    }).toList();
-  }
-
-  void updateMatchStatus(String message) {
-    matchStatus = message;
-    isLoading = false;
-  }
-
   Future<Map<String, dynamic>> getRoomData(String roomId) async {
     final roomSnapshot = await _roomsRef.child(roomId).once();
 
@@ -126,6 +112,62 @@ class GameFunction {
       }
     } else {
       throw Exception("방이 존재하지 않습니다.");
+    }
+  }
+
+  void updateMatchStatus(String message) {
+    matchStatus = message;
+    isLoading = false;
+  }
+
+  List<Question> _getQuestionsFromSharedData(Map<String, dynamic> data) {
+    return data.entries.map((entry) {
+      if (entry.value is Map<Object?, Object?>) {
+        return Question.fromMap(Map<String, dynamic>.from(entry.value));
+      } else {
+        throw Exception("질문 데이터 형식이 잘못되었습니다: ${entry.value}");
+      }
+    }).toList();
+  }
+
+  Future<void> addPlayerToRoom(String roomId, String playerId) async {
+    this.roomId = roomId; // 방 ID 설정
+    myPlayerId = playerId; // 내 플레이어 ID 설정
+    await _roomsRef.child(roomId).child('players').child(playerId).set({
+      "name": playerId,
+      "status": "waiting",
+      "score": 0,
+      "lastActive": DateTime.now().millisecondsSinceEpoch, // 타임스탬프 추가
+    });
+
+    final playersSnapshot = await _roomsRef.child(roomId).child('players').once();
+    if (playersSnapshot.snapshot.exists) {
+      final players = playersSnapshot.snapshot.value as Map;
+      if (players.length > 1) {
+        opponentId = players.keys.firstWhere((id) => id != playerId);
+        _setupScoreListener(); // 리스너 설정
+      }
+    }
+  }
+
+
+  /*문제 풀시*/
+
+  Future<void> updateScoreInDatabase(String roomId, String playerId, int scoreChange) async {
+    final playerRef = _roomsRef.child(roomId).child('players').child(playerId);
+
+    final snapshot = await playerRef.once();
+    if (snapshot.snapshot.exists) {
+      final currentScoreMap = snapshot.snapshot.value as Map<Object?, Object?>;
+      final currentScore = (currentScoreMap['score'] ?? 0) as int;
+      final newScore = currentScore + scoreChange;
+
+      await playerRef.update({'score': newScore});
+
+      // 콜백 호출하여 UI 업데이트
+      if (onScoreUpdated != null) {
+        onScoreUpdated!();
+      }
     }
   }
 
@@ -175,42 +217,6 @@ class GameFunction {
     isMovingToNextQuestion = false; // 이동 완료
   }
 
-
-
-  Future<void> endQuizAndUpdateScore(String roomId) async {
-    isGameFinished = true;
-
-    // 랭크 포인트에 최종 점수 추가
-    await updateRankPoints(myPlayerId!, playerScore);
-    await updateRankPoints(opponentId!, opponentScore);
-
-    // 방 상태 업데이트
-    await roomsRef.child(roomId).child('gameStatus').set({
-      'finished': true,
-      'finalScores': {
-        'playerScore': playerScore,
-        'opponentScore': opponentScore,
-      },
-    });
-  }
-
-
-  Future<void> updateRankPoints(String playerId, int finalScore) async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        final userDoc = FirebaseFirestore.instance.collection('UserData').doc(user.uid);
-        await userDoc.update({'rankPt': FieldValue.increment(finalScore)});
-        print('User points updated by $finalScore.');
-      }
-    } catch (e) {
-      print('Error updating user points: $e');
-    }
-  }
-
-
-
-
   // 플레이어에게 새로운 문제 알리기
   void notifyPlayersNewQuestion(String roomId) {
     final question = questions[currentQuestionIndex];
@@ -232,43 +238,43 @@ class GameFunction {
   }
 
 
-  Future<void> addPlayerToRoom(String roomId, String playerId) async {
-    this.roomId = roomId; // 방 ID 설정
-    myPlayerId = playerId; // 내 플레이어 ID 설정
-    await _roomsRef.child(roomId).child('players').child(playerId).set({
-      "name": playerId,
-      "status": "waiting",
-      "score": 0,
-      "lastActive": DateTime.now().millisecondsSinceEpoch, // 타임스탬프 추가
-    });
 
-    final playersSnapshot = await _roomsRef.child(roomId).child('players').once();
-    if (playersSnapshot.snapshot.exists) {
-      final players = playersSnapshot.snapshot.value as Map;
-      if (players.length > 1) {
-        opponentId = players.keys.firstWhere((id) => id != playerId);
-        _setupScoreListener(); // 리스너 설정
+/*끝날 시 , 나갈 시*/
+
+  Future<void> endQuizAndUpdateScore(String roomId) async {
+    isGameFinished = true;
+
+    // 랭크 포인트에 최종 점수 추가
+    await updateRankPoints(myPlayerId!, playerScore);
+
+    // 방 상태 업데이트
+    await roomsRef.child(roomId).child('gameStatus').set({
+      'finished': true,
+      'finalScores': {
+        'playerScore': playerScore,
+        'opponentScore': opponentScore,
+      },
+    });
+  }
+
+  Future<void> updateRankPoints(String playerId, int finalScore) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final userDoc = FirebaseFirestore.instance.collection('UserData').doc(user.uid);
+        await userDoc.update({'rankPt': FieldValue.increment(finalScore)});
+        print('User points updated by $finalScore.');
       }
+    } catch (e) {
+      print('Error updating user points: $e');
     }
   }
 
-  void _setupScoreListener() {
-    if (opponentId != null) {
-      roomsRef.child(roomId!).child('players').child(opponentId!).onValue.listen((event) {
-        if (event.snapshot.exists) {
-          final data = event.snapshot.value as Map<Object?, Object?>;
-          opponentScore = (data['score'] ?? 0) as int;
-          print("상대 점수 업데이트: $opponentScore");
-        }
-      });
-    }
-  }
 
-  Future<void> updatePlayerStatus(String roomId, String playerId, String status) async {
-    await _roomsRef.child(roomId).child('players').child(playerId).update({
-      "status": status,
-    });
-  }
+
+
+/*마지막*/
+
 
   // 플레이어의 마지막 활동 시간 업데이트 메서드
   Future<void> updateLastActive(String roomId, String playerId) async {
@@ -285,7 +291,8 @@ class GameFunction {
       if (roomSnapshot.exists) {
         // 플레이어를 방에서 제거
         await roomRef.child('players').child(playerId).update({
-          'status' : 'player_left'
+          'status' : 'player_left',
+          'lastActive' : DateTime.now().millisecondsSinceEpoch, // 현재 시간을 타임스탬프로 추가 (선택 사항)
         });
 
         // 방이 비어있으면 방 삭제
@@ -302,4 +309,5 @@ class GameFunction {
       print("방을 떠나는 중 오류 발생: $e");
     }
   }
+
 }
