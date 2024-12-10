@@ -345,7 +345,7 @@ class _BattlePageState extends State<BattlePage> {
       style: ElevatedButton.styleFrom(
         backgroundColor: isDarkMode ? Colors.black : Colors.white,
         // 다크 모드일 때 배경색
-        foregroundColor: isDarkMode ? Colors.white : Colors.teal,
+        foregroundColor: isDarkMode ? Colors.white : Colors.black,
         // 다크 모드일 때 텍스트 색상
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10), // 둥근 모서리

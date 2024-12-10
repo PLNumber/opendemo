@@ -57,7 +57,6 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
 
   Future<void> _fetchQuestionsAndOpponentData() async {
     try {
-      // 퀴즈 데이터 가져오기
       final questionsSnapshot =
       await FirebaseFirestore.instance.collection('WQ').get();
       final questions = questionsSnapshot.docs
@@ -65,21 +64,19 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
           .toList();
       questions.shuffle();
 
-      // 상대 데이터 가져오기
       final opponentSnapshot = await FirebaseFirestore.instance
           .collection('pvpGhost')
           .orderBy('completedAt', descending: true)
-          .limit(10) // 다수의 상대 데이터를 가져옴
+          .limit(10)
           .get();
 
       if (opponentSnapshot.docs.isEmpty) {
         throw Exception('상대 데이터가 없습니다.');
       }
 
-      // 무작위 상대를 선택
       final opponentDocs = opponentSnapshot.docs.toList();
-      opponentDocs.shuffle(); // 상대 데이터를 섞음
-      final opponentData = opponentDocs.first.data(); // 랜덤 상대 선택
+      opponentDocs.shuffle();
+      final opponentData = opponentDocs.first.data();
 
       final opponentTimeRecords =
       List<int>.from(opponentData['timeRecords'] ?? []);
@@ -112,18 +109,15 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
 
   void _simulateOpponent() async {
     for (int i = 0; i < _opponentTimeRecords.length; i++) {
-      // 상대방의 풀이 시간만큼 대기
       await Future.delayed(Duration(seconds: _opponentTimeRecords[i]));
 
-      // 상대방 점수 업데이트
       if (_opponentCorrectAnswers < 10) {
         setState(() {
           _opponentCorrectAnswers++;
         });
 
-        // 상대방이 모든 문제를 풀었다면 게임 종료
         if (_opponentCorrectAnswers >= 10) {
-          _finishGame(false); // 상대방 승리 처리
+          _finishGame(false);
           break;
         }
       }
@@ -138,7 +132,7 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark; // 다크 모드 확인
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     if (_isLoading) {
       return Scaffold(
@@ -157,53 +151,50 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
           backgroundColor: Colors.teal),
       body: Stack(
         children: [
-          Column(
-            children: [
-              // 프로필 섹션
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildProfileSection(_userName, _userProfileImg),
-                    _buildProfileSection(_opponentName, _opponentProfileImg),
-                  ],
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildProfileSection(_userName, _userProfileImg),
+                      _buildProfileSection(_opponentName, _opponentProfileImg),
+                    ],
+                  ),
                 ),
-              ),
-              // 체력바 섹션
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    _buildHealthBar(
-                      label: '나',
-                      current: _correctAnswers,
-                      total: 10,
-                      color: Colors.green,
-                    ),
-                    SizedBox(height: 8),
-                    _buildHealthBar(
-                      label: '상대',
-                      current: _opponentCorrectAnswers,
-                      total: 10,
-                      color: Colors.red,
-                    ),
-                  ],
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      _buildHealthBar(
+                        label: '나',
+                        current: _correctAnswers,
+                        total: 10,
+                        color: Colors.green,
+                      ),
+                      SizedBox(height: 8),
+                      _buildHealthBar(
+                        label: '상대',
+                        current: _opponentCorrectAnswers,
+                        total: 10,
+                        color: Colors.red,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Expanded(
-                child: Padding(
+                Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // 질문 카드
                       Card(
                         elevation: 4,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        color: isDarkMode ? Colors.black54 : Colors.white, // 카드 배경색
+                        color: isDarkMode ? Colors.black : Colors.white,
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
                           child: Text(
@@ -211,14 +202,13 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: isDarkMode ? Colors.white : Colors.black, // 글씨 색상
+                              color: isDarkMode ? Colors.white : Colors.black,
                             ),
                             textAlign: TextAlign.center,
                           ),
                         ),
                       ),
                       SizedBox(height: 20),
-                      // 답 입력 필드
                       TextField(
                         controller: _answerController,
                         decoration: InputDecoration(
@@ -228,20 +218,18 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
                             borderSide: BorderSide(color: Colors.teal),
                           ),
                           labelStyle: TextStyle(
-                            color: isDarkMode ? Colors.white : Colors.black, // 레이블 색상
+                            color: isDarkMode ? Colors.white : Colors.black,
                           ),
                         ),
-                        style: TextStyle(color: isDarkMode ? Colors.white : Colors.black), // 입력 텍스트 색상
+                        style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
                         onSubmitted: (value) {
-                          _checkAnswer(); // 사용자가 '완료' 버튼을 누르면 정답 확인
+                          _checkAnswer(); // 휴대폰 완료 버튼을 눌렀을 때 정답 체크
                         },
                       ),
                       SizedBox(height: 20),
-                      // 버튼들
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // 문제 넘기기 버튼
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
@@ -254,8 +242,7 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
                             child: Text('문제 넘기기',
                                 style: TextStyle(color: Colors.black)),
                           ),
-                          SizedBox(width: 24), // 간격 추가
-                          // 제출 버튼
+                          SizedBox(width: 24),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
@@ -273,16 +260,16 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           if (_showOverlay)
             GestureDetector(
               onTap: _startGame,
               child: Container(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.black
-                    : Colors.white, // 배경색 설정
+                color: isDarkMode ? Colors.black : Colors.white, // 반투명 배경
+                height: MediaQuery.of(context).size.height, // 전체 화면 높이
+                width: MediaQuery.of(context).size.width, // 전체 화면 너비
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -298,9 +285,7 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black, // 글씨 색상 설정
+                          color: isDarkMode ? Colors.white : Colors.black, // 글씨 색상
                         ),
                       ),
                       SizedBox(height: 8),
@@ -308,9 +293,7 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
                         '터치하면 시작합니다.',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.grey[300] // 다크 모드일 때 글씨 색상
-                              : Colors.grey, // 일반 모드일 때 글씨 색상
+                          color: Colors.grey[300], // 텍스트 색상
                         ),
                       ),
                     ],
@@ -318,7 +301,6 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
                 ),
               ),
             ),
-
         ],
       ),
     );
@@ -446,3 +428,4 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
     );
   }
 }
+
