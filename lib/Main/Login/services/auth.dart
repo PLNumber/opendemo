@@ -53,22 +53,33 @@ class AuthService {
   }
 
   // Firestore에 사용자 데이터 저장
+  // Firestore에 사용자 데이터 저장
   Future<void> _saveUserDataToFirestore(UserCredential userCredential) async {
-    await FirebaseFirestore.instance
+    final userDoc = FirebaseFirestore.instance
         .collection('UserData')
-        .doc(userCredential.user!.uid)
-        .set({
-      'email': userCredential.user!.email,
-      'createdAt': DateTime.now(),
-      'currentMSG': '',
-      'profileImg': 'https://ifh.cc/g/8AckGM.jpg',
-      'purchased': [true, false, false, false, false, false],
-      'removeAD': false,
-      'win': 0,
-      'loss': 0,
-      'shopPt': 0,
-      'rankPt': 0,
-      'name': 'Player'
-    });
+        .doc(userCredential.user!.uid);
+
+    final docSnapshot = await userDoc.get();
+
+    // 사용자 데이터가 존재하지 않을 때만 저장
+    if (!docSnapshot.exists) {
+      await userDoc.set({
+        'email': userCredential.user!.email,
+        'createdAt': DateTime.now(),
+        'currentMSG': '',
+        'profileImg': 'https://ifh.cc/g/8AckGM.jpg',
+        'purchased': [true, false, false, false, false, false],
+        'removeAD': false,
+        'win': 0,
+        'loss': 0,
+        'shopPt': 0,
+        'rankPt': 100,
+        'name': 'Player',
+      });
+      print('Firestore에 새 사용자 데이터 저장 완료');
+    } else {
+      print('Firestore에 이미 데이터가 존재합니다. 저장을 건너뜁니다.');
+    }
   }
+
 }

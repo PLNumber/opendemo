@@ -67,7 +67,7 @@ class _RegisterPageState extends State<RegisterPage> {
         'win': 0,
         'loss': 0,
         'shopPt': 0,
-        'rankPt': 0,
+        'rankPt': 100,
         'name': 'Player'
       });
 

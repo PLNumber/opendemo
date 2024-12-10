@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "582081833689",
+    "firebase_url": "https://quaddingnotetest-default-rtdb.firebaseio.com",
     "project_id": "quaddingnotetest",
     "storage_bucket": "quaddingnotetest.firebasestorage.app"
   },
@@ -14,11 +15,35 @@
       },
       "oauth_client": [
         {
-          "client_id": "582081833689-2dga1fp5gmk3ln0rtrntvjh19o6a9tt2.apps.googleusercontent.com",
+          "client_id": "582081833689-dvusvhtt3khq2rc9t3rcsq2ckl11seim.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "kr.kumoh.ac.s20180665.www.opendemo",
-            "certificate_hash": "a038d0ec5557ca12c0edec5844887710c4e208ad"
+            "certificate_hash": "7ebb91c0268f13d56b485826c9998e4164941ba3"
+          }
+        },
+        {
+          "client_id": "582081833689-m84vnl4fd2fp6stpemahtebalbh6ko48.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "kr.kumoh.ac.s20180665.www.opendemo",
+            "certificate_hash": "3b432f4bc5504cb7ac8982572d17a05cdc53f7be"
+          }
+        },
+        {
+          "client_id": "582081833689-qqtso6qtugcvhsn93s0eb7ptdevlt3a0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "kr.kumoh.ac.s20180665.www.opendemo",
+            "certificate_hash": "2dc0c01a5de794af772ab9bd89eca13da3dd090d"
+          }
+        },
+        {
+          "client_id": "582081833689-remf5nh3q78l622jrqibnnc0ftucvi44.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "kr.kumoh.ac.s20180665.www.opendemo",
+            "certificate_hash": "2d1d6cc6fb4240c7b4da85c9f03ced98c006eb07"
           }
         },
         {

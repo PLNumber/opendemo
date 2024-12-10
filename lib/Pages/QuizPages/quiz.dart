@@ -54,7 +54,7 @@ class _QuizPageState extends State<QuizPage> {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('단답식 문제'), // 앱바 텍스트 수정
+          title: Text('단답식 퀴즈'), // 앱바 텍스트 수정
           centerTitle: true,
           backgroundColor: Colors.teal,
         ),
@@ -65,7 +65,7 @@ class _QuizPageState extends State<QuizPage> {
     if (_questions.isEmpty) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('단답식 문제'), // 앱바 텍스트 수정
+          title: Text('단답식 퀴즈'), // 앱바 텍스트 수정
           centerTitle: true,
           backgroundColor: Colors.teal,
         ),
@@ -77,7 +77,7 @@ class _QuizPageState extends State<QuizPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('단답식 문제'), // 앱바 텍스트 수정
+        title: Text('단답식 퀴즈'), // 앱바 텍스트 수정
         centerTitle: true,
         backgroundColor: Colors.teal,
       ),

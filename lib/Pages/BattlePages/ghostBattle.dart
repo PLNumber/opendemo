@@ -232,6 +232,9 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
                           ),
                         ),
                         style: TextStyle(color: isDarkMode ? Colors.white : Colors.black), // 입력 텍스트 색상
+                        onSubmitted: (value) {
+                          _checkAnswer(); // 사용자가 '완료' 버튼을 누르면 정답 확인
+                        },
                       ),
                       SizedBox(height: 20),
                       // 버튼들
@@ -410,7 +413,7 @@ class _PvpGhostPageState extends State<PvpGhostPage> {
             int shopPt = data['shopPt'] ?? 0;
             int loss = data['loss'] ?? 0;
             int win = data['win'] ?? 0;
-            transaction.update(userDoc, {'rankPt': rankPt + 10});
+            transaction.update(userDoc, {'rankPt': rankPt + 15});
             transaction.update(userDoc, {'shopPt': shopPt + 300});
             transaction.update(userDoc, {'loss': loss - 1});
             transaction.update(userDoc, {'win': win + 1});

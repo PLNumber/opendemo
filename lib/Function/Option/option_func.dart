@@ -2,6 +2,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/foundation.dart'; // kIsWeb 사용을 위한 import
 
 /*테마 설정 함수*/
 class ThemeProvider with ChangeNotifier {
@@ -151,7 +152,10 @@ class SoundProvider with ChangeNotifier {
     notifyListeners();
 
     if (_isSoundOn) {
-      await _playSound(); // 소리가 켜진 상태라면 재생
+      // 플랫폼에 따라 오디오 재생
+      if (!kIsWeb) { // 모바일 앱인 경우
+        await _playSound(); // 소리 재생
+      }
     } else {
       await _stopSound(); // 꺼진 상태라면 정지
     }
@@ -165,7 +169,9 @@ class SoundProvider with ChangeNotifier {
     notifyListeners();
 
     if (_isSoundOn) {
-      await _playSound(); // 소리 켜졌을 때 소리 재생
+      if (!kIsWeb) { // 모바일 앱인 경우
+        await _playSound(); // 소리 켜졌을 때 소리 재생
+      }
     } else {
       await _stopSound(); // 소리 꺼졌을 때 소리 정지
     }
@@ -182,7 +188,7 @@ class SoundProvider with ChangeNotifier {
 
   // 오디오 정지 함수
   Future<void> _stopSound() async {
-    if (_isPlaying) { // 현재 재생 중일 때만 정지ㅍ
+    if (_isPlaying) { // 현재 재생 중일 때만 정지
       await _audioPlayer.stop();
       _isPlaying = false;
     }

@@ -12,13 +12,12 @@ import 'Function/Battle/inputDB.dart';
 import 'Function/splash_screen/splash_screen.dart';
 import 'Pages/BattlePages/battleMain.dart';
 import 'Pages/ProfilePages/profileMain.dart';
-import 'Pages/OptionPages/battleMain_beta.dart';
 import 'Pages/QuizPages/quizMain.dart';
 import 'Pages/QuizPages/dailyQuiz.dart';
 import 'Pages/OptionPages/option.dart';
 import 'Pages/DictionaryPages/dictionary.dart';
 import 'Function/Option/option_func.dart';
-import 'Main/firebase_options.dart';
+import 'firebase_options.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'Function/Ads/google_ads.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -32,10 +31,11 @@ void main() async {
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   MobileAds.instance.initialize();
 
+  await dotenv.load(fileName: 'assets/config/.env');
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  await dotenv.load(fileName: 'assets/config/.env');
 
   runApp(
     MultiProvider(

@@ -123,6 +123,9 @@ class _GhostPageState extends State<GhostPage> {
                   borderSide: BorderSide(color: Colors.teal),
                 ),
               ),
+              onSubmitted: (value) {
+                _checkAnswer(_questions[_currentQuestionIndex]); // 사용자가 '완료' 버튼을 누르면 정답 확인
+              },
             ),
             SizedBox(height: 20),
             // 버튼들

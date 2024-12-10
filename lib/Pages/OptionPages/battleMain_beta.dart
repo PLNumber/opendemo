@@ -214,6 +214,7 @@ class _BattleBetaPageState extends State<BattleBetaPage> {
   }
 
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -308,27 +309,29 @@ class _BattleBetaPageState extends State<BattleBetaPage> {
                       children: isPvpSelected
                           ? [
                         ElevatedButton(
-                          onPressed:
-                          isCreatingRoom ? null : createRoom,
+                          onPressed: isCreatingRoom ? null : createRoom,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
+                            backgroundColor: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.black
+                                : Colors.white,
+                            foregroundColor: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black,
                             shape: RoundedRectangleBorder(
-                              borderRadius:
-                              BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
                           child: Column(
-                            mainAxisAlignment:
-                            MainAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.door_front_door_sharp,
-                                  size: 40, color: Colors.teal),
+                                  size: 40, color: Theme.of(context).brightness == Brightness.dark
+                                      ? Colors.white
+                                      : Colors.teal),
                               const SizedBox(height: 10),
                               const Text(
                                 "방 만들기",
-                                style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold),
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                               ),
                             ],
                           ),
@@ -336,24 +339,27 @@ class _BattleBetaPageState extends State<BattleBetaPage> {
                         ElevatedButton(
                           onPressed: quickJoinRoom,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
+                            backgroundColor: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.black
+                                : Colors.white,
+                            foregroundColor: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black,
                             shape: RoundedRectangleBorder(
-                              borderRadius:
-                              BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
                           child: Column(
-                            mainAxisAlignment:
-                            MainAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.meeting_room,
-                                  size: 40, color: Colors.teal),
+                                  size: 40, color: Theme.of(context).brightness == Brightness.dark
+                                      ? Colors.white
+                                      : Colors.teal),
                               const SizedBox(height: 10),
                               const Text(
                                 "빠른 입장",
-                                style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold),
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                               ),
                             ],
                           ),
@@ -367,24 +373,27 @@ class _BattleBetaPageState extends State<BattleBetaPage> {
                             });
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
+                            backgroundColor: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.black
+                                : Colors.white,
+                            foregroundColor: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black,
                             shape: RoundedRectangleBorder(
-                              borderRadius:
-                              BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
                           child: Column(
-                            mainAxisAlignment:
-                            MainAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.people,
-                                  size: 40, color: Colors.teal),
+                                  size: 40, color: Theme.of(context).brightness == Brightness.dark
+                                      ? Colors.white
+                                      : Colors.teal),
                               const SizedBox(height: 10),
                               const Text(
                                 "PVP 대전",
-                                style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold),
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                               ),
                             ],
                           ),
@@ -394,69 +403,42 @@ class _BattleBetaPageState extends State<BattleBetaPage> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>
-                                    QuizBattlePage(),
+                                builder: (context) => QuizBattlePage(),
                               ),
                             );
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
+                            backgroundColor: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.black
+                                : Colors.white,
+                            foregroundColor: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black,
                             shape: RoundedRectangleBorder(
-                              borderRadius:
-                              BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
                           child: Column(
-                            mainAxisAlignment:
-                            MainAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.computer,
-                                  size: 40, color: Colors.teal),
+                                  size: 40, color: Theme.of(context).brightness == Brightness.dark
+                                      ? Colors.white
+                                      : Colors.teal),
                               const SizedBox(height: 10),
                               const Text(
                                 "PVE 대전",
-                                style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold),
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                               ),
                             ],
                           ),
                         ),
                       ],
                     ),
-                    if (isPvpSelected)
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.end, // 세로 정렬을 끝으로
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center, // 가로 중앙 정렬
-                            children: [
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white, // 배경색
-                                  foregroundColor: Colors.teal, // 텍스트 및 아이콘 색상
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10), // 둥근 모서리
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 20, vertical: 10),
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    isPvpSelected = false;
-                                  });
-                                },
-                                child: const Icon(Icons.arrow_back, size: 24),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20), // 버튼 간격 추가
-                        ],
-                      ),
-
                   ],
                 ),
               ),
+
             ],
           ),
         ),
