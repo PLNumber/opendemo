@@ -29,7 +29,7 @@
 
 ## 3. 사용법
 1. 앱 실행 후, 계정을 등록합니다.
-   - 일반 계정 생성 및 구글 계정 연동
+   - 일반 계정 생성 및 구글 계정 연동 (로그인 화면: https://github.com/PLNumber/opendemo/issues/3#issue-2753946160)
 2. 계정 등록 후, 로그인에 성공하면 홈 화면으로 이동합니다. (홈 화면: https://github.com/PLNumber/opendemo/issues/2#issue-2753939294)
 4. 주요 기능을 사용해보세요:
    - **3.1 문해력 문제**
