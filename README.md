@@ -1,18 +1,63 @@
-# opendemo
+# 문해북
 
-데모버전
+다양한 문해력 퀴즈를 풀고, PVE 또는 PVP 대전을 통해 문해력을 즐겁게, 그리고 효과적으로 향상시키는 어플리케이션.
 
-읽을거 특) 없음
+문해북 로고: (https://github.com/PLNumber/opendemo/issues/1#issue-2753935171)
 
-## Getting Started
 
-This project is a starting point for a Flutter application.
+## 목차
+1. [소개](#소개)
+2. [설치](#설치)
+3. [사용법](#사용법)
+4. [권한](#권한)
+5. [기술 스택](#기술-스택)
+6. [문제 보고 및 지원](#문제-보고-및-지원)
 
-A few resources to get you started if this is your first Flutter project:
+## 소개
+이 프로젝트는 저연령층의 문해력 저하 문제를 해결하기 위해 만들어졌습니다. 주요 기능은 다음과 같습니다:
+- **기능 1**: 문해력 문제(단답식/객관식)
+- **기능 2**: 단어 사전
+- **기능 3**: 대전(PVE, PVP)
+- **기능 4**: 프로필 편집
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## 설치
+1. Google Drive 링크에서 다운로드: [다운로드 링크](https://drive.google.com/file/d/1au8hD2O6Zhy8TQPyyiyUG0UVTFkvhE7F/view?usp=drive_link).
+2. APK 설치:
+   - 상단의 링크를 클릭하여 문해북.apk 파일을 다운로드 받습니다. 
+   - 휴대폰에서 `설정 > 보안 > 알 수 없는 소스`를 허용합니다.
+   - 다운로드한 APK 파일을 실행하여 설치합니다.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 사용법
+1. 앱 실행 후, 계정을 등록합니다.
+   - 일반 계정 생성 및 구글 계정 연동 (로그인 화면: https://github.com/PLNumber/opendemo/issues/3#issue-2753946160)
+2. 계정 등록 후, 로그인에 성공하면 홈 화면으로 이동합니다. (홈 화면: https://github.com/PLNumber/opendemo/issues/2#issue-2753939294)
+4. 주요 기능을 사용해보세요:
+   - **3.1 문해력 문제** (참고 이미지: https://github.com/PLNumber/opendemo/issues/4#issue-2753947639)
+      - 단답식, 객관식 유형의 문해력 문제가 제공됩니다.
+      - 초성 힌트 기능을 적극 활용하세요.
+      - 틀린 문제는 오답노트에 기록됩니다.
+   - **3.2 단어 사전**
+      - 단어 검색 및 검색기록 기능을 지원합니다.
+   - **3.3 대전** (AI 대전: https://github.com/PLNumber/opendemo/issues/6#issue-2753948162)
+      - PVE 대전 및 PVP 대전을 즐길 수 있습니다.
+      - 10 문제를 먼저 맞추는 쪽이 승리합니다.
+      - 대전 결과에 따라 랭크 포인트 및 상점 포인트를 제공합니다.
+   - **3.4 프로필 편집** (상점 화면 및 변경된 프로필: https://github.com/PLNumber/opendemo/issues/7#issue-2753948407)
+      - 사용자명, 상태 메시지, 프로필 아이콘을 수정 할 수 있습니다.
+      - PVP 대전의 전적을 확인 할 수 있습니다.
+5. 환결 설정을 변경하세요.
+   - 음소거, 다크모드 등의 환경 설정 기능을 제공합니다.
+   
+## 권한
+이 앱은 아무런 권한을 요구하지 않습니다.
+
+## 기술 스택
+- **프레임워크**: Android Studio
+- **UI**: Dart
+- **데이터베이스**: Firebase Storage
+
+## 문제 보고 및 지원 (Issues and Support)
+```markdown
+## 문제 보고 및 지원
+- 문제나 질문은 [Issues](https://github.com/PLNumber/opendemo/issues)를 통해 보고해주세요.
+- 추가적인 도움이 필요하면 이메일로 문의하세요: bst3840@gmail.com
