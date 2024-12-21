@@ -32,7 +32,7 @@
    - 일반 계정 생성 및 구글 계정 연동 (로그인 화면: https://github.com/PLNumber/opendemo/issues/3#issue-2753946160)
 2. 계정 등록 후, 로그인에 성공하면 홈 화면으로 이동합니다. (홈 화면: https://github.com/PLNumber/opendemo/issues/2#issue-2753939294)
 4. 주요 기능을 사용해보세요:
-   - **3.1 문해력 문제**
+   - **3.1 문해력 문제** (참고 이미지: https://github.com/PLNumber/opendemo/issues/4#issue-2753947639)
       - 단답식, 객관식 유형의 문해력 문제가 제공됩니다.
       - 초성 힌트 기능을 적극 활용하세요.
       - 틀린 문제는 오답노트에 기록됩니다.
