@@ -35,11 +35,22 @@ android {
 
     }
 
+    signingConfigs {
+        release {
+            storeFile file("C:\\Users\\sdf10\\AndroidStudioProjects\\OpenDemo\\release.keystore") // 키스토어 파일 경로
+            storePassword "991123" // 키스토어 비밀번호
+            keyAlias "release_key" // 별칭
+            keyPassword "991123" // 별칭 비밀번호
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            signingConfig = signingConfigs.release
+            minifyEnabled false // 필요시 true로 설정 (ProGuard 활성화)
+            shrinkResources false // 리소스 축소 비활성화
         }
     }
 }

@@ -90,43 +90,6 @@ class _NotePageState extends State<NotePage> {
     }
   }
 
-  Future<void> _removeWrongAnswer(int wId) async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        throw Exception("사용자가 로그인되어 있지 않습니다.");
-      }
-
-      final uid = user.uid;
-      final userDocRef =
-      FirebaseFirestore.instance.collection('UserData').doc(uid);
-
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        final snapshot = await transaction.get(userDocRef);
-        if (!snapshot.exists) {
-          throw Exception("사용자 데이터가 존재하지 않습니다.");
-        }
-
-        final data = snapshot.data() as Map<String, dynamic>;
-        final wrongAnswerIds = List<int>.from(data['wrongAnswerIds'] ?? []);
-
-        // 해당 wId를 리스트에서 제거
-        wrongAnswerIds.remove(wId);
-
-        transaction.update(userDocRef, {'wrongAnswerIds': wrongAnswerIds});
-      });
-
-      // 로컬 상태 업데이트
-      setState(() {
-        _wrongAnswers.removeWhere((item) => item['w_id'] == wId);
-      });
-
-      print('문제 ID $wId가 성공적으로 삭제되었습니다.');
-    } catch (e) {
-      print('오답 삭제 중 오류 발생: $e');
-    }
-  }
-
   Future<void> _removeSelectedAnswers() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
