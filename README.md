@@ -2,7 +2,7 @@
 
 다양한 문해력 퀴즈를 풀고, PVE 또는 PVP 대전을 통해 문해력을 즐겁게, 그리고 효과적으로 향상시키는 어플리케이션.
 
-![로고]([link-to-logo.png](https://ifh.cc/g/dMrQVL.png))![Uploading web_512.png…]()
+![로고][(https://github.com/PLNumber/opendemo/issues/1#issue-2753935171)]
 
 
 ## 목차
